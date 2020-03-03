@@ -13,25 +13,21 @@
  * permissions and limitations under the License.
  */
 
+#include "tls/s2n_tls13.h"
+
 #include "api/s2n.h"
 #include "tls/s2n_tls.h"
-#include "tls/s2n_tls13.h"
 #include "utils/s2n_safety.h"
 
-int s2n_is_tls13_enabled()
-{
-    return s2n_highest_protocol_version == S2N_TLS13;
+int s2n_is_tls13_enabled() { return s2n_highest_protocol_version == S2N_TLS13; }
+
+int s2n_enable_tls13() {
+  S2N_ERROR_IF(!S2N_IN_TEST, S2N_ERR_NOT_IN_UNIT_TEST);
+  s2n_highest_protocol_version = S2N_TLS13;
+  return 0;
 }
 
-int s2n_enable_tls13()
-{
-    S2N_ERROR_IF(!S2N_IN_TEST, S2N_ERR_NOT_IN_UNIT_TEST);
-    s2n_highest_protocol_version = S2N_TLS13;
-    return 0;
-}
-
-int s2n_disable_tls13()
-{
-    s2n_highest_protocol_version = S2N_TLS12;
-    return 0;
+int s2n_disable_tls13() {
+  s2n_highest_protocol_version = S2N_TLS12;
+  return 0;
 }

@@ -13,13 +13,13 @@
  * permissions and limitations under the License.
  */
 
-#include "stuffer/s2n_stuffer.h"
-
-#include "tls/s2n_connection.h"
 #include "tls/extensions/s2n_server_server_name.h"
 
-int s2n_recv_server_server_name(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
-    conn->server_name_used = 1;
-    return 0;
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
+
+int s2n_recv_server_server_name(struct s2n_connection *conn,
+                                struct s2n_stuffer *extension) {
+  conn->server_name_used = 1;
+  return 0;
 }

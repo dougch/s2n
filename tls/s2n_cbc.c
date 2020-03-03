@@ -13,17 +13,14 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
 #include <stdint.h>
-
-#include "error/s2n_errno.h"
-
-#include "utils/s2n_safety.h"
-#include "utils/s2n_mem.h"
+#include <sys/param.h>
 
 #include "crypto/s2n_hmac.h"
-
+#include "error/s2n_errno.h"
 #include "tls/s2n_record.h"
+#include "utils/s2n_mem.h"
+#include "utils/s2n_safety.h"
 
 /* A TLS CBC record looks like ..
  *
@@ -36,7 +33,7 @@
  *
  * The goal of s2n_verify_cbc() is to verify that the padding and hmac
  * are correct, without leaking (via timing) how much padding there
- * actually is: as this is considered secret. 
+ * actually is: as this is considered secret.
  *
  * In addition to our efforts here though, s2n also wraps any CBC
  * verification error (or record parsing error in general) with
@@ -45,59 +42,66 @@
  * complexity of attack for even a 1 microsecond timing leak (which
  * is quite large) by a factor of around 83 trillion.
  */
-int s2n_verify_cbc(struct s2n_connection *conn, struct s2n_hmac_state *hmac, struct s2n_blob *decrypted)
-{
-    /* Set up MAC copy workspace */
-    struct s2n_hmac_state *copy = &conn->client->record_mac_copy_workspace;
-    if (conn->mode == S2N_CLIENT) {
-       copy = &conn->server->record_mac_copy_workspace;
-    }
-    
-    uint8_t mac_digest_size;
-    GUARD(s2n_hmac_digest_size(hmac->alg, &mac_digest_size));
+int s2n_verify_cbc(struct s2n_connection *conn, struct s2n_hmac_state *hmac,
+                   struct s2n_blob *decrypted) {
+  /* Set up MAC copy workspace */
+  struct s2n_hmac_state *copy = &conn->client->record_mac_copy_workspace;
+  if (conn->mode == S2N_CLIENT) {
+    copy = &conn->server->record_mac_copy_workspace;
+  }
 
-    /* The record has to be at least big enough to contain the MAC,
-     * plus the padding length byte */
-    gt_check(decrypted->size, mac_digest_size);
+  uint8_t mac_digest_size;
+  GUARD(s2n_hmac_digest_size(hmac->alg, &mac_digest_size));
 
-    int payload_and_padding_size = decrypted->size - mac_digest_size;
+  /* The record has to be at least big enough to contain the MAC,
+   * plus the padding length byte */
+  gt_check(decrypted->size, mac_digest_size);
 
-    /* Determine what the padding length is */
-    uint8_t padding_length = decrypted->data[decrypted->size - 1];
+  int payload_and_padding_size = decrypted->size - mac_digest_size;
 
-    int payload_length = MAX(payload_and_padding_size - padding_length - 1, 0);
+  /* Determine what the padding length is */
+  uint8_t padding_length = decrypted->data[decrypted->size - 1];
 
-    /* Update the MAC */
-    GUARD(s2n_hmac_update(hmac, decrypted->data, payload_length));
-    GUARD(s2n_hmac_copy(copy, hmac));
+  int payload_length = MAX(payload_and_padding_size - padding_length - 1, 0);
 
-    /* Check the MAC */
-    uint8_t check_digest[S2N_MAX_DIGEST_LEN];
-    lte_check(mac_digest_size, sizeof(check_digest));
-    GUARD(s2n_hmac_digest_two_compression_rounds(hmac, check_digest, mac_digest_size));
+  /* Update the MAC */
+  GUARD(s2n_hmac_update(hmac, decrypted->data, payload_length));
+  GUARD(s2n_hmac_copy(copy, hmac));
 
-    int mismatches = s2n_constant_time_equals(decrypted->data + payload_length, check_digest, mac_digest_size) ^ 1;
+  /* Check the MAC */
+  uint8_t check_digest[S2N_MAX_DIGEST_LEN];
+  lte_check(mac_digest_size, sizeof(check_digest));
+  GUARD(s2n_hmac_digest_two_compression_rounds(hmac, check_digest,
+                                               mac_digest_size));
 
-    /* Compute a MAC on the rest of the data so that we perform the same number of hash operations */
-    GUARD(s2n_hmac_update(copy, decrypted->data + payload_length + mac_digest_size, decrypted->size - payload_length - mac_digest_size - 1));
+  int mismatches = s2n_constant_time_equals(decrypted->data + payload_length,
+                                            check_digest, mac_digest_size) ^
+                   1;
 
-    /* SSLv3 doesn't specify what the padding should actually be */
-    if (conn->actual_protocol_version == S2N_SSLv3) {
-        return 0 - mismatches;
-    }
+  /* Compute a MAC on the rest of the data so that we perform the same number of
+   * hash operations */
+  GUARD(
+      s2n_hmac_update(copy, decrypted->data + payload_length + mac_digest_size,
+                      decrypted->size - payload_length - mac_digest_size - 1));
 
-    /* Check the maximum amount that could theoretically be padding */
-    int check = MIN(255, (payload_and_padding_size - 1));
+  /* SSLv3 doesn't specify what the padding should actually be */
+  if (conn->actual_protocol_version == S2N_SSLv3) {
+    return 0 - mismatches;
+  }
 
-    int cutoff = check - padding_length;
-    for (int i = 0, j = decrypted->size - 1 - check; i < check && j < decrypted->size; i++, j++) {
-        uint8_t mask = ~(0xff << ((i >= cutoff) * 8));
-        mismatches |= (decrypted->data[j] ^ padding_length) & mask;
-    }
+  /* Check the maximum amount that could theoretically be padding */
+  int check = MIN(255, (payload_and_padding_size - 1));
 
-    GUARD(s2n_hmac_reset(copy));
+  int cutoff = check - padding_length;
+  for (int i = 0, j = decrypted->size - 1 - check;
+       i < check && j < decrypted->size; i++, j++) {
+    uint8_t mask = ~(0xff << ((i >= cutoff) * 8));
+    mismatches |= (decrypted->data[j] ^ padding_length) & mask;
+  }
 
-    S2N_ERROR_IF(mismatches, S2N_ERR_CBC_VERIFY);
+  GUARD(s2n_hmac_reset(copy));
 
-    return 0;
+  S2N_ERROR_IF(mismatches, S2N_ERR_CBC_VERIFY);
+
+  return 0;
 }

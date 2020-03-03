@@ -15,4 +15,5 @@
 
 #pragma once
 
-extern int s2n_recv_server_max_fragment_length(struct s2n_connection *conn, struct s2n_stuffer *extension);
+extern int s2n_recv_server_max_fragment_length(struct s2n_connection *conn,
+                                               struct s2n_stuffer *extension);

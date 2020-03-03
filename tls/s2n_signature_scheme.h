@@ -18,29 +18,29 @@
 #include <s2n.h>
 #include <strings.h>
 
+#include "crypto/s2n_ecc_evp.h"
 #include "crypto/s2n_hash.h"
 #include "crypto/s2n_signature.h"
-#include "crypto/s2n_ecc_evp.h"
 
 struct s2n_signature_scheme {
-    uint16_t iana_value;
-    s2n_hash_algorithm hash_alg;
-    s2n_signature_algorithm sig_alg;
-    uint8_t minimum_protocol_version;
-    uint8_t maximum_protocol_version;
+  uint16_t iana_value;
+  s2n_hash_algorithm hash_alg;
+  s2n_signature_algorithm sig_alg;
+  uint8_t minimum_protocol_version;
+  uint8_t maximum_protocol_version;
 
-    /* Curve is only specified for ECDSA Signatures */
-    struct s2n_ecc_named_curve const *signature_curve;
+  /* Curve is only specified for ECDSA Signatures */
+  struct s2n_ecc_named_curve const *signature_curve;
 };
 
-struct s2n_signature_preferences{
-    uint8_t count;
-    const struct s2n_signature_scheme *const *signature_schemes;
+struct s2n_signature_preferences {
+  uint8_t count;
+  const struct s2n_signature_scheme *const *signature_schemes;
 };
 
 /* RSA PKCS1 */
-/* s2n_rsa_pkcs1_md5_sha1 is not in any preference list, but it is needed since it's the default for TLS 1.0 and 1.1 if
- * no SignatureScheme is sent. */
+/* s2n_rsa_pkcs1_md5_sha1 is not in any preference list, but it is needed since
+ * it's the default for TLS 1.0 and 1.1 if no SignatureScheme is sent. */
 extern const struct s2n_signature_scheme s2n_rsa_pkcs1_md5_sha1;
 extern const struct s2n_signature_scheme s2n_rsa_pkcs1_sha1;
 extern const struct s2n_signature_scheme s2n_rsa_pkcs1_sha224;
@@ -61,8 +61,8 @@ extern const struct s2n_signature_scheme s2n_ecdsa_secp384r1_sha384;
 
 /* RSA PSS */
 /*
- * Use RSA-PSS-RSAE instead of RSA-PSS-PSS in order to work with older certificates.
- * For more info see: https://crypto.stackexchange.com/a/58708
+ * Use RSA-PSS-RSAE instead of RSA-PSS-PSS in order to work with older
+ * certificates. For more info see: https://crypto.stackexchange.com/a/58708
  */
 extern const struct s2n_signature_scheme s2n_rsa_pss_pss_sha256;
 extern const struct s2n_signature_scheme s2n_rsa_pss_pss_sha384;
@@ -71,7 +71,10 @@ extern const struct s2n_signature_scheme s2n_rsa_pss_rsae_sha256;
 extern const struct s2n_signature_scheme s2n_rsa_pss_rsae_sha384;
 extern const struct s2n_signature_scheme s2n_rsa_pss_rsae_sha512;
 
-extern const struct s2n_signature_preferences s2n_signature_preferences_20140601;
-extern const struct s2n_signature_preferences s2n_signature_preferences_20200207;
+extern const struct s2n_signature_preferences
+    s2n_signature_preferences_20140601;
+extern const struct s2n_signature_preferences
+    s2n_signature_preferences_20200207;
 
-int s2n_config_set_signature_preferences(struct s2n_config *config, const char *version);
+int s2n_config_set_signature_preferences(struct s2n_config *config,
+                                         const char *version);

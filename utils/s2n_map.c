@@ -13,229 +13,223 @@
  * permissions and limitations under the License.
  */
 
-#include <string.h>
-#include <stdio.h>
-
-#include "error/s2n_errno.h"
-
-#include "crypto/s2n_hash.h"
-
-#include "utils/s2n_safety.h"
-#include "utils/s2n_blob.h"
-#include "utils/s2n_mem.h"
 #include "utils/s2n_map.h"
-#include "utils/s2n_map_internal.h"
 
 #include <s2n.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "crypto/s2n_hash.h"
+#include "error/s2n_errno.h"
+#include "utils/s2n_blob.h"
+#include "utils/s2n_map_internal.h"
+#include "utils/s2n_mem.h"
+#include "utils/s2n_safety.h"
 
 #define S2N_INITIAL_TABLE_SIZE 1024
 
-static int s2n_map_slot(struct s2n_map *map, struct s2n_blob *key, uint32_t *slot)
-{
-    union {
-        uint8_t u8[32];
-        uint32_t u32[8];
-    } digest;
+static int s2n_map_slot(struct s2n_map *map, struct s2n_blob *key,
+                        uint32_t *slot) {
+  union {
+    uint8_t u8[32];
+    uint32_t u32[8];
+  } digest;
 
-    GUARD(s2n_hash_update(&map->sha256, key->data, key->size));
-    GUARD(s2n_hash_digest(&map->sha256, digest.u8, sizeof(digest)));
+  GUARD(s2n_hash_update(&map->sha256, key->data, key->size));
+  GUARD(s2n_hash_digest(&map->sha256, digest.u8, sizeof(digest)));
 
-    GUARD(s2n_hash_reset(&map->sha256));
+  GUARD(s2n_hash_reset(&map->sha256));
 
-    *slot = digest.u32[0] % map->capacity;
-    return 0;
+  *slot = digest.u32[0] % map->capacity;
+  return 0;
 }
 
-static int s2n_map_embiggen(struct s2n_map *map, uint32_t capacity)
-{
-    struct s2n_blob mem = {0};
-    struct s2n_map tmp = {0};
+static int s2n_map_embiggen(struct s2n_map *map, uint32_t capacity) {
+  struct s2n_blob mem = {0};
+  struct s2n_map tmp = {0};
 
-    S2N_ERROR_IF(map->immutable, S2N_ERR_MAP_IMMUTABLE);
+  S2N_ERROR_IF(map->immutable, S2N_ERR_MAP_IMMUTABLE);
 
-    GUARD(s2n_alloc(&mem, (capacity * sizeof(struct s2n_map_entry))));
-    GUARD(s2n_blob_zero(&mem));
+  GUARD(s2n_alloc(&mem, (capacity * sizeof(struct s2n_map_entry))));
+  GUARD(s2n_blob_zero(&mem));
 
-    tmp.capacity = capacity;
-    tmp.size = 0;
-    tmp.table = (void *) mem.data;
-    tmp.immutable = 0;
-    tmp.sha256 = map->sha256;
+  tmp.capacity = capacity;
+  tmp.size = 0;
+  tmp.table = (void *)mem.data;
+  tmp.immutable = 0;
+  tmp.sha256 = map->sha256;
 
-    for (int i = 0; i < map->capacity; i++) {
-        if (map->table[i].key.size) {
-            GUARD(s2n_map_add(&tmp, &map->table[i].key, &map->table[i].value));
-            GUARD(s2n_free(&map->table[i].key));
-            GUARD(s2n_free(&map->table[i].value));
-        }
+  for (int i = 0; i < map->capacity; i++) {
+    if (map->table[i].key.size) {
+      GUARD(s2n_map_add(&tmp, &map->table[i].key, &map->table[i].value));
+      GUARD(s2n_free(&map->table[i].key));
+      GUARD(s2n_free(&map->table[i].value));
     }
-    GUARD(s2n_free_object((uint8_t **)&map->table, map->capacity * sizeof(struct s2n_map_entry)));
+  }
+  GUARD(s2n_free_object((uint8_t **)&map->table,
+                        map->capacity * sizeof(struct s2n_map_entry)));
 
-    /* Clone the temporary map */
-    map->capacity = tmp.capacity;
-    map->size = tmp.size;
-    map->table = tmp.table;
-    map->immutable = 0;
-    map->sha256 = tmp.sha256;
+  /* Clone the temporary map */
+  map->capacity = tmp.capacity;
+  map->size = tmp.size;
+  map->table = tmp.table;
+  map->immutable = 0;
+  map->sha256 = tmp.sha256;
 
-    return 0;
+  return 0;
 }
 
-struct s2n_map *s2n_map_new()
-{
-    return s2n_map_new_with_initial_capacity(S2N_INITIAL_TABLE_SIZE);
+struct s2n_map *s2n_map_new() {
+  return s2n_map_new_with_initial_capacity(S2N_INITIAL_TABLE_SIZE);
 }
 
-struct s2n_map *s2n_map_new_with_initial_capacity(uint32_t capacity)
-{
-    S2N_ERROR_IF_PTR(capacity == 0, S2N_ERR_MAP_INVALID_MAP_SIZE);
-    struct s2n_blob mem = {0};
-    struct s2n_map *map;
+struct s2n_map *s2n_map_new_with_initial_capacity(uint32_t capacity) {
+  S2N_ERROR_IF_PTR(capacity == 0, S2N_ERR_MAP_INVALID_MAP_SIZE);
+  struct s2n_blob mem = {0};
+  struct s2n_map *map;
 
-    GUARD_PTR(s2n_alloc(&mem, sizeof(struct s2n_map)));
+  GUARD_PTR(s2n_alloc(&mem, sizeof(struct s2n_map)));
 
-    map = (void *) mem.data;
-    map->capacity = 0;
-    map->size = 0;
-    map->immutable = 0;
-    map->table = NULL;
+  map = (void *)mem.data;
+  map->capacity = 0;
+  map->size = 0;
+  map->immutable = 0;
+  map->table = NULL;
 
-    GUARD_PTR(s2n_hash_new(&map->sha256));
-    GUARD_PTR(s2n_hash_init(&map->sha256, S2N_HASH_SHA256));
+  GUARD_PTR(s2n_hash_new(&map->sha256));
+  GUARD_PTR(s2n_hash_init(&map->sha256, S2N_HASH_SHA256));
 
-    GUARD_PTR(s2n_map_embiggen(map, capacity));
+  GUARD_PTR(s2n_map_embiggen(map, capacity));
 
-    return map;
+  return map;
 }
 
-int s2n_map_add(struct s2n_map *map, struct s2n_blob *key, struct s2n_blob *value)
-{
-    S2N_ERROR_IF(map->immutable, S2N_ERR_MAP_IMMUTABLE);
+int s2n_map_add(struct s2n_map *map, struct s2n_blob *key,
+                struct s2n_blob *value) {
+  S2N_ERROR_IF(map->immutable, S2N_ERR_MAP_IMMUTABLE);
 
-    if (map->capacity < (map->size * 2)) {
-        /* Embiggen the map */
-        GUARD(s2n_map_embiggen(map, map->capacity * 2));
-    }
+  if (map->capacity < (map->size * 2)) {
+    /* Embiggen the map */
+    GUARD(s2n_map_embiggen(map, map->capacity * 2));
+  }
 
-    uint32_t slot;
-    GUARD(s2n_map_slot(map, key, &slot));
+  uint32_t slot;
+  GUARD(s2n_map_slot(map, key, &slot));
 
-    /* Linear probing until we find an empty slot */
-    while(map->table[slot].key.size) {
-        if (key->size != map->table[slot].key.size ||
-            memcmp(key->data,  map->table[slot].key.data, key->size)) {
-            slot++;
-            slot %= map->capacity;
-            continue;
-        }
-
-        /* We found a duplicate key */
-        S2N_ERROR(S2N_ERR_MAP_DUPLICATE);
+  /* Linear probing until we find an empty slot */
+  while (map->table[slot].key.size) {
+    if (key->size != map->table[slot].key.size ||
+        memcmp(key->data, map->table[slot].key.data, key->size)) {
+      slot++;
+      slot %= map->capacity;
+      continue;
     }
 
-    GUARD(s2n_dup(key, &map->table[slot].key));
-    GUARD(s2n_dup(value, &map->table[slot].value));
-    map->size++;
+    /* We found a duplicate key */
+    S2N_ERROR(S2N_ERR_MAP_DUPLICATE);
+  }
 
-    return 0;
+  GUARD(s2n_dup(key, &map->table[slot].key));
+  GUARD(s2n_dup(value, &map->table[slot].value));
+  map->size++;
+
+  return 0;
 }
 
-int s2n_map_put(struct s2n_map *map, struct s2n_blob *key, struct s2n_blob *value)
-{
-    S2N_ERROR_IF(map->immutable, S2N_ERR_MAP_IMMUTABLE);
+int s2n_map_put(struct s2n_map *map, struct s2n_blob *key,
+                struct s2n_blob *value) {
+  S2N_ERROR_IF(map->immutable, S2N_ERR_MAP_IMMUTABLE);
 
-    if (map->capacity < (map->size * 2)) {
-        /* Embiggen the map */
-        GUARD(s2n_map_embiggen(map, map->capacity * 2));
+  if (map->capacity < (map->size * 2)) {
+    /* Embiggen the map */
+    GUARD(s2n_map_embiggen(map, map->capacity * 2));
+  }
+
+  uint32_t slot;
+  GUARD(s2n_map_slot(map, key, &slot));
+
+  /* Linear probing until we find an empty slot */
+  while (map->table[slot].key.size) {
+    if (key->size != map->table[slot].key.size ||
+        memcmp(key->data, map->table[slot].key.data, key->size)) {
+      slot++;
+      slot %= map->capacity;
+      continue;
     }
 
-    uint32_t slot;
-    GUARD(s2n_map_slot(map, key, &slot));
+    /* We found a duplicate key that will be overwritten */
+    GUARD(s2n_free(&map->table[slot].key));
+    GUARD(s2n_free(&map->table[slot].value));
+    map->size--;
+    break;
+  }
 
-    /* Linear probing until we find an empty slot */
-    while(map->table[slot].key.size) {
-        if (key->size != map->table[slot].key.size ||
-            memcmp(key->data,  map->table[slot].key.data, key->size)) {
-            slot++;
-            slot %= map->capacity;
-            continue;
-        }
+  GUARD(s2n_dup(key, &map->table[slot].key));
+  GUARD(s2n_dup(value, &map->table[slot].value));
+  map->size++;
 
-        /* We found a duplicate key that will be overwritten */
-        GUARD(s2n_free(&map->table[slot].key));
-        GUARD(s2n_free(&map->table[slot].value));
-        map->size--;
+  return 0;
+}
+
+int s2n_map_complete(struct s2n_map *map) {
+  map->immutable = 1;
+
+  return 0;
+}
+
+int s2n_map_unlock(struct s2n_map *map) {
+  map->immutable = 0;
+
+  return 0;
+}
+
+int s2n_map_lookup(struct s2n_map *map, struct s2n_blob *key,
+                   struct s2n_blob *value) {
+  S2N_ERROR_IF(!map->immutable, S2N_ERR_MAP_MUTABLE);
+
+  uint32_t slot;
+  GUARD(s2n_map_slot(map, key, &slot));
+  const uint32_t initial_slot = slot;
+
+  while (map->table[slot].key.size) {
+    if (key->size != map->table[slot].key.size ||
+        memcmp(key->data, map->table[slot].key.data, key->size)) {
+      slot++;
+      slot %= map->capacity;
+      /* We went over all the slots but found no match */
+      if (slot == initial_slot) {
         break;
+      }
+      continue;
     }
 
-    GUARD(s2n_dup(key, &map->table[slot].key));
-    GUARD(s2n_dup(value, &map->table[slot].value));
-    map->size++;
+    /* We found a match */
+    value->data = map->table[slot].value.data;
+    value->size = map->table[slot].value.size;
 
-    return 0;
+    return 1;
+  }
+
+  return 0;
 }
 
-int s2n_map_complete(struct s2n_map *map)
-{
-    map->immutable = 1;
-
-    return 0;
-}
-
-int s2n_map_unlock(struct s2n_map *map)
-{
-    map->immutable = 0;
-
-    return 0;
-}
-
-int s2n_map_lookup(struct s2n_map *map, struct s2n_blob *key, struct s2n_blob *value)
-{
-    S2N_ERROR_IF(!map->immutable, S2N_ERR_MAP_MUTABLE);
-
-    uint32_t slot;
-    GUARD(s2n_map_slot(map, key, &slot));
-    const uint32_t initial_slot = slot;
-
-    while(map->table[slot].key.size) {
-        if (key->size != map->table[slot].key.size ||
-            memcmp(key->data,  map->table[slot].key.data, key->size)) {
-            slot++;
-            slot %= map->capacity;
-            /* We went over all the slots but found no match */
-            if (slot == initial_slot) {
-                break;
-            }
-            continue;
-        }
-
-        /* We found a match */
-        value->data = map->table[slot].value.data;
-        value->size = map->table[slot].value.size;
-
-        return 1;
+int s2n_map_free(struct s2n_map *map) {
+  /* Free the keys and values */
+  for (int i = 0; i < map->capacity; i++) {
+    if (map->table[i].key.size) {
+      GUARD(s2n_free(&map->table[i].key));
+      GUARD(s2n_free(&map->table[i].value));
     }
+  }
 
-    return 0;
-}
+  GUARD(s2n_hash_free(&map->sha256));
 
-int s2n_map_free(struct s2n_map *map)
-{
-    /* Free the keys and values */
-    for (int i = 0; i < map->capacity; i++) {
-        if (map->table[i].key.size) {
-            GUARD(s2n_free(&map->table[i].key));
-            GUARD(s2n_free(&map->table[i].value));
-        }
-    }
+  /* Free the table */
+  GUARD(s2n_free_object((uint8_t **)&map->table,
+                        map->capacity * sizeof(struct s2n_map_entry)));
 
-    GUARD(s2n_hash_free(&map->sha256));
+  /* And finally the map */
+  GUARD(s2n_free_object((uint8_t **)&map, sizeof(struct s2n_map)));
 
-    /* Free the table */
-    GUARD(s2n_free_object((uint8_t **)&map->table, map->capacity * sizeof(struct s2n_map_entry)));
-
-    /* And finally the map */
-    GUARD(s2n_free_object((uint8_t **)&map, sizeof(struct s2n_map)));
-
-    return 0;
+  return 0;
 }

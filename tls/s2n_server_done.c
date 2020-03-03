@@ -16,20 +16,15 @@
 #include <stdint.h>
 
 #include "error/s2n_errno.h"
-
+#include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
 
-#include "stuffer/s2n_stuffer.h"
+int s2n_server_done_recv(struct s2n_connection *conn) {
+  S2N_ERROR_IF(s2n_stuffer_data_available(&conn->handshake.io),
+               S2N_ERR_BAD_MESSAGE);
 
-int s2n_server_done_recv(struct s2n_connection *conn)
-{
-    S2N_ERROR_IF(s2n_stuffer_data_available(&conn->handshake.io), S2N_ERR_BAD_MESSAGE);
-
-    return 0;
+  return 0;
 }
 
-int s2n_server_done_send(struct s2n_connection *conn)
-{
-    return 0;
-}
+int s2n_server_done_send(struct s2n_connection *conn) { return 0; }

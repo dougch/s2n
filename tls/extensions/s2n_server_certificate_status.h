@@ -15,4 +15,5 @@
 
 #pragma once
 
-extern int s2n_server_certificate_status_parse(struct s2n_connection *conn, struct s2n_blob *status);
+extern int s2n_server_certificate_status_parse(struct s2n_connection *conn,
+                                               struct s2n_blob *status);

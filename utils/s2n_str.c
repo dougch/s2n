@@ -13,29 +13,30 @@
  * permissions and limitations under the License.
  */
 #include "s2n_str.h"
+
 #include <string.h>
 #include <sys/param.h>
 
 char *s2n_strcpy(char *buf, char *last, const char *str) {
-    if (buf >= last) {
-        return buf;
-    }
+  if (buf >= last) {
+    return buf;
+  }
 
-    if (NULL == str) {
-        *buf = '\0';
-        return buf;
-    }
+  if (NULL == str) {
+    *buf = '\0';
+    return buf;
+  }
 
-    /* Free bytes needs to be one byte smaller than size of a storage, 
-     * as strncpy always writes '\0', but doesn't include it in n 
-     */
-    size_t bytes_to_copy = MIN(last - buf - 1, strlen(str));
+  /* Free bytes needs to be one byte smaller than size of a storage,
+   * as strncpy always writes '\0', but doesn't include it in n
+   */
+  size_t bytes_to_copy = MIN(last - buf - 1, strlen(str));
 
-    char *p = buf;
-    if (bytes_to_copy > 0) {
-        p = (char *)memcpy(buf, str, bytes_to_copy) + bytes_to_copy;
-    }
-    *p = '\0';
+  char *p = buf;
+  if (bytes_to_copy > 0) {
+    p = (char *)memcpy(buf, str, bytes_to_copy) + bytes_to_copy;
+  }
+  *p = '\0';
 
-    return p;
+  return p;
 }
