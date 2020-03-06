@@ -13,15 +13,13 @@
  * permissions and limitations under the License.
  */
 
-#include "stuffer/s2n_stuffer.h"
-
-#include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_connection.h"
-
 #include "tls/extensions/s2n_server_status_request.h"
 
-int s2n_recv_server_status_request(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_tls_parameters.h"
+
+int s2n_recv_server_status_request(struct s2n_connection *conn, struct s2n_stuffer *extension) {
     conn->status_type = S2N_STATUS_REQUEST_OCSP;
 
     return 0;

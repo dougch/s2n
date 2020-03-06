@@ -13,11 +13,10 @@
  * permissions and limitations under the License.
  */
 
-
 #pragma once
 
-#include "tls/s2n_connection.h"
 #include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
 
 /* Return the length of cookie data in the connection */
 int s2n_extensions_cookie_size(struct s2n_connection *conn);

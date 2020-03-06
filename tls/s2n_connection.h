@@ -15,36 +15,29 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <signal.h>
 #include <errno.h>
 #include <s2n.h>
-
-#include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_handshake.h"
-#include "tls/s2n_client_hello.h"
-#include "tls/s2n_crypto.h"
-#include "tls/s2n_config.h"
-#include "tls/s2n_prf.h"
-#include "tls/s2n_x509_validator.h"
-
-#include "stuffer/s2n_stuffer.h"
+#include <signal.h>
+#include <stdint.h>
 
 #include "crypto/s2n_hash.h"
 #include "crypto/s2n_hmac.h"
-
-#include "utils/s2n_timer.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_client_hello.h"
+#include "tls/s2n_config.h"
+#include "tls/s2n_crypto.h"
+#include "tls/s2n_handshake.h"
+#include "tls/s2n_prf.h"
+#include "tls/s2n_tls_parameters.h"
+#include "tls/s2n_x509_validator.h"
 #include "utils/s2n_mem.h"
+#include "utils/s2n_timer.h"
 
-#define S2N_TLS_PROTOCOL_VERSION_LEN    2
+#define S2N_TLS_PROTOCOL_VERSION_LEN 2
 
 #define is_handshake_complete(conn) (APPLICATION_DATA == s2n_conn_get_current_message_type(conn))
 
-typedef enum {
-    S2N_NO_TICKET = 0,
-    S2N_DECRYPT_TICKET,
-    S2N_NEW_TICKET
-} s2n_session_ticket_status;
+typedef enum { S2N_NO_TICKET = 0, S2N_DECRYPT_TICKET, S2N_NEW_TICKET } s2n_session_ticket_status;
 
 struct s2n_connection {
     /* The configuration (cert, key .. etc ) */
@@ -71,13 +64,13 @@ struct s2n_connection {
     /* Is this connection using CORK/SO_RCVLOWAT optimizations? Only valid when the connection is using
      * managed_io
      */
-    unsigned corked_io:1;
+    unsigned corked_io : 1;
 
     /* Session resumption indicator on client side */
-    unsigned client_session_resumed:1;
+    unsigned client_session_resumed : 1;
 
     /* Determines if we're currently sending or receiving in s2n_shutdown */
-    unsigned close_notify_queued:1;
+    unsigned close_notify_queued : 1;
 
     /* s2n does not support renegotiation.
      * RFC5746 Section 4.3 suggests servers implement a minimal version of the
@@ -85,22 +78,22 @@ struct s2n_connection {
      * Some clients may fail the handshake if a corresponding renegotiation_info
      * extension is not sent back by the server.
      */
-    unsigned secure_renegotiation:1;
+    unsigned secure_renegotiation : 1;
     /* Was the EC point formats sent by the client */
-    unsigned ec_point_formats:1;
+    unsigned ec_point_formats : 1;
 
-     /* whether the connection address is ipv6 or not */
-    unsigned ipv6:1;
+    /* whether the connection address is ipv6 or not */
+    unsigned ipv6 : 1;
 
     /* Whether server_name extension was used to make a decision on cert selection.
      * RFC6066 Section 3 states that server which used server_name to make a decision
      * on certificate or security settings has to send an empty server_name.
      */
-    unsigned server_name_used:1;
+    unsigned server_name_used : 1;
 
     /* If write fd is broken */
-    unsigned write_fd_broken:1;
-    
+    unsigned write_fd_broken : 1;
+
     /* Is this connection a client or a server connection */
     s2n_mode mode;
 
@@ -151,9 +144,9 @@ struct s2n_connection {
 
     /* Whether to use client_cert_auth_type stored in s2n_config or in this s2n_connection.
      *
-     * By default the s2n_connection will defer to s2n_config->client_cert_auth_type on whether or not to use Client Auth.
-     * But users can override Client Auth at the connection level using s2n_connection_set_client_auth_type() without mutating
-     * s2n_config since s2n_config can be shared between multiple s2n_connections. */
+     * By default the s2n_connection will defer to s2n_config->client_cert_auth_type on whether or not to use Client
+     * Auth. But users can override Client Auth at the connection level using s2n_connection_set_client_auth_type()
+     * without mutating s2n_config since s2n_config can be shared between multiple s2n_connections. */
     uint8_t client_cert_auth_type_overridden;
 
     /* Whether or not the s2n_connection should require the Client to authenticate itself to the server. Only used if
@@ -209,8 +202,8 @@ struct s2n_connection {
      */
     uint16_t max_outgoing_fragment_length;
 
-    /* The number of bytes to send before changing the record size. 
-     * If this value > 0 then dynamic TLS record size is enabled. Otherwise, the feature is disabled (default). 
+    /* The number of bytes to send before changing the record size.
+     * If this value > 0 then dynamic TLS record size is enabled. Otherwise, the feature is disabled (default).
      */
     uint32_t dynamic_record_resize_threshold;
 
@@ -299,8 +292,10 @@ int s2n_connection_kill(struct s2n_connection *conn);
 int s2n_connection_send_stuffer(struct s2n_stuffer *stuffer, struct s2n_connection *conn, uint32_t len);
 int s2n_connection_recv_stuffer(struct s2n_stuffer *stuffer, struct s2n_connection *conn, uint32_t len);
 
-extern int s2n_connection_get_cipher_preferences(struct s2n_connection *conn, const struct s2n_cipher_preferences **cipher_preferences);
+extern int s2n_connection_get_cipher_preferences(struct s2n_connection *conn,
+                                                 const struct s2n_cipher_preferences **cipher_preferences);
 extern int s2n_connection_get_protocol_preferences(struct s2n_connection *conn, struct s2n_blob **protocol_preferences);
 extern int s2n_connection_set_client_auth_type(struct s2n_connection *conn, s2n_cert_auth_type cert_auth_type);
 extern int s2n_connection_get_client_auth_type(struct s2n_connection *conn, s2n_cert_auth_type *client_cert_auth_type);
-extern int s2n_connection_get_client_cert_chain(struct s2n_connection *conn, uint8_t **der_cert_chain_out, uint32_t *cert_chain_len);
+extern int s2n_connection_get_client_cert_chain(struct s2n_connection *conn, uint8_t **der_cert_chain_out,
+                                                uint32_t *cert_chain_len);

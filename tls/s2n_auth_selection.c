@@ -13,13 +13,12 @@
  * permissions and limitations under the License.
  */
 
-#include "crypto/s2n_signature.h"
-#include "crypto/s2n_certificate.h"
-
-#include "tls/s2n_cipher_suites.h"
-#include "tls/s2n_kex.h"
 #include "tls/s2n_auth_selection.h"
 
+#include "crypto/s2n_certificate.h"
+#include "crypto/s2n_signature.h"
+#include "tls/s2n_cipher_suites.h"
+#include "tls/s2n_kex.h"
 #include "utils/s2n_safety.h"
 
 /* This module should contain any logic related to choosing a valid combination of
@@ -39,9 +38,8 @@
  * TLS1.2 cipher suites.
  */
 
-static int s2n_get_auth_method_for_cert_type(s2n_pkey_type cert_type, s2n_authentication_method *auth_method)
-{
-    switch(cert_type) {
+static int s2n_get_auth_method_for_cert_type(s2n_pkey_type cert_type, s2n_authentication_method *auth_method) {
+    switch (cert_type) {
         case S2N_PKEY_TYPE_RSA:
         case S2N_PKEY_TYPE_RSA_PSS:
             *auth_method = S2N_AUTHENTICATION_RSA;
@@ -56,9 +54,8 @@ static int s2n_get_auth_method_for_cert_type(s2n_pkey_type cert_type, s2n_authen
     S2N_ERROR(S2N_ERR_CERT_TYPE_UNSUPPORTED);
 }
 
-static int s2n_get_cert_type_for_sig_alg(s2n_signature_algorithm sig_alg, s2n_pkey_type *cert_type)
-{
-    switch(sig_alg) {
+static int s2n_get_cert_type_for_sig_alg(s2n_signature_algorithm sig_alg, s2n_pkey_type *cert_type) {
+    switch (sig_alg) {
         case S2N_SIGNATURE_RSA_PSS_RSAE:
         case S2N_SIGNATURE_RSA:
             *cert_type = S2N_PKEY_TYPE_RSA;
@@ -75,8 +72,8 @@ static int s2n_get_cert_type_for_sig_alg(s2n_signature_algorithm sig_alg, s2n_pk
     S2N_ERROR(S2N_ERR_INVALID_SIGNATURE_ALGORITHM);
 }
 
-static int s2n_is_sig_alg_valid_for_cipher_suite(s2n_signature_algorithm sig_alg, struct s2n_cipher_suite *cipher_suite)
-{
+static int s2n_is_sig_alg_valid_for_cipher_suite(s2n_signature_algorithm sig_alg,
+                                                 struct s2n_cipher_suite *cipher_suite) {
     notnull_check(cipher_suite);
 
     s2n_pkey_type cert_type_for_sig_alg;
@@ -104,8 +101,7 @@ static int s2n_is_sig_alg_valid_for_cipher_suite(s2n_signature_algorithm sig_alg
     return S2N_SUCCESS;
 }
 
-static int s2n_certs_exist_for_sig_alg(struct s2n_connection *conn, s2n_signature_algorithm sig_alg)
-{
+static int s2n_certs_exist_for_sig_alg(struct s2n_connection *conn, s2n_signature_algorithm sig_alg) {
     ne_check(sig_alg, S2N_SIGNATURE_ANONYMOUS);
 
     s2n_pkey_type cert_type;
@@ -117,8 +113,7 @@ static int s2n_certs_exist_for_sig_alg(struct s2n_connection *conn, s2n_signatur
     S2N_ERROR(S2N_ERR_CERT_TYPE_UNSUPPORTED);
 }
 
-static int s2n_certs_exist_for_auth_method(struct s2n_connection *conn, s2n_authentication_method auth_method)
-{
+static int s2n_certs_exist_for_auth_method(struct s2n_connection *conn, s2n_authentication_method auth_method) {
     s2n_authentication_method auth_method_for_cert_type;
     for (int i = 0; i < S2N_CERT_TYPE_COUNT; i++) {
         GUARD(s2n_get_auth_method_for_cert_type(i, &auth_method_for_cert_type));
@@ -142,8 +137,7 @@ static int s2n_certs_exist_for_auth_method(struct s2n_connection *conn, s2n_auth
  *
  * This method is called by the server when choosing a cipher suite.
  */
-int s2n_is_cipher_suite_valid_for_auth(struct s2n_connection *conn, struct s2n_cipher_suite *cipher_suite)
-{
+int s2n_is_cipher_suite_valid_for_auth(struct s2n_connection *conn, struct s2n_cipher_suite *cipher_suite) {
     notnull_check(cipher_suite);
 
     GUARD(s2n_certs_exist_for_auth_method(conn, cipher_suite->auth_method));
@@ -157,8 +151,7 @@ int s2n_is_cipher_suite_valid_for_auth(struct s2n_connection *conn, struct s2n_c
  *
  * This method is called by the both server and client when choosing a signature algorithm.
  */
-int s2n_is_sig_alg_valid_for_auth(struct s2n_connection *conn, s2n_signature_algorithm sig_alg)
-{
+int s2n_is_sig_alg_valid_for_auth(struct s2n_connection *conn, s2n_signature_algorithm sig_alg) {
     notnull_check(conn);
 
     struct s2n_cipher_suite *cipher_suite = conn->secure.cipher_suite;
@@ -179,8 +172,7 @@ int s2n_is_sig_alg_valid_for_auth(struct s2n_connection *conn, s2n_signature_alg
  *
  * This method is called by the client when receiving the server's cert.
  */
-int s2n_is_cert_type_valid_for_auth(struct s2n_connection *conn, s2n_pkey_type cert_type)
-{
+int s2n_is_cert_type_valid_for_auth(struct s2n_connection *conn, s2n_pkey_type cert_type) {
     notnull_check(conn);
     notnull_check(conn->secure.cipher_suite);
 
@@ -198,8 +190,7 @@ int s2n_is_cert_type_valid_for_auth(struct s2n_connection *conn, s2n_pkey_type c
  *
  * This method is called by the server after configuring its cipher suite and sig algs.
  */
-int s2n_select_certs_for_server_auth(struct s2n_connection *conn, struct s2n_cert_chain_and_key **chosen_certs)
-{
+int s2n_select_certs_for_server_auth(struct s2n_connection *conn, struct s2n_cert_chain_and_key **chosen_certs) {
     notnull_check(conn);
 
     s2n_pkey_type cert_type;

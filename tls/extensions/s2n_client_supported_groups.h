@@ -15,8 +15,8 @@
 
 #pragma once
 
-#include "tls/s2n_connection.h"
 #include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
 
 extern int s2n_extensions_client_supported_groups_send(struct s2n_connection *conn, struct s2n_stuffer *out);
 extern int s2n_recv_client_supported_groups(struct s2n_connection *conn, struct s2n_stuffer *extension);

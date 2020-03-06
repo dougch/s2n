@@ -15,34 +15,33 @@
 
 #pragma once
 
-#include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_connection.h"
-#include "tls/s2n_crypto.h"
+#include <stdint.h>
 
 #include "crypto/s2n_certificate.h"
 #include "crypto/s2n_cipher.h"
 #include "crypto/s2n_hmac.h"
-
-#include <stdint.h>
+#include "tls/s2n_connection.h"
+#include "tls/s2n_crypto.h"
+#include "tls/s2n_tls_parameters.h"
 
 /* Key exchange flags that can be OR'ed */
-#define S2N_KEY_EXCHANGE_DH       0x01  /* Diffie-Hellman key exchange, including ephemeral */
-#define S2N_KEY_EXCHANGE_EPH      0x02  /* Ephemeral key exchange */
-#define S2N_KEY_EXCHANGE_ECC      0x04  /* Elliptic curve cryptography */
+#define S2N_KEY_EXCHANGE_DH 0x01  /* Diffie-Hellman key exchange, including ephemeral */
+#define S2N_KEY_EXCHANGE_EPH 0x02 /* Ephemeral key exchange */
+#define S2N_KEY_EXCHANGE_ECC 0x04 /* Elliptic curve cryptography */
 
-#define S2N_MAX_POSSIBLE_RECORD_ALGS    2
+#define S2N_MAX_POSSIBLE_RECORD_ALGS 2
 #if !defined(S2N_NO_PQ)
-#define S2N_PQ_CIPHER_SUITE_COUNT       2
+#define S2N_PQ_CIPHER_SUITE_COUNT 2
 #else
-#define S2N_PQ_CIPHER_SUITE_COUNT       0
+#define S2N_PQ_CIPHER_SUITE_COUNT 0
 #endif
 
-#define S2N_CIPHER_SUITE_COUNT          (36 + S2N_PQ_CIPHER_SUITE_COUNT) /* Kept up-to-date by s2n_cipher_suite_match_test */
+#define S2N_CIPHER_SUITE_COUNT (36 + S2N_PQ_CIPHER_SUITE_COUNT) /* Kept up-to-date by s2n_cipher_suite_match_test */
 
 /* Record algorithm flags that can be OR'ed */
-#define S2N_TLS12_AES_GCM_AEAD_NONCE     0x01
+#define S2N_TLS12_AES_GCM_AEAD_NONCE 0x01
 #define S2N_TLS12_CHACHA_POLY_AEAD_NONCE 0x02
-#define S2N_TLS13_RECORD_AEAD_NONCE      0x04
+#define S2N_TLS13_RECORD_AEAD_NONCE 0x04
 
 typedef enum {
     S2N_AUTHENTICATION_RSA = 0,
@@ -80,7 +79,7 @@ extern const struct s2n_record_algorithm s2n_record_alg_chacha20_poly1305;
 
 struct s2n_cipher_suite {
     /* Is there an implementation available? Set in s2n_cipher_suites_init() */
-    unsigned int available:1;
+    unsigned int available : 1;
 
     /* Cipher name in Openssl format */
     const char *name;
@@ -155,5 +154,5 @@ extern int s2n_cipher_suites_init(void);
 extern int s2n_cipher_suites_cleanup(void);
 extern struct s2n_cipher_suite *s2n_cipher_suite_from_wire(const uint8_t cipher_suite[S2N_TLS_CIPHER_SUITE_LEN]);
 extern int s2n_set_cipher_as_client(struct s2n_connection *conn, uint8_t wire[S2N_TLS_CIPHER_SUITE_LEN]);
-extern int s2n_set_cipher_as_sslv2_server(struct s2n_connection *conn, uint8_t * wire, uint16_t count);
-extern int s2n_set_cipher_as_tls_server(struct s2n_connection *conn, uint8_t * wire, uint16_t count);
+extern int s2n_set_cipher_as_sslv2_server(struct s2n_connection *conn, uint8_t *wire, uint16_t count);
+extern int s2n_set_cipher_as_tls_server(struct s2n_connection *conn, uint8_t *wire, uint16_t count);

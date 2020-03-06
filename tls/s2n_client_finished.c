@@ -16,33 +16,31 @@
 #include <stdint.h>
 
 #include "error/s2n_errno.h"
-
+#include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13_handshake.h"
-
-#include "stuffer/s2n_stuffer.h"
-
 #include "utils/s2n_safety.h"
 
-int s2n_client_finished_recv(struct s2n_connection *conn)
-{
+int s2n_client_finished_recv(struct s2n_connection *conn) {
     uint8_t *our_version;
     our_version = conn->handshake.client_finished;
     uint8_t *their_version = s2n_stuffer_raw_read(&conn->handshake.io, S2N_TLS_FINISHED_LEN);
     notnull_check(their_version);
 
-    S2N_ERROR_IF(!s2n_constant_time_equals(our_version, their_version, S2N_TLS_FINISHED_LEN) || conn->handshake.rsa_failed, S2N_ERR_BAD_MESSAGE);
+    S2N_ERROR_IF(
+        !s2n_constant_time_equals(our_version, their_version, S2N_TLS_FINISHED_LEN) || conn->handshake.rsa_failed,
+        S2N_ERR_BAD_MESSAGE);
 
     return 0;
 }
 
-int s2n_client_finished_send(struct s2n_connection *conn)
-{
+int s2n_client_finished_send(struct s2n_connection *conn) {
     uint8_t *our_version;
     GUARD(s2n_prf_client_finished(conn));
 
-    struct s2n_blob seq = {.data = conn->secure.client_sequence_number,.size = sizeof(conn->secure.client_sequence_number) };
+    struct s2n_blob seq = {.data = conn->secure.client_sequence_number,
+                           .size = sizeof(conn->secure.client_sequence_number)};
     GUARD(s2n_blob_zero(&seq));
     our_version = conn->handshake.client_finished;
 

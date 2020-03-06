@@ -13,20 +13,18 @@
  * permissions and limitations under the License.
  */
 
-#include "utils/s2n_safety.h"
 #include "utils/s2n_timer.h"
 
 #include "tls/s2n_config.h"
+#include "utils/s2n_safety.h"
 
-int s2n_timer_start(struct s2n_config *config, struct s2n_timer *timer)
-{
+int s2n_timer_start(struct s2n_config *config, struct s2n_timer *timer) {
     GUARD(config->monotonic_clock(config->monotonic_clock_ctx, &timer->time));
 
     return 0;
 }
 
-int s2n_timer_elapsed(struct s2n_config *config, struct s2n_timer *timer, uint64_t * nanoseconds)
-{
+int s2n_timer_elapsed(struct s2n_config *config, struct s2n_timer *timer, uint64_t *nanoseconds) {
     uint64_t current_time;
 
     GUARD(config->monotonic_clock(config->monotonic_clock_ctx, &current_time));
@@ -36,8 +34,7 @@ int s2n_timer_elapsed(struct s2n_config *config, struct s2n_timer *timer, uint64
     return 0;
 }
 
-int s2n_timer_reset(struct s2n_config *config, struct s2n_timer *timer, uint64_t * nanoseconds)
-{
+int s2n_timer_reset(struct s2n_config *config, struct s2n_timer *timer, uint64_t *nanoseconds) {
     uint64_t previous_time = timer->time;
 
     GUARD(s2n_timer_start(config, timer));

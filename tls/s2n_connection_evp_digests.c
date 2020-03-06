@@ -21,8 +21,7 @@
  * s2n_connection_prf_handles struct to avoid re-allocation after zeroing the connection struct.
  * Do not store any additional hash/HMAC state as it is unnecessary and excessive copying would impact performance.
  */
-int s2n_connection_save_prf_state(struct s2n_connection_prf_handles *prf_handles, struct s2n_connection *conn)
-{
+int s2n_connection_save_prf_state(struct s2n_connection_prf_handles *prf_handles, struct s2n_connection *conn) {
     /* Preserve only the handlers for TLS PRF p_hash pointers to avoid re-allocation */
     GUARD(s2n_hmac_save_evp_hash_state(&prf_handles->p_hash_s2n_hmac, &conn->prf_space.tls.p_hash.s2n_hmac));
     prf_handles->p_hash_evp_hmac = conn->prf_space.tls.p_hash.evp_hmac;
@@ -34,8 +33,7 @@ int s2n_connection_save_prf_state(struct s2n_connection_prf_handles *prf_handles
  * s2n_connection_hash_handles struct to avoid re-allocation after zeroing the connection struct.
  * Do not store any additional hash state as it is unnecessary and excessive copying would impact performance.
  */
-int s2n_connection_save_hash_state(struct s2n_connection_hash_handles *hash_handles, struct s2n_connection *conn)
-{
+int s2n_connection_save_hash_state(struct s2n_connection_hash_handles *hash_handles, struct s2n_connection *conn) {
     /* Preserve only the handlers for handshake hash state pointers to avoid re-allocation */
     hash_handles->md5 = conn->handshake.md5.digest.high_level;
     hash_handles->sha1 = conn->handshake.sha1.digest.high_level;
@@ -66,8 +64,7 @@ int s2n_connection_save_hash_state(struct s2n_connection_hash_handles *hash_hand
  * s2n_connection_hmac_handles struct to avoid re-allocation after zeroing the connection struct.
  * Do not store any additional HMAC state as it is unnecessary and excessive copying would impact performance.
  */
-int s2n_connection_save_hmac_state(struct s2n_connection_hmac_handles *hmac_handles, struct s2n_connection *conn)
-{
+int s2n_connection_save_hmac_state(struct s2n_connection_hmac_handles *hmac_handles, struct s2n_connection *conn) {
     GUARD(s2n_hmac_save_evp_hash_state(&hmac_handles->initial_client, &conn->initial.client_record_mac));
     GUARD(s2n_hmac_save_evp_hash_state(&hmac_handles->initial_server, &conn->initial.server_record_mac));
     GUARD(s2n_hmac_save_evp_hash_state(&hmac_handles->initial_client_copy, &conn->initial.record_mac_copy_workspace));
@@ -81,8 +78,7 @@ int s2n_connection_save_hmac_state(struct s2n_connection_hmac_handles *hmac_hand
  * to avoid re-allocation. Do not store any additional hash/HMAC state as it is unnecessary and excessive copying
  * would impact performance.
  */
-int s2n_connection_restore_prf_state(struct s2n_connection *conn, struct s2n_connection_prf_handles *prf_handles)
-{
+int s2n_connection_restore_prf_state(struct s2n_connection *conn, struct s2n_connection_prf_handles *prf_handles) {
     /* Restore s2n_connection handlers for TLS PRF p_hash */
     GUARD(s2n_hmac_restore_evp_hash_state(&prf_handles->p_hash_s2n_hmac, &conn->prf_space.tls.p_hash.s2n_hmac));
     conn->prf_space.tls.p_hash.evp_hmac = prf_handles->p_hash_evp_hmac;
@@ -94,8 +90,7 @@ int s2n_connection_restore_prf_state(struct s2n_connection *conn, struct s2n_con
  * to avoid re-allocation. Do not store any additional hash state as it is unnecessary and excessive copying
  * would impact performance.
  */
-int s2n_connection_restore_hash_state(struct s2n_connection *conn, struct s2n_connection_hash_handles *hash_handles)
-{
+int s2n_connection_restore_hash_state(struct s2n_connection *conn, struct s2n_connection_hash_handles *hash_handles) {
     /* Restore s2n_connection handlers for handshake hash states */
     conn->handshake.md5.digest.high_level = hash_handles->md5;
     conn->handshake.sha1.digest.high_level = hash_handles->sha1;
@@ -126,11 +121,11 @@ int s2n_connection_restore_hash_state(struct s2n_connection *conn, struct s2n_co
  * to avoid re-allocation. Do not store any additional HMAC state as it is unnecessary and excessive copying
  * would impact performance.
  */
-int s2n_connection_restore_hmac_state(struct s2n_connection *conn, struct s2n_connection_hmac_handles *hmac_handles)
-{
+int s2n_connection_restore_hmac_state(struct s2n_connection *conn, struct s2n_connection_hmac_handles *hmac_handles) {
     GUARD(s2n_hmac_restore_evp_hash_state(&hmac_handles->initial_client, &conn->initial.client_record_mac));
     GUARD(s2n_hmac_restore_evp_hash_state(&hmac_handles->initial_server, &conn->initial.server_record_mac));
-    GUARD(s2n_hmac_restore_evp_hash_state(&hmac_handles->initial_client_copy, &conn->initial.record_mac_copy_workspace));
+    GUARD(
+        s2n_hmac_restore_evp_hash_state(&hmac_handles->initial_client_copy, &conn->initial.record_mac_copy_workspace));
     GUARD(s2n_hmac_restore_evp_hash_state(&hmac_handles->secure_client, &conn->secure.client_record_mac));
     GUARD(s2n_hmac_restore_evp_hash_state(&hmac_handles->secure_server, &conn->secure.server_record_mac));
     GUARD(s2n_hmac_restore_evp_hash_state(&hmac_handles->secure_client_copy, &conn->secure.record_mac_copy_workspace));

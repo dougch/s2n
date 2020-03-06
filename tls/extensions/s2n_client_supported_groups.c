@@ -13,17 +13,16 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
-#include <stdint.h>
-
 #include "tls/extensions/s2n_client_supported_groups.h"
+
+#include <stdint.h>
+#include <sys/param.h>
+
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-
 #include "utils/s2n_safety.h"
 
-int s2n_extensions_client_supported_groups_send(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
+int s2n_extensions_client_supported_groups_send(struct s2n_connection *conn, struct s2n_stuffer *out) {
     GUARD(s2n_stuffer_write_uint16(out, TLS_EXTENSION_SUPPORTED_GROUPS));
     GUARD(s2n_stuffer_write_uint16(out, 2 + s2n_ecc_evp_supported_curves_list_len * 2));
     /* Curve list len */
@@ -39,12 +38,11 @@ int s2n_extensions_client_supported_groups_send(struct s2n_connection *conn, str
     GUARD(s2n_stuffer_write_uint8(out, 1));
     /* Only allow uncompressed format */
     GUARD(s2n_stuffer_write_uint8(out, 0));
-    
+
     return 0;
 }
 
-int s2n_recv_client_supported_groups(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_recv_client_supported_groups(struct s2n_connection *conn, struct s2n_stuffer *extension) {
     uint16_t size_of_all;
     struct s2n_blob proposed_curves = {0};
 

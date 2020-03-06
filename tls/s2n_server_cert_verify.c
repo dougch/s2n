@@ -13,21 +13,20 @@
  * permissions and limitations under the License.
  */
 
-#include "tls/s2n_tls13_handshake.h"
+#include "crypto/s2n_hash.h"
+#include "error/s2n_errno.h"
+#include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_certificate_verify.h"
 #include "tls/s2n_connection.h"
-#include "crypto/s2n_hash.h"
-
-#include "stuffer/s2n_stuffer.h"
-#include "error/s2n_errno.h"
+#include "tls/s2n_tls13_handshake.h"
 #include "utils/s2n_safety.h"
 
 static int s2n_server_write_cert_verify_signature(struct s2n_connection *conn, struct s2n_stuffer *out);
-static int s2n_server_generate_unsigned_cert_verify_content(struct s2n_connection *conn, struct s2n_stuffer *unsigned_content);
+static int s2n_server_generate_unsigned_cert_verify_content(struct s2n_connection *conn,
+                                                            struct s2n_stuffer *unsigned_content);
 static uint8_t s2n_server_cert_verify_header_length();
 
-int s2n_server_cert_verify_send(struct s2n_connection *conn)
-{
+int s2n_server_cert_verify_send(struct s2n_connection *conn) {
     struct s2n_stuffer *out = &conn->handshake.io;
 
     /* Write the SignatureScheme out */
@@ -39,8 +38,7 @@ int s2n_server_cert_verify_send(struct s2n_connection *conn)
     return 0;
 }
 
-int s2n_server_cert_read_and_verify_signature(struct s2n_connection *conn)
-{
+int s2n_server_cert_read_and_verify_signature(struct s2n_connection *conn) {
     struct s2n_stuffer *in = &conn->handshake.io;
     DEFER_CLEANUP(struct s2n_blob signed_content = {0}, s2n_free);
     DEFER_CLEANUP(struct s2n_stuffer unsigned_content = {0}, s2n_stuffer_free);
@@ -69,9 +67,7 @@ int s2n_server_cert_read_and_verify_signature(struct s2n_connection *conn)
     return 0;
 }
 
-
-int s2n_server_cert_verify_recv(struct s2n_connection *conn)
-{
+int s2n_server_cert_verify_recv(struct s2n_connection *conn) {
     /* Read the algorithm and update conn->secure.conn_sig_scheme */
     GUARD(s2n_get_and_validate_negotiated_signature_scheme(conn, &conn->handshake.io, &conn->secure.conn_sig_scheme));
     /* Read the rest of the signature and verify */
@@ -80,8 +76,7 @@ int s2n_server_cert_verify_recv(struct s2n_connection *conn)
     return 0;
 }
 
-int s2n_server_write_cert_verify_signature(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
+int s2n_server_write_cert_verify_signature(struct s2n_connection *conn, struct s2n_stuffer *out) {
     notnull_check(conn->handshake_params.our_chain_and_key);
     const struct s2n_pkey *pkey = conn->handshake_params.our_chain_and_key->private_key;
 
@@ -107,8 +102,8 @@ int s2n_server_write_cert_verify_signature(struct s2n_connection *conn, struct s
 }
 
 /* Concatenates the handshake hash used for generating a Certificate Verify Signature. */
-int s2n_server_generate_unsigned_cert_verify_content(struct s2n_connection *conn, struct s2n_stuffer *unsigned_content)
-{
+int s2n_server_generate_unsigned_cert_verify_content(struct s2n_connection *conn,
+                                                     struct s2n_stuffer *unsigned_content) {
     s2n_tls13_connection_keys(tls13_ctx, conn);
 
     struct s2n_hash_state handshake_hash, hash_copy;
@@ -127,13 +122,13 @@ int s2n_server_generate_unsigned_cert_verify_content(struct s2n_connection *conn
     /* Concatenate the content to be signed/verified */
     GUARD(s2n_stuffer_alloc(unsigned_content, hash_digest_length + s2n_server_cert_verify_header_length()));
     GUARD(s2n_stuffer_write_bytes(unsigned_content, S2N_CERT_VERIFY_PREFIX, sizeof(S2N_CERT_VERIFY_PREFIX)));
-    GUARD(s2n_stuffer_write_bytes(unsigned_content, S2N_SERVER_CERT_VERIFY_CONTEXT, sizeof(S2N_SERVER_CERT_VERIFY_CONTEXT)));
+    GUARD(s2n_stuffer_write_bytes(unsigned_content, S2N_SERVER_CERT_VERIFY_CONTEXT,
+                                  sizeof(S2N_SERVER_CERT_VERIFY_CONTEXT)));
     GUARD(s2n_stuffer_write_bytes(unsigned_content, digest_out, hash_digest_length));
 
     return 0;
 }
 
-uint8_t s2n_server_cert_verify_header_length()
-{
+uint8_t s2n_server_cert_verify_header_length() {
     return sizeof(S2N_CERT_VERIFY_PREFIX) + sizeof(S2N_SERVER_CERT_VERIFY_CONTEXT);
 }

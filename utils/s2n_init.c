@@ -13,29 +13,21 @@
  * permissions and limitations under the License.
  */
 #include "crypto/s2n_fips.h"
-
 #include "error/s2n_errno.h"
-
+#include "openssl/opensslv.h"
+#include "tls/extensions/s2n_client_key_share.h"
 #include "tls/s2n_cipher_preferences.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_client_extensions.h"
-#include "tls/extensions/s2n_client_key_share.h"
-
 #include "utils/s2n_mem.h"
 #include "utils/s2n_random.h"
 #include "utils/s2n_safety.h"
 
-#include "openssl/opensslv.h"
-
 static void s2n_cleanup_atexit(void);
 
-unsigned long s2n_get_openssl_version(void)
-{
-    return OPENSSL_VERSION_NUMBER;
-}
+unsigned long s2n_get_openssl_version(void) { return OPENSSL_VERSION_NUMBER; }
 
-int s2n_init(void)
-{
+int s2n_init(void) {
     GUARD(s2n_fips_init());
     GUARD(s2n_mem_init());
     GUARD(s2n_rand_init());
@@ -63,31 +55,28 @@ int s2n_init(void)
         TLS_EXTENSION_RENEGOTIATION_INFO,
         TLS_EXTENSION_KEY_SHARE,
     };
-    static const uint16_t  num_extensions = sizeof(extensions) / sizeof(uint16_t);
+    static const uint16_t num_extensions = sizeof(extensions) / sizeof(uint16_t);
     for (uint16_t i = 0; i < num_extensions; i++) {
         s2n_register_extension(extensions[i]);
     }
 
     if (getenv("S2N_PRINT_STACKTRACE")) {
-      s2n_stack_traces_enabled_set(true);
+        s2n_stack_traces_enabled_set(true);
     }
 
     return 0;
 }
 
-int s2n_cleanup(void)
-{
+int s2n_cleanup(void) {
     /* s2n_cleanup is supposed to be called from each thread before exiting,
      * so ensure that whatever clean ups we have here are thread safe */
     GUARD(s2n_rand_cleanup_thread());
     return 0;
 }
 
-static void s2n_cleanup_atexit(void)
-{
+static void s2n_cleanup_atexit(void) {
     s2n_rand_cleanup_thread();
     s2n_rand_cleanup();
     s2n_mem_cleanup();
     s2n_wipe_static_configs();
 }
-

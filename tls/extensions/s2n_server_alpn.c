@@ -13,17 +13,14 @@
  * permissions and limitations under the License.
  */
 
-#include "stuffer/s2n_stuffer.h"
-
-#include "utils/s2n_safety.h"
-
-#include "tls/s2n_connection.h"
-#include "tls/s2n_tls.h"
-
 #include "tls/extensions/s2n_server_alpn.h"
 
-int s2n_recv_server_alpn(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_tls.h"
+#include "utils/s2n_safety.h"
+
+int s2n_recv_server_alpn(struct s2n_connection *conn, struct s2n_stuffer *extension) {
     uint16_t size_of_all;
     GUARD(s2n_stuffer_read_uint16(extension, &size_of_all));
     if (size_of_all > s2n_stuffer_data_available(extension) || size_of_all < 3) {
