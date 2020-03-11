@@ -1,0 +1,19 @@
+name: Linters
+
+on:
+  push:
+    branches:
+      - gha_sidetrail
+env:
+  DOCKER_IMAGE: docker.pkg.github.com/dougch/s2n/sidetrail
+jobs:
+  sidetrail:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u awslabs --password-stdin
+          docker pull ${{ env.DOCKER_IMAGE }}
+      - run: |
+          docker run -v ${{ github.workspace }}:/src ${{ env.DOCKER_IMAGE }} codebuild/bin/run_sidetrail.sh /sidetrail-install-dir /src
