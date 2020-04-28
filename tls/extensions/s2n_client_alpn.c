@@ -13,18 +13,17 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
-#include <stdint.h>
-
 #include "tls/extensions/s2n_client_alpn.h"
+
+#include <stdint.h>
+#include <sys/param.h>
+
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-
 #include "utils/s2n_safety.h"
 
-int s2n_extensions_client_alpn_send(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
-    struct s2n_blob *client_app_protocols;
+int s2n_extensions_client_alpn_send(struct s2n_connection* conn, struct s2n_stuffer* out) {
+    struct s2n_blob* client_app_protocols;
     GUARD(s2n_connection_get_protocol_preferences(conn, &client_app_protocols));
     uint16_t application_protocols_len = client_app_protocols->size;
 
@@ -36,13 +35,12 @@ int s2n_extensions_client_alpn_send(struct s2n_connection *conn, struct s2n_stuf
     return 0;
 }
 
-int s2n_recv_client_alpn(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_recv_client_alpn(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     uint16_t size_of_all;
     struct s2n_stuffer client_protos = {0};
     struct s2n_stuffer server_protos = {0};
 
-    struct s2n_blob *server_app_protocols;
+    struct s2n_blob* server_app_protocols;
     GUARD(s2n_connection_get_protocol_preferences(conn, &server_app_protocols));
 
     if (!server_app_protocols->size) {
@@ -56,7 +54,7 @@ int s2n_recv_client_alpn(struct s2n_connection *conn, struct s2n_stuffer *extens
         return 0;
     }
 
-    struct s2n_blob client_app_protocols = { 0 };
+    struct s2n_blob client_app_protocols = {0};
     client_app_protocols.size = size_of_all;
     client_app_protocols.data = s2n_stuffer_raw_read(extension, size_of_all);
     notnull_check(client_app_protocols.data);

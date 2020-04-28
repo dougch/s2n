@@ -22,11 +22,11 @@
 
 struct s2n_ecc_preferences {
     uint8_t count;
-    const struct s2n_ecc_named_curve *const *ecc_curves;
+    const struct s2n_ecc_named_curve* const* ecc_curves;
 };
 extern const struct s2n_ecc_preferences s2n_ecc_preferences_20140601;
 extern const struct s2n_ecc_preferences s2n_ecc_preferences_20200310;
 
 int s2n_ecc_preferences_init();
-int s2n_config_set_ecc_preferences(struct s2n_config *config, const char *version);
-int s2n_check_ecc_preferences_curves_list(const struct s2n_ecc_preferences *ecc_preferences);
+int s2n_config_set_ecc_preferences(struct s2n_config* config, const char* version);
+int s2n_check_ecc_preferences_curves_list(const struct s2n_ecc_preferences* ecc_preferences);

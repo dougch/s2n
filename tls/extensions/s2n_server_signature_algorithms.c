@@ -13,24 +13,21 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
 #include <stdint.h>
+#include <sys/param.h>
 
 #include "tls/extensions/s2n_client_signature_algorithms.h"
+#include "tls/s2n_signature_algorithms.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_signature_algorithms.h"
-
 #include "utils/s2n_safety.h"
 
-int s2n_extensions_server_signature_algorithms_size(struct s2n_connection *conn)
-{
+int s2n_extensions_server_signature_algorithms_size(struct s2n_connection* conn) {
     /* extra 6 = 2 from extension type, 2 from extension size, 2 from list length */
     return s2n_supported_sig_scheme_list_size(conn) + 6;
 }
 
-int s2n_extensions_server_signature_algorithms_send(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
+int s2n_extensions_server_signature_algorithms_send(struct s2n_connection* conn, struct s2n_stuffer* out) {
     /* The extension header */
     GUARD(s2n_stuffer_write_uint16(out, TLS_EXTENSION_SIGNATURE_ALGORITHMS));
 
@@ -44,7 +41,6 @@ int s2n_extensions_server_signature_algorithms_send(struct s2n_connection *conn,
     return 0;
 }
 
-int s2n_extensions_server_signature_algorithms_recv(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_extensions_server_signature_algorithms_recv(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     return s2n_recv_supported_sig_scheme_list(extension, &conn->handshake_params.server_sig_hash_algs);
 }

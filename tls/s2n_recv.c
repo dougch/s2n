@@ -17,28 +17,23 @@
 
 /* Use usleep */
 #define _XOPEN_SOURCE 500
-#include <unistd.h>
-
 #include <errno.h>
 #include <s2n.h>
+#include <unistd.h>
 
 #include "error/s2n_errno.h"
-
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_alerts.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_handshake.h"
 #include "tls/s2n_record.h"
 #include "tls/s2n_resume.h"
-#include "tls/s2n_alerts.h"
 #include "tls/s2n_tls.h"
-
-#include "stuffer/s2n_stuffer.h"
-
-#include "utils/s2n_socket.h"
-#include "utils/s2n_safety.h"
 #include "utils/s2n_blob.h"
+#include "utils/s2n_safety.h"
+#include "utils/s2n_socket.h"
 
-int s2n_read_full_record(struct s2n_connection *conn, uint8_t * record_type, int *isSSLv2)
-{
+int s2n_read_full_record(struct s2n_connection* conn, uint8_t* record_type, int* isSSLv2) {
     int r;
 
     *isSSLv2 = 0;
@@ -123,9 +118,9 @@ int s2n_read_full_record(struct s2n_connection *conn, uint8_t * record_type, int
     }
 
     /* In TLS 1.3, encrypted handshake records would appear to be of record type
-    * TLS_APPLICATION_DATA. The actual record content type is found after the encrypted
-    * is decrypted.
-    */
+     * TLS_APPLICATION_DATA. The actual record content type is found after the encrypted
+     * is decrypted.
+     */
     if (conn->actual_protocol_version == S2N_TLS13 && *record_type == TLS_APPLICATION_DATA) {
         GUARD(s2n_tls13_parse_record_type(&conn->in, record_type));
     }
@@ -133,10 +128,9 @@ int s2n_read_full_record(struct s2n_connection *conn, uint8_t * record_type, int
     return 0;
 }
 
-ssize_t s2n_recv(struct s2n_connection * conn, void *buf, ssize_t size, s2n_blocked_status * blocked)
-{
+ssize_t s2n_recv(struct s2n_connection* conn, void* buf, ssize_t size, s2n_blocked_status* blocked) {
     ssize_t bytes_read = 0;
-    struct s2n_blob out = {.data = (uint8_t *) buf };
+    struct s2n_blob out = {.data = (uint8_t*)buf};
 
     if (conn->closed) {
         return 0;
@@ -166,7 +160,8 @@ ssize_t s2n_recv(struct s2n_connection * conn, void *buf, ssize_t size, s2n_bloc
 
             /* If we get here, it's an error condition */
             if (s2n_errno != S2N_ERR_BLOCKED && s2n_allowed_to_cache_connection(conn) && conn->session_id_len) {
-                conn->config->cache_delete(conn, conn->config->cache_delete_data, conn->session_id, conn->session_id_len);
+                conn->config->cache_delete(conn, conn->config->cache_delete_data, conn->session_id,
+                                           conn->session_id_len);
             }
 
             S2N_ERROR_PRESERVE_ERRNO();
@@ -214,12 +209,9 @@ ssize_t s2n_recv(struct s2n_connection * conn, void *buf, ssize_t size, s2n_bloc
     return bytes_read;
 }
 
-uint32_t s2n_peek(struct s2n_connection *conn) {
-    return s2n_stuffer_data_available(&conn->in);
-}
+uint32_t s2n_peek(struct s2n_connection* conn) { return s2n_stuffer_data_available(&conn->in); }
 
-int s2n_recv_close_notify(struct s2n_connection *conn, s2n_blocked_status * blocked)
-{
+int s2n_recv_close_notify(struct s2n_connection* conn, s2n_blocked_status* blocked) {
     uint8_t record_type;
     int isSSLv2;
     *blocked = S2N_BLOCKED_ON_READ;
@@ -236,4 +228,3 @@ int s2n_recv_close_notify(struct s2n_connection *conn, s2n_blocked_status * bloc
     *blocked = S2N_NOT_BLOCKED;
     return 0;
 }
-

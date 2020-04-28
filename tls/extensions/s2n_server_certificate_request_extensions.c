@@ -15,14 +15,12 @@
 
 #include "error/s2n_errno.h"
 #include "s2n_server_signature_algorithms.h"
-#include "utils/s2n_safety.h"
 #include "stuffer/s2n_stuffer.h"
-
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
+#include "utils/s2n_safety.h"
 
-int s2n_server_certificate_request_extensions_recv(struct s2n_connection *conn, struct s2n_blob *extensions)
-{
+int s2n_server_certificate_request_extensions_recv(struct s2n_connection* conn, struct s2n_blob* extensions) {
     uint8_t processed_sig_algs = 0;
     struct s2n_stuffer ext_stuffer = {0};
     GUARD(s2n_stuffer_init(&ext_stuffer, extensions));
@@ -47,21 +45,21 @@ int s2n_server_certificate_request_extensions_recv(struct s2n_connection *conn, 
         GUARD(s2n_stuffer_write(&current_extension, &ext));
 
         switch (extension_type) {
-        case TLS_EXTENSION_SIGNATURE_ALGORITHMS:
-            GUARD(s2n_extensions_server_signature_algorithms_recv(conn, &current_extension));
-            processed_sig_algs += 1;
-            break;
-        case TLS_EXTENSION_SCT_LIST:
-        case TLS_EXTENSION_STATUS_REQUEST:
-        case TLS_EXTENSION_SERVER_NAME:
-        case TLS_EXTENSION_ALPN:
-        case TLS_EXTENSION_MAX_FRAG_LEN:
-        case TLS_EXTENSION_RENEGOTIATION_INFO:
-        case TLS_EXTENSION_SESSION_TICKET:
-        case TLS_EXTENSION_SUPPORTED_VERSIONS:
-        case TLS_EXTENSION_KEY_SHARE:
-            S2N_ERROR(S2N_ERR_BAD_MESSAGE);
-            break;
+            case TLS_EXTENSION_SIGNATURE_ALGORITHMS:
+                GUARD(s2n_extensions_server_signature_algorithms_recv(conn, &current_extension));
+                processed_sig_algs += 1;
+                break;
+            case TLS_EXTENSION_SCT_LIST:
+            case TLS_EXTENSION_STATUS_REQUEST:
+            case TLS_EXTENSION_SERVER_NAME:
+            case TLS_EXTENSION_ALPN:
+            case TLS_EXTENSION_MAX_FRAG_LEN:
+            case TLS_EXTENSION_RENEGOTIATION_INFO:
+            case TLS_EXTENSION_SESSION_TICKET:
+            case TLS_EXTENSION_SUPPORTED_VERSIONS:
+            case TLS_EXTENSION_KEY_SHARE:
+                S2N_ERROR(S2N_ERR_BAD_MESSAGE);
+                break;
         }
     }
 
@@ -73,16 +71,14 @@ int s2n_server_certificate_request_extensions_recv(struct s2n_connection *conn, 
     return 0;
 }
 
-int s2n_server_certificate_request_extensions_send(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
-	/* For minimal implementation we only send signature algorithms */
+int s2n_server_certificate_request_extensions_send(struct s2n_connection* conn, struct s2n_stuffer* out) {
+    /* For minimal implementation we only send signature algorithms */
     GUARD(s2n_extensions_server_signature_algorithms_send(conn, out));
 
     return 0;
 }
 
-int s2n_server_certificate_request_extensions_size(struct s2n_connection *conn)
-{
-	/* currently only sending signature algorithms */
-	return s2n_extensions_server_signature_algorithms_size(conn);
+int s2n_server_certificate_request_extensions_size(struct s2n_connection* conn) {
+    /* currently only sending signature algorithms */
+    return s2n_extensions_server_signature_algorithms_size(conn);
 }

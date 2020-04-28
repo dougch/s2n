@@ -16,19 +16,15 @@
 #include <stdint.h>
 
 #include "error/s2n_errno.h"
-
+#include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_resume.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13_handshake.h"
-
-#include "stuffer/s2n_stuffer.h"
-
 #include "utils/s2n_safety.h"
 
-int s2n_server_finished_recv(struct s2n_connection *conn)
-{
-    uint8_t *our_version;
+int s2n_server_finished_recv(struct s2n_connection* conn) {
+    uint8_t* our_version;
     int length = S2N_TLS_FINISHED_LEN;
     our_version = conn->handshake.server_finished;
 
@@ -36,7 +32,7 @@ int s2n_server_finished_recv(struct s2n_connection *conn)
         length = S2N_SSL_FINISHED_LEN;
     }
 
-    uint8_t *their_version = s2n_stuffer_raw_read(&conn->handshake.io, length);
+    uint8_t* their_version = s2n_stuffer_raw_read(&conn->handshake.io, length);
     notnull_check(their_version);
 
     S2N_ERROR_IF(!s2n_constant_time_equals(our_version, their_version, length), S2N_ERR_BAD_MESSAGE);
@@ -44,9 +40,8 @@ int s2n_server_finished_recv(struct s2n_connection *conn)
     return 0;
 }
 
-int s2n_server_finished_send(struct s2n_connection *conn)
-{
-    uint8_t *our_version;
+int s2n_server_finished_send(struct s2n_connection* conn) {
+    uint8_t* our_version;
     int length = S2N_TLS_FINISHED_LEN;
 
     /* Compute the finished message */
@@ -61,7 +56,7 @@ int s2n_server_finished_send(struct s2n_connection *conn)
     GUARD(s2n_stuffer_write_bytes(&conn->handshake.io, our_version, length));
 
     /* Zero the sequence number */
-    struct s2n_blob seq = {.data = conn->secure.server_sequence_number,.size = S2N_TLS_SEQUENCE_NUM_LEN };
+    struct s2n_blob seq = {.data = conn->secure.server_sequence_number, .size = S2N_TLS_SEQUENCE_NUM_LEN};
     GUARD(s2n_blob_zero(&seq));
 
     /* Update the secure state to active, and point the client at the active state */
@@ -74,8 +69,7 @@ int s2n_server_finished_send(struct s2n_connection *conn)
     return 0;
 }
 
-
-int s2n_tls13_server_finished_recv(struct s2n_connection *conn) {
+int s2n_tls13_server_finished_recv(struct s2n_connection* conn) {
     eq_check(conn->actual_protocol_version, S2N_TLS13);
 
     uint8_t length = s2n_stuffer_data_available(&conn->handshake.io);
@@ -106,7 +100,7 @@ int s2n_tls13_server_finished_recv(struct s2n_connection *conn) {
     return 0;
 }
 
-int s2n_tls13_server_finished_send(struct s2n_connection *conn) {
+int s2n_tls13_server_finished_send(struct s2n_connection* conn) {
     eq_check(conn->actual_protocol_version, S2N_TLS13);
 
     /* get tls13 keys */

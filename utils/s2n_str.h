@@ -14,4 +14,4 @@
  */
 #pragma once
 
-extern char *s2n_strcpy(char *buf, char *last, const char *str);
+extern char* s2n_strcpy(char* buf, char* last, const char* str);

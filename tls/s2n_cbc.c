@@ -13,17 +13,14 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
 #include <stdint.h>
-
-#include "error/s2n_errno.h"
-
-#include "utils/s2n_safety.h"
-#include "utils/s2n_mem.h"
+#include <sys/param.h>
 
 #include "crypto/s2n_hmac.h"
-
+#include "error/s2n_errno.h"
 #include "tls/s2n_record.h"
+#include "utils/s2n_mem.h"
+#include "utils/s2n_safety.h"
 
 /* A TLS CBC record looks like ..
  *
@@ -36,7 +33,7 @@
  *
  * The goal of s2n_verify_cbc() is to verify that the padding and hmac
  * are correct, without leaking (via timing) how much padding there
- * actually is: as this is considered secret. 
+ * actually is: as this is considered secret.
  *
  * In addition to our efforts here though, s2n also wraps any CBC
  * verification error (or record parsing error in general) with
@@ -45,14 +42,13 @@
  * complexity of attack for even a 1 microsecond timing leak (which
  * is quite large) by a factor of around 83 trillion.
  */
-int s2n_verify_cbc(struct s2n_connection *conn, struct s2n_hmac_state *hmac, struct s2n_blob *decrypted)
-{
+int s2n_verify_cbc(struct s2n_connection* conn, struct s2n_hmac_state* hmac, struct s2n_blob* decrypted) {
     /* Set up MAC copy workspace */
-    struct s2n_hmac_state *copy = &conn->client->record_mac_copy_workspace;
+    struct s2n_hmac_state* copy = &conn->client->record_mac_copy_workspace;
     if (conn->mode == S2N_CLIENT) {
-       copy = &conn->server->record_mac_copy_workspace;
+        copy = &conn->server->record_mac_copy_workspace;
     }
-    
+
     uint8_t mac_digest_size;
     GUARD(s2n_hmac_digest_size(hmac->alg, &mac_digest_size));
 
@@ -79,7 +75,8 @@ int s2n_verify_cbc(struct s2n_connection *conn, struct s2n_hmac_state *hmac, str
     int mismatches = s2n_constant_time_equals(decrypted->data + payload_length, check_digest, mac_digest_size) ^ 1;
 
     /* Compute a MAC on the rest of the data so that we perform the same number of hash operations */
-    GUARD(s2n_hmac_update(copy, decrypted->data + payload_length + mac_digest_size, decrypted->size - payload_length - mac_digest_size - 1));
+    GUARD(s2n_hmac_update(copy, decrypted->data + payload_length + mac_digest_size,
+                          decrypted->size - payload_length - mac_digest_size - 1));
 
     /* SSLv3 doesn't specify what the padding should actually be */
     if (conn->actual_protocol_version == S2N_SSLv3) {

@@ -13,13 +13,14 @@
  * permissions and limitations under the License.
  */
 
+#include "tls/extensions/s2n_server_status_request.h"
+
 #include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-#include "tls/extensions/s2n_server_status_request.h"
 
-int s2n_server_extensions_status_request_send_size(struct s2n_connection *conn) {
+int s2n_server_extensions_status_request_send_size(struct s2n_connection* conn) {
     if (s2n_server_can_send_ocsp(conn)) {
         return 2 * sizeof(uint16_t);
     }
@@ -28,7 +29,7 @@ int s2n_server_extensions_status_request_send_size(struct s2n_connection *conn) 
 }
 
 /* Write OCSP extension */
-int s2n_server_extensions_status_request_send(struct s2n_connection *conn, struct s2n_stuffer *out) {
+int s2n_server_extensions_status_request_send(struct s2n_connection* conn, struct s2n_stuffer* out) {
     if (s2n_server_can_send_ocsp(conn)) {
         GUARD(s2n_stuffer_write_uint16(out, TLS_EXTENSION_STATUS_REQUEST));
         GUARD(s2n_stuffer_write_uint16(out, 0));
@@ -37,8 +38,7 @@ int s2n_server_extensions_status_request_send(struct s2n_connection *conn, struc
     return 0;
 }
 
-int s2n_recv_server_status_request(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_recv_server_status_request(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     conn->status_type = S2N_STATUS_REQUEST_OCSP;
 
     return 0;

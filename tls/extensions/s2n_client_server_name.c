@@ -13,17 +13,16 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
-#include <stdint.h>
-
 #include "tls/extensions/s2n_client_server_name.h"
+
+#include <stdint.h>
+#include <sys/param.h>
+
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-
 #include "utils/s2n_safety.h"
 
-int s2n_extensions_client_server_name_send(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
+int s2n_extensions_client_server_name_send(struct s2n_connection* conn, struct s2n_stuffer* out) {
     uint16_t server_name_len = strlen(conn->server_name);
 
     /* Write the server name */
@@ -37,7 +36,7 @@ int s2n_extensions_client_server_name_send(struct s2n_connection *conn, struct s
     GUARD(s2n_stuffer_write_uint8(out, 0));
 
     struct s2n_blob server_name = {0};
-    server_name.data = (uint8_t *) conn->server_name;
+    server_name.data = (uint8_t*)conn->server_name;
     server_name.size = server_name_len;
     GUARD(s2n_stuffer_write_uint16(out, server_name_len));
     GUARD(s2n_stuffer_write(out, &server_name));
@@ -45,8 +44,7 @@ int s2n_extensions_client_server_name_send(struct s2n_connection *conn, struct s
     return 0;
 }
 
-int s2n_parse_client_hello_server_name(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_parse_client_hello_server_name(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     if (conn->server_name[0]) {
         /* already parsed server name extension, exit early */
         return 0;
@@ -55,7 +53,7 @@ int s2n_parse_client_hello_server_name(struct s2n_connection *conn, struct s2n_s
     uint16_t size_of_all;
     uint8_t server_name_type;
     uint16_t server_name_len;
-    uint8_t *server_name;
+    uint8_t* server_name;
 
     GUARD(s2n_stuffer_read_uint16(extension, &size_of_all));
     if (size_of_all > s2n_stuffer_data_available(extension) || size_of_all < 3) {

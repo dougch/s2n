@@ -13,20 +13,19 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
-#include <stdint.h>
-
 #include "tls/extensions/s2n_client_session_ticket.h"
+
+#include <stdint.h>
+#include <sys/param.h>
+
+#include "tls/s2n_resume.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_resume.h"
-
 #include "utils/s2n_safety.h"
 
-int s2n_extensions_client_session_ticket_send(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
+int s2n_extensions_client_session_ticket_send(struct s2n_connection* conn, struct s2n_stuffer* out) {
     uint16_t client_ticket_len = conn->client_ticket.size;
-    
+
     GUARD(s2n_stuffer_write_uint16(out, TLS_EXTENSION_SESSION_TICKET));
     GUARD(s2n_stuffer_write_uint16(out, client_ticket_len));
     GUARD(s2n_stuffer_write(out, &conn->client_ticket));
@@ -34,8 +33,7 @@ int s2n_extensions_client_session_ticket_send(struct s2n_connection *conn, struc
     return 0;
 }
 
-int s2n_recv_client_session_ticket_ext(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_recv_client_session_ticket_ext(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     if (conn->config->use_tickets != 1) {
         /* Ignore the extension. */
         return 0;

@@ -18,11 +18,9 @@
 #include "tls/s2n_alerts.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
-
 #include "utils/s2n_safety.h"
 
-int s2n_shutdown(struct s2n_connection *conn, s2n_blocked_status * more)
-{
+int s2n_shutdown(struct s2n_connection* conn, s2n_blocked_status* more) {
     notnull_check(conn);
     notnull_check(more);
 

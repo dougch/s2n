@@ -18,9 +18,9 @@
 #include <s2n.h>
 #include <strings.h>
 
+#include "crypto/s2n_ecc_evp.h"
 #include "crypto/s2n_hash.h"
 #include "crypto/s2n_signature.h"
-#include "crypto/s2n_ecc_evp.h"
 
 struct s2n_signature_scheme {
     uint16_t iana_value;
@@ -30,12 +30,12 @@ struct s2n_signature_scheme {
     uint8_t maximum_protocol_version;
 
     /* Curve is only specified for ECDSA Signatures */
-    struct s2n_ecc_named_curve const *signature_curve;
+    struct s2n_ecc_named_curve const* signature_curve;
 };
 
-struct s2n_signature_preferences{
+struct s2n_signature_preferences {
     uint8_t count;
-    const struct s2n_signature_scheme *const *signature_schemes;
+    const struct s2n_signature_scheme* const* signature_schemes;
 };
 
 /* RSA PKCS1 */
@@ -74,4 +74,4 @@ extern const struct s2n_signature_scheme s2n_rsa_pss_rsae_sha512;
 extern const struct s2n_signature_preferences s2n_signature_preferences_20140601;
 extern const struct s2n_signature_preferences s2n_signature_preferences_20200207;
 
-int s2n_config_set_signature_preferences(struct s2n_config *config, const char *version);
+int s2n_config_set_signature_preferences(struct s2n_config* config, const char* version);

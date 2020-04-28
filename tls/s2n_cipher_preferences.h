@@ -16,24 +16,25 @@
 #pragma once
 
 #include <stdint.h>
+
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_kem.h"
 #include "tls/s2n_tls13.h"
 
 struct s2n_cipher_preferences {
     uint8_t count;
-    struct s2n_cipher_suite **suites;
+    struct s2n_cipher_suite** suites;
     uint8_t minimum_protocol_version;
     uint8_t kem_count;
-    const struct s2n_kem **kems;
+    const struct s2n_kem** kems;
 };
 
 #if !defined(S2N_NO_PQ)
 
-extern const struct s2n_kem *pq_kems_r1[2];
-extern const struct s2n_kem *pq_kems_r2r1[4];
-extern const struct s2n_kem *pq_kems_sike_r1[1];
-extern const struct s2n_kem *pq_kems_sike_r2r1[2];
+extern const struct s2n_kem* pq_kems_r1[2];
+extern const struct s2n_kem* pq_kems_r2r1[4];
+extern const struct s2n_kem* pq_kems_sike_r1[1];
+extern const struct s2n_kem* pq_kems_sike_r2r1[2];
 
 #endif
 
@@ -72,8 +73,9 @@ extern const struct s2n_cipher_preferences elb_security_policy_fs_1_1_2019_08;
 extern const struct s2n_cipher_preferences elb_security_policy_fs_1_2_res_2019_08;
 
 extern int s2n_cipher_preferences_init();
-extern int s2n_find_cipher_pref_from_version(const char *version, const struct s2n_cipher_preferences **cipher_preferences);
-extern int s2n_config_set_cipher_preferences(struct s2n_config *config, const char *version);
-extern int s2n_ecc_extension_required(const struct s2n_cipher_preferences *preferences);
-extern int s2n_pq_kem_extension_required(const struct s2n_cipher_preferences *preferences);
-extern bool s2n_cipher_preference_supports_tls13(const struct s2n_cipher_preferences *preferences);
+extern int s2n_find_cipher_pref_from_version(const char* version,
+                                             const struct s2n_cipher_preferences** cipher_preferences);
+extern int s2n_config_set_cipher_preferences(struct s2n_config* config, const char* version);
+extern int s2n_ecc_extension_required(const struct s2n_cipher_preferences* preferences);
+extern int s2n_pq_kem_extension_required(const struct s2n_cipher_preferences* preferences);
+extern bool s2n_cipher_preference_supports_tls13(const struct s2n_cipher_preferences* preferences);

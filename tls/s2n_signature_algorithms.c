@@ -13,22 +13,20 @@
  * permissions and limitations under the License.
  */
 
-#include "crypto/s2n_fips.h"
-#include "crypto/s2n_rsa_signing.h"
-#include "crypto/s2n_rsa_pss.h"
-#include "error/s2n_errno.h"
+#include "tls/s2n_signature_algorithms.h"
 
+#include "crypto/s2n_fips.h"
+#include "crypto/s2n_rsa_pss.h"
+#include "crypto/s2n_rsa_signing.h"
+#include "error/s2n_errno.h"
 #include "tls/s2n_auth_selection.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_kex.h"
-#include "tls/s2n_tls_digest_preferences.h"
-#include "tls/s2n_signature_algorithms.h"
 #include "tls/s2n_signature_scheme.h"
-
+#include "tls/s2n_tls_digest_preferences.h"
 #include "utils/s2n_safety.h"
 
-static int s2n_signature_scheme_valid_to_offer(struct s2n_connection *conn, const struct s2n_signature_scheme *scheme)
-{
+static int s2n_signature_scheme_valid_to_offer(struct s2n_connection* conn, const struct s2n_signature_scheme* scheme) {
     /* We don't know what protocol version we will eventually negotiate, but we know that it won't be any higher. */
     gte_check(conn->actual_protocol_version, scheme->minimum_protocol_version);
 
@@ -43,8 +41,8 @@ static int s2n_signature_scheme_valid_to_offer(struct s2n_connection *conn, cons
     return 0;
 }
 
-static int s2n_signature_scheme_valid_to_accept(struct s2n_connection *conn, const struct s2n_signature_scheme *scheme)
-{
+static int s2n_signature_scheme_valid_to_accept(struct s2n_connection* conn,
+                                                const struct s2n_signature_scheme* scheme) {
     notnull_check(scheme);
 
     GUARD(s2n_signature_scheme_valid_to_offer(conn, scheme));
@@ -56,17 +54,16 @@ static int s2n_signature_scheme_valid_to_accept(struct s2n_connection *conn, con
     return 0;
 }
 
-static int s2n_choose_sig_scheme(struct s2n_connection *conn, struct s2n_sig_scheme_list *peer_wire_prefs,
-                          struct s2n_signature_scheme *chosen_scheme_out)
-{
-    const struct s2n_signature_preferences *signature_preferences = conn->config->signature_preferences;
+static int s2n_choose_sig_scheme(struct s2n_connection* conn, struct s2n_sig_scheme_list* peer_wire_prefs,
+                                 struct s2n_signature_scheme* chosen_scheme_out) {
+    const struct s2n_signature_preferences* signature_preferences = conn->config->signature_preferences;
     notnull_check(signature_preferences);
 
-    struct s2n_cipher_suite *cipher_suite = conn->secure.cipher_suite;
+    struct s2n_cipher_suite* cipher_suite = conn->secure.cipher_suite;
     notnull_check(cipher_suite);
 
     for (int i = 0; i < signature_preferences->count; i++) {
-        const struct s2n_signature_scheme *candidate = signature_preferences->signature_schemes[i];
+        const struct s2n_signature_scheme* candidate = signature_preferences->signature_schemes[i];
 
         if (s2n_signature_scheme_valid_to_accept(conn, candidate) != S2N_SUCCESS) {
             continue;
@@ -89,17 +86,16 @@ static int s2n_choose_sig_scheme(struct s2n_connection *conn, struct s2n_sig_sch
     S2N_ERROR(S2N_ERR_INVALID_SIGNATURE_SCHEME);
 }
 
-int s2n_get_and_validate_negotiated_signature_scheme(struct s2n_connection *conn, struct s2n_stuffer *in,
-                                             struct s2n_signature_scheme *chosen_sig_scheme)
-{
+int s2n_get_and_validate_negotiated_signature_scheme(struct s2n_connection* conn, struct s2n_stuffer* in,
+                                                     struct s2n_signature_scheme* chosen_sig_scheme) {
     uint16_t actual_iana_val;
     GUARD(s2n_stuffer_read_uint16(in, &actual_iana_val));
 
-    const struct s2n_signature_preferences *signature_preferences = conn->config->signature_preferences;
+    const struct s2n_signature_preferences* signature_preferences = conn->config->signature_preferences;
     notnull_check(signature_preferences);
 
     for (int i = 0; i < signature_preferences->count; i++) {
-        const struct s2n_signature_scheme *candidate = signature_preferences->signature_schemes[i];
+        const struct s2n_signature_scheme* candidate = signature_preferences->signature_schemes[i];
 
         if (0 != s2n_signature_scheme_valid_to_accept(conn, candidate)) {
             continue;
@@ -114,8 +110,7 @@ int s2n_get_and_validate_negotiated_signature_scheme(struct s2n_connection *conn
     S2N_ERROR(S2N_ERR_INVALID_SIGNATURE_SCHEME);
 }
 
-int s2n_choose_default_sig_scheme(struct s2n_connection *conn, struct s2n_signature_scheme *sig_scheme_out)
-{
+int s2n_choose_default_sig_scheme(struct s2n_connection* conn, struct s2n_signature_scheme* sig_scheme_out) {
     notnull_check(conn);
     notnull_check(conn->secure.cipher_suite);
     notnull_check(sig_scheme_out);
@@ -133,17 +128,17 @@ int s2n_choose_default_sig_scheme(struct s2n_connection *conn, struct s2n_signat
     }
 
     /* Default RSA Hash Algorithm is SHA1 (instead of MD5_SHA1) if TLS 1.2 or FIPS mode */
-    if ((conn->actual_protocol_version >= S2N_TLS12 || s2n_is_in_fips_mode())
-            && (sig_scheme_out->sig_alg == S2N_SIGNATURE_RSA)) {
+    if ((conn->actual_protocol_version >= S2N_TLS12 || s2n_is_in_fips_mode()) &&
+        (sig_scheme_out->sig_alg == S2N_SIGNATURE_RSA)) {
         *sig_scheme_out = s2n_rsa_pkcs1_sha1;
     }
 
     return S2N_SUCCESS;
 }
 
-int s2n_choose_sig_scheme_from_peer_preference_list(struct s2n_connection *conn, struct s2n_sig_scheme_list *peer_wire_prefs,
-                                                        struct s2n_signature_scheme *sig_scheme_out)
-{
+int s2n_choose_sig_scheme_from_peer_preference_list(struct s2n_connection* conn,
+                                                    struct s2n_sig_scheme_list* peer_wire_prefs,
+                                                    struct s2n_signature_scheme* sig_scheme_out) {
     notnull_check(conn);
     notnull_check(sig_scheme_out);
 
@@ -158,7 +153,7 @@ int s2n_choose_sig_scheme_from_peer_preference_list(struct s2n_connection *conn,
         /* We require an exact match in TLS 1.3, but all previous versions can fall back to the default.
          * The pre-TLS1.3 behavior is an intentional choice to maximize support. */
         S2N_ERROR_IF(result != S2N_SUCCESS && conn->actual_protocol_version == S2N_TLS13,
-                S2N_ERR_INVALID_SIGNATURE_SCHEME);
+                     S2N_ERR_INVALID_SIGNATURE_SCHEME);
     } else {
         S2N_ERROR_IF(conn->actual_protocol_version == S2N_TLS13, S2N_ERR_EMPTY_SIGNATURE_SCHEME);
     }
@@ -168,15 +163,14 @@ int s2n_choose_sig_scheme_from_peer_preference_list(struct s2n_connection *conn,
     return S2N_SUCCESS;
 }
 
-int s2n_send_supported_sig_scheme_list(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
-    const struct s2n_signature_preferences *signature_preferences = conn->config->signature_preferences;
+int s2n_send_supported_sig_scheme_list(struct s2n_connection* conn, struct s2n_stuffer* out) {
+    const struct s2n_signature_preferences* signature_preferences = conn->config->signature_preferences;
     notnull_check(signature_preferences);
 
     GUARD(s2n_stuffer_write_uint16(out, s2n_supported_sig_scheme_list_size(conn)));
 
-    for (int i =  0; i < signature_preferences->count; i++) {
-        const struct s2n_signature_scheme *const scheme = signature_preferences->signature_schemes[i];
+    for (int i = 0; i < signature_preferences->count; i++) {
+        const struct s2n_signature_scheme* const scheme = signature_preferences->signature_schemes[i];
         if (0 == s2n_signature_scheme_valid_to_offer(conn, scheme)) {
             GUARD(s2n_stuffer_write_uint16(out, scheme->iana_value));
         }
@@ -185,27 +179,24 @@ int s2n_send_supported_sig_scheme_list(struct s2n_connection *conn, struct s2n_s
     return 0;
 }
 
-int s2n_supported_sig_scheme_list_size(struct s2n_connection *conn)
-{
+int s2n_supported_sig_scheme_list_size(struct s2n_connection* conn) {
     return s2n_supported_sig_schemes_count(conn) * TLS_SIGNATURE_SCHEME_LEN;
 }
 
-int s2n_supported_sig_schemes_count(struct s2n_connection *conn)
-{
-    const struct s2n_signature_preferences *signature_preferences = conn->config->signature_preferences;
+int s2n_supported_sig_schemes_count(struct s2n_connection* conn) {
+    const struct s2n_signature_preferences* signature_preferences = conn->config->signature_preferences;
     notnull_check(signature_preferences);
 
     uint8_t count = 0;
-    for (int i =  0; i < signature_preferences->count; i++) {
+    for (int i = 0; i < signature_preferences->count; i++) {
         if (0 == s2n_signature_scheme_valid_to_offer(conn, signature_preferences->signature_schemes[i])) {
-            count ++;
+            count++;
         }
     }
     return count;
 }
 
-int s2n_recv_supported_sig_scheme_list(struct s2n_stuffer *in, struct s2n_sig_scheme_list *sig_hash_algs)
-{
+int s2n_recv_supported_sig_scheme_list(struct s2n_stuffer* in, struct s2n_sig_scheme_list* sig_hash_algs) {
     uint16_t length_of_all_pairs;
     GUARD(s2n_stuffer_read_uint16(in, &length_of_all_pairs));
     if (length_of_all_pairs > s2n_stuffer_data_available(in)) {
@@ -224,7 +215,7 @@ int s2n_recv_supported_sig_scheme_list(struct s2n_stuffer *in, struct s2n_sig_sc
     if (pairs_available > TLS_SIGNATURE_SCHEME_LIST_MAX_LEN) {
         S2N_ERROR(S2N_ERR_TOO_MANY_SIGNATURE_SCHEMES);
     }
-    
+
     sig_hash_algs->len = 0;
 
     for (int i = 0; i < pairs_available; i++) {

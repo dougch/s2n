@@ -15,35 +15,30 @@
 
 #include <s2n.h>
 
+#include "crypto/s2n_dhe.h"
 #include "error/s2n_errno.h"
-
-#include "tls/s2n_tls_digest_preferences.h"
-#include "tls/s2n_kem.h"
-#include "tls/s2n_kex.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_cipher_preferences.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_connection.h"
+#include "tls/s2n_kem.h"
+#include "tls/s2n_kex.h"
 #include "tls/s2n_signature_algorithms.h"
-#include "tls/s2n_cipher_preferences.h"
-
-#include "stuffer/s2n_stuffer.h"
-
-#include "crypto/s2n_dhe.h"
-
-#include "utils/s2n_safety.h"
+#include "tls/s2n_tls_digest_preferences.h"
 #include "utils/s2n_random.h"
+#include "utils/s2n_safety.h"
 
-static int s2n_write_signature_blob(struct s2n_stuffer *out, const struct s2n_pkey *priv_key,
-        s2n_signature_algorithm sig_alg, struct s2n_hash_state *digest);
+static int s2n_write_signature_blob(struct s2n_stuffer* out, const struct s2n_pkey* priv_key,
+                                    s2n_signature_algorithm sig_alg, struct s2n_hash_state* digest);
 
-int s2n_server_key_recv(struct s2n_connection *conn)
-{
+int s2n_server_key_recv(struct s2n_connection* conn) {
     notnull_check(conn);
     notnull_check(conn->secure.cipher_suite);
     notnull_check(conn->secure.cipher_suite->key_exchange_alg);
 
-    struct s2n_hash_state *signature_hash = &conn->secure.signature_hash;
-    const struct s2n_kex *key_exchange = conn->secure.cipher_suite->key_exchange_alg;
-    struct s2n_stuffer *in = &conn->handshake.io;
+    struct s2n_hash_state* signature_hash = &conn->secure.signature_hash;
+    const struct s2n_kex* key_exchange = conn->secure.cipher_suite->key_exchange_alg;
+    struct s2n_stuffer* in = &conn->handshake.io;
     struct s2n_blob data_to_verify = {0};
 
     /* Read the KEX data */
@@ -73,8 +68,9 @@ int s2n_server_key_recv(struct s2n_connection *conn)
     notnull_check(signature.data);
     gt_check(signature_length, 0);
 
-    S2N_ERROR_IF(s2n_pkey_verify(&conn->secure.server_public_key, active_sig_scheme.sig_alg,signature_hash, &signature) < 0,
-            S2N_ERR_BAD_MESSAGE);
+    S2N_ERROR_IF(
+        s2n_pkey_verify(&conn->secure.server_public_key, active_sig_scheme.sig_alg, signature_hash, &signature) < 0,
+        S2N_ERR_BAD_MESSAGE);
 
     /* We don't need the key any more, so free it */
     GUARD(s2n_pkey_free(&conn->secure.server_public_key));
@@ -84,25 +80,24 @@ int s2n_server_key_recv(struct s2n_connection *conn)
     return 0;
 }
 
-int s2n_ecdhe_server_key_recv_read_data(struct s2n_connection *conn, struct s2n_blob *data_to_verify, struct s2n_kex_raw_server_data *raw_server_data)
-{
-    struct s2n_stuffer *in = &conn->handshake.io;
+int s2n_ecdhe_server_key_recv_read_data(struct s2n_connection* conn, struct s2n_blob* data_to_verify,
+                                        struct s2n_kex_raw_server_data* raw_server_data) {
+    struct s2n_stuffer* in = &conn->handshake.io;
 
     GUARD(s2n_ecc_evp_read_params(in, data_to_verify, &raw_server_data->ecdhe_data));
     return 0;
 }
 
-int s2n_ecdhe_server_key_recv_parse_data(struct s2n_connection *conn, struct s2n_kex_raw_server_data *raw_server_data)
-{
+int s2n_ecdhe_server_key_recv_parse_data(struct s2n_connection* conn, struct s2n_kex_raw_server_data* raw_server_data) {
     GUARD(s2n_ecc_evp_parse_params(&raw_server_data->ecdhe_data, &conn->secure.server_ecc_evp_params));
 
     return 0;
 }
 
-int s2n_dhe_server_key_recv_read_data(struct s2n_connection *conn, struct s2n_blob *data_to_verify, struct s2n_kex_raw_server_data *raw_server_data)
-{
-    struct s2n_stuffer *in = &conn->handshake.io;
-    struct s2n_dhe_raw_server_points *dhe_data = &raw_server_data->dhe_data;
+int s2n_dhe_server_key_recv_read_data(struct s2n_connection* conn, struct s2n_blob* data_to_verify,
+                                      struct s2n_kex_raw_server_data* raw_server_data) {
+    struct s2n_stuffer* in = &conn->handshake.io;
+    struct s2n_dhe_raw_server_points* dhe_data = &raw_server_data->dhe_data;
 
     uint16_t p_length;
     uint16_t g_length;
@@ -133,8 +128,7 @@ int s2n_dhe_server_key_recv_read_data(struct s2n_connection *conn, struct s2n_bl
     return 0;
 }
 
-int s2n_dhe_server_key_recv_parse_data(struct s2n_connection *conn, struct s2n_kex_raw_server_data *raw_server_data)
-{
+int s2n_dhe_server_key_recv_parse_data(struct s2n_connection* conn, struct s2n_kex_raw_server_data* raw_server_data) {
     struct s2n_dhe_raw_server_points dhe_data = raw_server_data->dhe_data;
 
     /* Copy the DH details */
@@ -142,10 +136,10 @@ int s2n_dhe_server_key_recv_parse_data(struct s2n_connection *conn, struct s2n_k
     return 0;
 }
 
-int s2n_kem_server_key_recv_read_data(struct s2n_connection *conn, struct s2n_blob *data_to_verify, struct s2n_kex_raw_server_data *raw_server_data)
-{
-    struct s2n_kem_raw_server_params *kem_data = &raw_server_data->kem_data;
-    struct s2n_stuffer *in = &conn->handshake.io;
+int s2n_kem_server_key_recv_read_data(struct s2n_connection* conn, struct s2n_blob* data_to_verify,
+                                      struct s2n_kex_raw_server_data* raw_server_data) {
+    struct s2n_kem_raw_server_params* kem_data = &raw_server_data->kem_data;
+    struct s2n_stuffer* in = &conn->handshake.io;
     kem_public_key_size key_length;
 
     /* Keep a copy to the start of the whole structure for the signature check */
@@ -168,33 +162,35 @@ int s2n_kem_server_key_recv_read_data(struct s2n_connection *conn, struct s2n_bl
     return 0;
 }
 
-int s2n_kem_server_key_recv_parse_data(struct s2n_connection *conn, struct s2n_kex_raw_server_data *raw_server_data)
-{
-    struct s2n_kem_raw_server_params *kem_data = &raw_server_data->kem_data;
+int s2n_kem_server_key_recv_parse_data(struct s2n_connection* conn, struct s2n_kex_raw_server_data* raw_server_data) {
+    struct s2n_kem_raw_server_params* kem_data = &raw_server_data->kem_data;
 
     /* Check that the server's requested kem is supported by the client */
-    const struct s2n_cipher_preferences *cipher_preferences = NULL;
+    const struct s2n_cipher_preferences* cipher_preferences = NULL;
     GUARD(s2n_connection_get_cipher_preferences(conn, &cipher_preferences));
 
-    const struct s2n_cipher_suite *cipher_suite = conn->secure.cipher_suite;
-    const struct s2n_kem *match = NULL;
-    S2N_ERROR_IF(s2n_choose_kem_with_peer_pref_list(cipher_suite->iana_value, &kem_data->kem_name, cipher_preferences->kems, cipher_preferences->kem_count, &match) != 0,
-            S2N_ERR_KEM_UNSUPPORTED_PARAMS);
+    const struct s2n_cipher_suite* cipher_suite = conn->secure.cipher_suite;
+    const struct s2n_kem* match = NULL;
+    S2N_ERROR_IF(
+        s2n_choose_kem_with_peer_pref_list(cipher_suite->iana_value, &kem_data->kem_name, cipher_preferences->kems,
+                                           cipher_preferences->kem_count, &match) != 0,
+        S2N_ERR_KEM_UNSUPPORTED_PARAMS);
     conn->secure.s2n_kem_keys.negotiated_kem = match;
 
-    S2N_ERROR_IF(kem_data->raw_public_key.size != conn->secure.s2n_kem_keys.negotiated_kem->public_key_length, S2N_ERR_BAD_MESSAGE);
+    S2N_ERROR_IF(kem_data->raw_public_key.size != conn->secure.s2n_kem_keys.negotiated_kem->public_key_length,
+                 S2N_ERR_BAD_MESSAGE);
 
     s2n_dup(&kem_data->raw_public_key, &conn->secure.s2n_kem_keys.public_key);
     return 0;
 }
 
-int s2n_hybrid_server_key_recv_read_data(struct s2n_connection *conn, struct s2n_blob *total_data_to_verify, struct s2n_kex_raw_server_data *raw_server_data)
-{
+int s2n_hybrid_server_key_recv_read_data(struct s2n_connection* conn, struct s2n_blob* total_data_to_verify,
+                                         struct s2n_kex_raw_server_data* raw_server_data) {
     notnull_check(conn);
     notnull_check(conn->secure.cipher_suite);
-    const struct s2n_kex *kex = conn->secure.cipher_suite->key_exchange_alg;
-    const struct s2n_kex *hybrid_kex_0 = kex->hybrid[0];
-    const struct s2n_kex *hybrid_kex_1 = kex->hybrid[1];
+    const struct s2n_kex* kex = conn->secure.cipher_suite->key_exchange_alg;
+    const struct s2n_kex* hybrid_kex_0 = kex->hybrid[0];
+    const struct s2n_kex* hybrid_kex_1 = kex->hybrid[1];
 
     /* Keep a copy to the start of the whole structure for the signature check */
     total_data_to_verify->data = s2n_stuffer_raw_read(&conn->handshake.io, 0);
@@ -210,24 +206,23 @@ int s2n_hybrid_server_key_recv_read_data(struct s2n_connection *conn, struct s2n
     return 0;
 }
 
-int s2n_hybrid_server_key_recv_parse_data(struct s2n_connection *conn, struct s2n_kex_raw_server_data *raw_server_data)
-{
+int s2n_hybrid_server_key_recv_parse_data(struct s2n_connection* conn,
+                                          struct s2n_kex_raw_server_data* raw_server_data) {
     notnull_check(conn);
     notnull_check(conn->secure.cipher_suite);
-    const struct s2n_kex *kex = conn->secure.cipher_suite->key_exchange_alg;
-    const struct s2n_kex *hybrid_kex_0 = kex->hybrid[0];
-    const struct s2n_kex *hybrid_kex_1 = kex->hybrid[1];
+    const struct s2n_kex* kex = conn->secure.cipher_suite->key_exchange_alg;
+    const struct s2n_kex* hybrid_kex_0 = kex->hybrid[0];
+    const struct s2n_kex* hybrid_kex_1 = kex->hybrid[1];
 
     GUARD(s2n_kex_server_key_recv_parse_data(hybrid_kex_0, conn, raw_server_data));
     GUARD(s2n_kex_server_key_recv_parse_data(hybrid_kex_1, conn, raw_server_data));
     return 0;
 }
 
-int s2n_server_key_send(struct s2n_connection *conn)
-{
-    struct s2n_hash_state *signature_hash = &conn->secure.signature_hash;
-    const struct s2n_kex *key_exchange = conn->secure.cipher_suite->key_exchange_alg;
-    struct s2n_stuffer *out = &conn->handshake.io;
+int s2n_server_key_send(struct s2n_connection* conn) {
+    struct s2n_hash_state* signature_hash = &conn->secure.signature_hash;
+    const struct s2n_kex* key_exchange = conn->secure.cipher_suite->key_exchange_alg;
+    struct s2n_stuffer* out = &conn->handshake.io;
     struct s2n_blob data_to_sign = {0};
 
     /* Call the negotiated key exchange method to send it's data */
@@ -248,13 +243,12 @@ int s2n_server_key_send(struct s2n_connection *conn)
 
     /* Sign and write the signature */
     GUARD(s2n_write_signature_blob(out, conn->handshake_params.our_chain_and_key->private_key,
-            conn->secure.conn_sig_scheme.sig_alg, signature_hash));
+                                   conn->secure.conn_sig_scheme.sig_alg, signature_hash));
     return 0;
 }
 
-int s2n_ecdhe_server_key_send(struct s2n_connection *conn, struct s2n_blob *data_to_sign)
-{
-    struct s2n_stuffer *out = &conn->handshake.io;
+int s2n_ecdhe_server_key_send(struct s2n_connection* conn, struct s2n_blob* data_to_sign) {
+    struct s2n_stuffer* out = &conn->handshake.io;
 
     /* Generate an ephemeral key and  */
     GUARD(s2n_ecc_evp_generate_ephemeral_key(&conn->secure.server_ecc_evp_params));
@@ -264,9 +258,8 @@ int s2n_ecdhe_server_key_send(struct s2n_connection *conn, struct s2n_blob *data
     return 0;
 }
 
-int s2n_dhe_server_key_send(struct s2n_connection *conn, struct s2n_blob *data_to_sign)
-{
-    struct s2n_stuffer *out = &conn->handshake.io;
+int s2n_dhe_server_key_send(struct s2n_connection* conn, struct s2n_blob* data_to_sign) {
+    struct s2n_stuffer* out = &conn->handshake.io;
 
     /* Duplicate the DH key from the config */
     GUARD(s2n_dh_params_copy(conn->config->dhparams, &conn->secure.server_dh_params));
@@ -279,10 +272,9 @@ int s2n_dhe_server_key_send(struct s2n_connection *conn, struct s2n_blob *data_t
     return 0;
 }
 
-int s2n_kem_server_key_send(struct s2n_connection *conn, struct s2n_blob *data_to_sign)
-{
-    struct s2n_stuffer *out = &conn->handshake.io;
-    const struct s2n_kem *kem = conn->secure.s2n_kem_keys.negotiated_kem;
+int s2n_kem_server_key_send(struct s2n_connection* conn, struct s2n_blob* data_to_sign) {
+    struct s2n_stuffer* out = &conn->handshake.io;
+    const struct s2n_kem* kem = conn->secure.s2n_kem_keys.negotiated_kem;
 
     data_to_sign->data = s2n_stuffer_raw_write(out, 0);
     notnull_check(data_to_sign->data);
@@ -291,24 +283,23 @@ int s2n_kem_server_key_send(struct s2n_connection *conn, struct s2n_blob *data_t
     GUARD(s2n_stuffer_write_uint16(out, kem->public_key_length));
 
     /* The public key is not needed after this method, write it straight to the stuffer */
-    struct s2n_blob *public_key = &conn->secure.s2n_kem_keys.public_key;
+    struct s2n_blob* public_key = &conn->secure.s2n_kem_keys.public_key;
     public_key->data = s2n_stuffer_raw_write(out, kem->public_key_length);
     notnull_check(public_key->data);
     public_key->size = kem->public_key_length;
 
     GUARD(s2n_kem_generate_keypair(&conn->secure.s2n_kem_keys));
 
-    data_to_sign->size = sizeof(kem_extension_size) + sizeof(kem_public_key_size) +  public_key->size;
+    data_to_sign->size = sizeof(kem_extension_size) + sizeof(kem_public_key_size) + public_key->size;
     return 0;
 }
 
-int s2n_hybrid_server_key_send(struct s2n_connection *conn, struct s2n_blob *total_data_to_sign)
-{
+int s2n_hybrid_server_key_send(struct s2n_connection* conn, struct s2n_blob* total_data_to_sign) {
     notnull_check(conn);
     notnull_check(conn->secure.cipher_suite);
-    const struct s2n_kex *kex = conn->secure.cipher_suite->key_exchange_alg;
-    const struct s2n_kex *hybrid_kex_0 = kex->hybrid[0];
-    const struct s2n_kex *hybrid_kex_1 = kex->hybrid[1];
+    const struct s2n_kex* kex = conn->secure.cipher_suite->key_exchange_alg;
+    const struct s2n_kex* hybrid_kex_0 = kex->hybrid[0];
+    const struct s2n_kex* hybrid_kex_1 = kex->hybrid[1];
 
     /* Keep a copy to the start of the whole structure for the signature check */
     total_data_to_sign->data = s2n_stuffer_raw_write(&conn->handshake.io, 0);
@@ -324,15 +315,14 @@ int s2n_hybrid_server_key_send(struct s2n_connection *conn, struct s2n_blob *tot
     return 0;
 }
 
-static int s2n_write_signature_blob(struct s2n_stuffer *out, const struct s2n_pkey *priv_key,
-        s2n_signature_algorithm sig_alg, struct s2n_hash_state *digest)
-{
+static int s2n_write_signature_blob(struct s2n_stuffer* out, const struct s2n_pkey* priv_key,
+                                    s2n_signature_algorithm sig_alg, struct s2n_hash_state* digest) {
     struct s2n_blob signature = {0};
-    
+
     /* Leave signature length blank for now until we're done signing */
     uint16_t sig_len = 0;
     GUARD(s2n_stuffer_write_uint16(out, sig_len));
-    
+
     int max_signature_size = s2n_pkey_size(priv_key);
     signature.size = max_signature_size;
     signature.data = s2n_stuffer_raw_write(out, signature.size);

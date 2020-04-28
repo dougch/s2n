@@ -17,33 +17,28 @@
 #include <string.h>
 
 #include "error/s2n_errno.h"
-
-#include "tls/s2n_tls_parameters.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/extensions/s2n_certificate_extensions.h"
+#include "tls/extensions/s2n_server_alpn.h"
+#include "tls/extensions/s2n_server_key_share.h"
+#include "tls/extensions/s2n_server_max_fragment_length.h"
+#include "tls/extensions/s2n_server_renegotiation_info.h"
+#include "tls/extensions/s2n_server_sct_list.h"
+#include "tls/extensions/s2n_server_server_name.h"
+#include "tls/extensions/s2n_server_session_ticket.h"
+#include "tls/extensions/s2n_server_status_request.h"
+#include "tls/extensions/s2n_server_supported_versions.h"
+#include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_connection.h"
+#include "tls/s2n_kex.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
-#include "tls/s2n_kex.h"
-#include "tls/s2n_cipher_suites.h"
-
-#include "tls/extensions/s2n_certificate_extensions.h"
-#include "tls/extensions/s2n_server_renegotiation_info.h"
-#include "tls/extensions/s2n_server_alpn.h"
-#include "tls/extensions/s2n_server_status_request.h"
-#include "tls/extensions/s2n_server_sct_list.h"
-#include "tls/extensions/s2n_server_max_fragment_length.h"
-#include "tls/extensions/s2n_server_session_ticket.h"
-#include "tls/extensions/s2n_server_server_name.h"
-#include "tls/extensions/s2n_server_supported_versions.h"
-#include "tls/extensions/s2n_server_key_share.h"
-
-#include "stuffer/s2n_stuffer.h"
-
-#include "utils/s2n_safety.h"
+#include "tls/s2n_tls_parameters.h"
 #include "utils/s2n_blob.h"
+#include "utils/s2n_safety.h"
 
 /* compute size server extensions send requires */
-int s2n_server_extensions_send_size(struct s2n_connection *conn)
-{
+int s2n_server_extensions_send_size(struct s2n_connection* conn) {
     int total_size = 0;
     const bool is_tls13_conn = conn->actual_protocol_version == S2N_TLS13;
 
@@ -57,7 +52,8 @@ int s2n_server_extensions_send_size(struct s2n_connection *conn)
     GUARD_UINT16_AND_INCREMENT(s2n_server_extensions_server_name_send_size(conn), total_size);
     GUARD_UINT16_AND_INCREMENT(s2n_server_extensions_alpn_send_size(conn), total_size);
     GUARD_UINT16_AND_INCREMENT(s2n_server_renegotiation_info_ext_size(conn), total_size);
-    GUARD_UINT16_AND_INCREMENT(s2n_kex_server_extension_size(conn->secure.cipher_suite->key_exchange_alg, conn), total_size);
+    GUARD_UINT16_AND_INCREMENT(s2n_kex_server_extension_size(conn->secure.cipher_suite->key_exchange_alg, conn),
+                               total_size);
     GUARD_UINT16_AND_INCREMENT(s2n_server_extensions_max_fragment_length_send_size(conn), total_size);
     GUARD_UINT16_AND_INCREMENT(s2n_server_session_ticket_ext_size(conn), total_size);
     GUARD_UINT16_AND_INCREMENT(s2n_server_extensions_status_request_send_size(conn), total_size);
@@ -66,8 +62,7 @@ int s2n_server_extensions_send_size(struct s2n_connection *conn)
     return total_size;
 }
 
-int s2n_server_extensions_send(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
+int s2n_server_extensions_send(struct s2n_connection* conn, struct s2n_stuffer* out) {
     int total_size = s2n_server_extensions_send_size(conn);
 
     if (total_size == 0) {
@@ -96,7 +91,7 @@ int s2n_server_extensions_send(struct s2n_connection *conn, struct s2n_stuffer *
 
     /* Write kex extension */
     GUARD(s2n_kex_write_server_extension(conn->secure.cipher_suite->key_exchange_alg, conn, out));
-    
+
     /* Write the renegotiation_info extension */
     GUARD(s2n_send_server_renegotiation_info_ext(conn, out));
 
@@ -118,8 +113,7 @@ int s2n_server_extensions_send(struct s2n_connection *conn, struct s2n_stuffer *
     return 0;
 }
 
-int s2n_server_extensions_recv(struct s2n_connection *conn, struct s2n_blob *extensions)
-{
+int s2n_server_extensions_recv(struct s2n_connection* conn, struct s2n_blob* extensions) {
     struct s2n_stuffer in = {0};
 
     GUARD(s2n_stuffer_init(&in, extensions));
@@ -141,37 +135,37 @@ int s2n_server_extensions_recv(struct s2n_connection *conn, struct s2n_blob *ext
         GUARD(s2n_stuffer_write(&extension, &ext));
 
         switch (extension_type) {
-        case TLS_EXTENSION_SERVER_NAME:
-            GUARD(s2n_recv_server_server_name(conn, &extension));
-            break;
-        case TLS_EXTENSION_RENEGOTIATION_INFO:
-            GUARD(s2n_recv_server_renegotiation_info_ext(conn, &extension));
-            break;
-        case TLS_EXTENSION_ALPN:
-            GUARD(s2n_recv_server_alpn(conn, &extension));
-            break;
-        case TLS_EXTENSION_STATUS_REQUEST:
-            GUARD(s2n_recv_server_status_request(conn, &extension));
-            break;
-        case TLS_EXTENSION_SCT_LIST:
-            GUARD(s2n_recv_server_sct_list(conn, &extension));
-            break;
-        case TLS_EXTENSION_MAX_FRAG_LEN:
-            GUARD(s2n_recv_server_max_fragment_length(conn, &extension));
-            break;
-        case TLS_EXTENSION_SESSION_TICKET:
-            GUARD(s2n_recv_server_session_ticket_ext(conn, &extension));
-            break;
-        case TLS_EXTENSION_SUPPORTED_VERSIONS:
-            if (s2n_is_tls13_enabled()) {
-                GUARD(s2n_extensions_server_supported_versions_recv(conn, &extension));
-            }
-            break;
-        case TLS_EXTENSION_KEY_SHARE:
-            if (s2n_is_tls13_enabled()) {
-                GUARD(s2n_extensions_server_key_share_recv(conn, &extension));
-            }
-            break;
+            case TLS_EXTENSION_SERVER_NAME:
+                GUARD(s2n_recv_server_server_name(conn, &extension));
+                break;
+            case TLS_EXTENSION_RENEGOTIATION_INFO:
+                GUARD(s2n_recv_server_renegotiation_info_ext(conn, &extension));
+                break;
+            case TLS_EXTENSION_ALPN:
+                GUARD(s2n_recv_server_alpn(conn, &extension));
+                break;
+            case TLS_EXTENSION_STATUS_REQUEST:
+                GUARD(s2n_recv_server_status_request(conn, &extension));
+                break;
+            case TLS_EXTENSION_SCT_LIST:
+                GUARD(s2n_recv_server_sct_list(conn, &extension));
+                break;
+            case TLS_EXTENSION_MAX_FRAG_LEN:
+                GUARD(s2n_recv_server_max_fragment_length(conn, &extension));
+                break;
+            case TLS_EXTENSION_SESSION_TICKET:
+                GUARD(s2n_recv_server_session_ticket_ext(conn, &extension));
+                break;
+            case TLS_EXTENSION_SUPPORTED_VERSIONS:
+                if (s2n_is_tls13_enabled()) {
+                    GUARD(s2n_extensions_server_supported_versions_recv(conn, &extension));
+                }
+                break;
+            case TLS_EXTENSION_KEY_SHARE:
+                if (s2n_is_tls13_enabled()) {
+                    GUARD(s2n_extensions_server_key_share_recv(conn, &extension));
+                }
+                break;
         }
     }
 

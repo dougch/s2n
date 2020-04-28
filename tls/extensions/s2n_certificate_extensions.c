@@ -13,22 +13,20 @@
  * permissions and limitations under the License.
  */
 
-#include "error/s2n_errno.h"
-#include "utils/s2n_safety.h"
-#include "utils/s2n_bitmap.h"
-#include "stuffer/s2n_stuffer.h"
+#include "tls/extensions/s2n_certificate_extensions.h"
 
+#include "error/s2n_errno.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/extensions/s2n_server_certificate_status.h"
+#include "tls/extensions/s2n_server_sct_list.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
-#include "tls/extensions/s2n_server_sct_list.h"
-#include "tls/extensions/s2n_server_certificate_status.h"
-#include "tls/extensions/s2n_certificate_extensions.h"
-#include "tls/extensions/s2n_server_certificate_status.h"
+#include "utils/s2n_bitmap.h"
+#include "utils/s2n_safety.h"
 
-static int s2n_get_number_certs_in_chain(struct s2n_cert *head, uint8_t *chain_length);
+static int s2n_get_number_certs_in_chain(struct s2n_cert* head, uint8_t* chain_length);
 
-int s2n_certificate_extensions_parse(struct s2n_connection *conn, struct s2n_blob *extensions)
-{
+int s2n_certificate_extensions_parse(struct s2n_connection* conn, struct s2n_blob* extensions) {
     static __thread char parsed_extensions_mask[8192];
     memset(parsed_extensions_mask, 0, 8192);
 
@@ -55,39 +53,38 @@ int s2n_certificate_extensions_parse(struct s2n_connection *conn, struct s2n_blo
         notnull_check(ext.data);
 
         switch (extension_type) {
-        case TLS_EXTENSION_SCT_LIST:
-            /* only servers should be sending this extension here therefore
-             * only clients should be parsing the extension
+            case TLS_EXTENSION_SCT_LIST:
+                /* only servers should be sending this extension here therefore
+                 * only clients should be parsing the extension
+                 */
+                if (conn->mode == S2N_CLIENT) {
+                    GUARD(s2n_stuffer_init(&extension, &ext));
+                    GUARD(s2n_stuffer_write(&extension, &ext));
+                    GUARD(s2n_recv_server_sct_list(conn, &extension));
+                }
+                break;
+            case TLS_EXTENSION_STATUS_REQUEST:
+                GUARD(s2n_server_certificate_status_parse(conn, &ext));
+                break;
+            /* Error on known extensions that are not supposed to appear in EE
+             * https://tools.ietf.org/html/rfc8446#page-37
              */
-            if (conn->mode == S2N_CLIENT) {
-                GUARD(s2n_stuffer_init(&extension, &ext));
-                GUARD(s2n_stuffer_write(&extension, &ext));
-                GUARD(s2n_recv_server_sct_list(conn, &extension));
-            }
-            break;
-        case TLS_EXTENSION_STATUS_REQUEST:
-            GUARD(s2n_server_certificate_status_parse(conn, &ext));
-            break;
-        /* Error on known extensions that are not supposed to appear in EE
-         * https://tools.ietf.org/html/rfc8446#page-37
-         */
-        case TLS_EXTENSION_SERVER_NAME:
-        case TLS_EXTENSION_ALPN:
-        case TLS_EXTENSION_MAX_FRAG_LEN:
-        case TLS_EXTENSION_RENEGOTIATION_INFO:
-        case TLS_EXTENSION_SESSION_TICKET:
-        case TLS_EXTENSION_SUPPORTED_VERSIONS:
-        case TLS_EXTENSION_KEY_SHARE:
-            S2N_ERROR(S2N_ERR_BAD_MESSAGE);
-            break;
+            case TLS_EXTENSION_SERVER_NAME:
+            case TLS_EXTENSION_ALPN:
+            case TLS_EXTENSION_MAX_FRAG_LEN:
+            case TLS_EXTENSION_RENEGOTIATION_INFO:
+            case TLS_EXTENSION_SESSION_TICKET:
+            case TLS_EXTENSION_SUPPORTED_VERSIONS:
+            case TLS_EXTENSION_KEY_SHARE:
+                S2N_ERROR(S2N_ERR_BAD_MESSAGE);
+                break;
         }
     }
 
     return 0;
 }
 
-int s2n_certificate_extensions_send_empty(struct s2n_stuffer *out)
-{
+int s2n_certificate_extensions_send_empty(struct s2n_stuffer* out) {
     /* For sending no certificate extensions,
      * we only send the length field with a value of 0.
      */
@@ -96,8 +93,8 @@ int s2n_certificate_extensions_send_empty(struct s2n_stuffer *out)
     return 0;
 }
 
-int s2n_certificate_extensions_send(struct s2n_connection *conn, struct s2n_stuffer *out, struct s2n_cert_chain_and_key *chain_and_key)
-{
+int s2n_certificate_extensions_send(struct s2n_connection* conn, struct s2n_stuffer* out,
+                                    struct s2n_cert_chain_and_key* chain_and_key) {
     notnull_check(conn);
     notnull_check(chain_and_key);
 
@@ -115,8 +112,7 @@ int s2n_certificate_extensions_send(struct s2n_connection *conn, struct s2n_stuf
     return 0;
 }
 
-int s2n_certificate_extensions_size(struct s2n_connection *conn, struct s2n_cert_chain_and_key *chain_and_key)
-{
+int s2n_certificate_extensions_size(struct s2n_connection* conn, struct s2n_cert_chain_and_key* chain_and_key) {
     notnull_check(conn);
     notnull_check(chain_and_key);
 
@@ -129,8 +125,7 @@ int s2n_certificate_extensions_size(struct s2n_connection *conn, struct s2n_cert
 }
 
 /* sum the size of all extensions in the cert chain, including empty ones */
-int s2n_certificate_total_extensions_size(struct s2n_connection *conn, struct s2n_cert_chain_and_key *chain_and_key)
-{
+int s2n_certificate_total_extensions_size(struct s2n_connection* conn, struct s2n_cert_chain_and_key* chain_and_key) {
     notnull_check(conn);
     notnull_check(chain_and_key);
     notnull_check(chain_and_key->cert_chain);
@@ -145,8 +140,7 @@ int s2n_certificate_total_extensions_size(struct s2n_connection *conn, struct s2
     return size;
 }
 
-int s2n_get_number_certs_in_chain(struct s2n_cert *head, uint8_t *chain_length)
-{
+int s2n_get_number_certs_in_chain(struct s2n_cert* head, uint8_t* chain_length) {
     notnull_check(head);
 
     int length = 1;

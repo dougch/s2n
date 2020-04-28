@@ -13,17 +13,16 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
-#include <stdint.h>
-
 #include "tls/extensions/s2n_client_max_frag_len.h"
+
+#include <stdint.h>
+#include <sys/param.h>
+
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-
 #include "utils/s2n_safety.h"
 
-int s2n_extensions_client_max_frag_len_send(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
+int s2n_extensions_client_max_frag_len_send(struct s2n_connection* conn, struct s2n_stuffer* out) {
     uint16_t mfl_code_len = sizeof(conn->config->mfl_code);
 
     GUARD(s2n_stuffer_write_uint16(out, TLS_EXTENSION_MAX_FRAG_LEN));
@@ -33,8 +32,7 @@ int s2n_extensions_client_max_frag_len_send(struct s2n_connection *conn, struct 
     return 0;
 }
 
-int s2n_recv_client_max_frag_len(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_recv_client_max_frag_len(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     if (!conn->config->accept_mfl) {
         return 0;
     }

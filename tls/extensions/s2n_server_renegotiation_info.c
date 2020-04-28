@@ -13,22 +13,19 @@
  * permissions and limitations under the License.
  */
 
-#include "error/s2n_errno.h"
-
-#include "stuffer/s2n_stuffer.h"
-
-#include "utils/s2n_safety.h"
-
-#include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_connection.h"
-#include "tls/s2n_tls.h"
 #include "tls/extensions/s2n_server_renegotiation_info.h"
 
-#define s2n_server_can_send_secure_renegotiation(conn) ((conn)->secure_renegotiation && \
-        (conn)->actual_protocol_version < S2N_TLS13)
+#include "error/s2n_errno.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_tls.h"
+#include "tls/s2n_tls_parameters.h"
+#include "utils/s2n_safety.h"
 
-int s2n_recv_server_renegotiation_info_ext(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+#define s2n_server_can_send_secure_renegotiation(conn) \
+    ((conn)->secure_renegotiation && (conn)->actual_protocol_version < S2N_TLS13)
+
+int s2n_recv_server_renegotiation_info_ext(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     /* RFC5746 Section 3.4: The client MUST then verify that the length of
      * the "renegotiated_connection" field is zero, and if it is not, MUST
      * abort the handshake. */
@@ -41,8 +38,7 @@ int s2n_recv_server_renegotiation_info_ext(struct s2n_connection *conn, struct s
     return 0;
 }
 
-int s2n_send_server_renegotiation_info_ext(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
+int s2n_send_server_renegotiation_info_ext(struct s2n_connection* conn, struct s2n_stuffer* out) {
     if (s2n_server_can_send_secure_renegotiation(conn)) {
         GUARD(s2n_stuffer_write_uint16(out, TLS_EXTENSION_RENEGOTIATION_INFO));
         /* renegotiation_info length */
@@ -54,8 +50,7 @@ int s2n_send_server_renegotiation_info_ext(struct s2n_connection *conn, struct s
     return 0;
 }
 
-uint16_t s2n_server_renegotiation_info_ext_size(struct s2n_connection *conn)
-{
+uint16_t s2n_server_renegotiation_info_ext_size(struct s2n_connection* conn) {
     if (s2n_server_can_send_secure_renegotiation(conn)) {
         /* 2 for ext type, 2 for extension length, 1 for value of 0 */
         return 5;

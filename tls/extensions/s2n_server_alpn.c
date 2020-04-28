@@ -13,19 +13,15 @@
  * permissions and limitations under the License.
  */
 
-#include "stuffer/s2n_stuffer.h"
-
-#include "utils/s2n_safety.h"
-
-#include "tls/s2n_connection.h"
-#include "tls/s2n_tls.h"
-
 #include "tls/extensions/s2n_server_alpn.h"
 
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_tls.h"
+#include "utils/s2n_safety.h"
 
 /* Precalculate size of extension */
-int s2n_server_extensions_alpn_send_size(struct s2n_connection *conn)
-{
+int s2n_server_extensions_alpn_send_size(struct s2n_connection* conn) {
     const uint8_t application_protocol_len = strlen(conn->application_protocol);
 
     if (!application_protocol_len) {
@@ -36,8 +32,7 @@ int s2n_server_extensions_alpn_send_size(struct s2n_connection *conn)
 }
 
 /* Write ALPN extension */
-int s2n_server_extensions_alpn_send(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
+int s2n_server_extensions_alpn_send(struct s2n_connection* conn, struct s2n_stuffer* out) {
     const uint8_t application_protocol_len = strlen(conn->application_protocol);
 
     if (!application_protocol_len) {
@@ -48,13 +43,12 @@ int s2n_server_extensions_alpn_send(struct s2n_connection *conn, struct s2n_stuf
     GUARD(s2n_stuffer_write_uint16(out, application_protocol_len + 3));
     GUARD(s2n_stuffer_write_uint16(out, application_protocol_len + 1));
     GUARD(s2n_stuffer_write_uint8(out, application_protocol_len));
-    GUARD(s2n_stuffer_write_bytes(out, (uint8_t *) conn->application_protocol, application_protocol_len));
+    GUARD(s2n_stuffer_write_bytes(out, (uint8_t*)conn->application_protocol, application_protocol_len));
 
     return 0;
 }
 
-int s2n_recv_server_alpn(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_recv_server_alpn(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     uint16_t size_of_all;
     GUARD(s2n_stuffer_read_uint16(extension, &size_of_all));
     if (size_of_all > s2n_stuffer_data_available(extension) || size_of_all < 3) {
@@ -65,7 +59,7 @@ int s2n_recv_server_alpn(struct s2n_connection *conn, struct s2n_stuffer *extens
     uint8_t protocol_len;
     GUARD(s2n_stuffer_read_uint8(extension, &protocol_len));
 
-    uint8_t *protocol = s2n_stuffer_raw_read(extension, protocol_len);
+    uint8_t* protocol = s2n_stuffer_raw_read(extension, protocol_len);
     notnull_check(protocol);
 
     /* copy the first protocol name */

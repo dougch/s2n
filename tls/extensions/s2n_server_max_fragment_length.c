@@ -13,20 +13,16 @@
  * permissions and limitations under the License.
  */
 
-#include "error/s2n_errno.h"
-
-#include "stuffer/s2n_stuffer.h"
-
-#include "utils/s2n_safety.h"
-
-#include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_connection.h"
-
 #include "tls/extensions/s2n_server_max_fragment_length.h"
 
+#include "error/s2n_errno.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_tls_parameters.h"
+#include "utils/s2n_safety.h"
+
 /* Precalculate size of extension */
-int s2n_server_extensions_max_fragment_length_send_size(struct s2n_connection *conn)
-{
+int s2n_server_extensions_max_fragment_length_send_size(struct s2n_connection* conn) {
     if (!conn->mfl_code) {
         return 0;
     }
@@ -34,8 +30,7 @@ int s2n_server_extensions_max_fragment_length_send_size(struct s2n_connection *c
 }
 
 /* Write MFL extension */
-int s2n_server_extensions_max_fragment_length_send(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
+int s2n_server_extensions_max_fragment_length_send(struct s2n_connection* conn, struct s2n_stuffer* out) {
     if (!conn->mfl_code) {
         return 0;
     }
@@ -46,8 +41,7 @@ int s2n_server_extensions_max_fragment_length_send(struct s2n_connection *conn, 
     return 0;
 }
 
-int s2n_recv_server_max_fragment_length(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_recv_server_max_fragment_length(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     uint8_t mfl_code;
     GUARD(s2n_stuffer_read_uint8(extension, &mfl_code));
     S2N_ERROR_IF(mfl_code != conn->config->mfl_code, S2N_ERR_MAX_FRAG_LEN_MISMATCH);

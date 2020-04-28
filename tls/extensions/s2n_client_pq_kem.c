@@ -13,20 +13,19 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
-#include <stdint.h>
-
 #include "tls/extensions/s2n_client_pq_kem.h"
+
+#include <stdint.h>
+#include <sys/param.h>
+
+#include "tls/s2n_cipher_preferences.h"
+#include "tls/s2n_kem.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_kem.h"
-#include "tls/s2n_cipher_preferences.h"
-
 #include "utils/s2n_safety.h"
 
-int s2n_extensions_client_pq_kem_send(struct s2n_connection *conn, struct s2n_stuffer *out, uint16_t pq_kem_list_size)
-{
-    const struct s2n_cipher_preferences *cipher_preferences;
+int s2n_extensions_client_pq_kem_send(struct s2n_connection* conn, struct s2n_stuffer* out, uint16_t pq_kem_list_size) {
+    const struct s2n_cipher_preferences* cipher_preferences;
     GUARD(s2n_connection_get_cipher_preferences(conn, &cipher_preferences));
 
     GUARD(s2n_stuffer_write_uint16(out, TLS_EXTENSION_PQ_KEM_PARAMETERS));
@@ -43,10 +42,9 @@ int s2n_extensions_client_pq_kem_send(struct s2n_connection *conn, struct s2n_st
     return 0;
 }
 
-int s2n_recv_pq_kem_extension(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_recv_pq_kem_extension(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     uint16_t size_of_all;
-    struct s2n_blob *proposed_kems = &conn->secure.client_pq_kem_extension;
+    struct s2n_blob* proposed_kems = &conn->secure.client_pq_kem_extension;
 
     GUARD(s2n_stuffer_read_uint16(extension, &size_of_all));
     if (size_of_all > s2n_stuffer_data_available(extension) || size_of_all % 2) {

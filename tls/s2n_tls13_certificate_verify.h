@@ -17,5 +17,5 @@
 
 #include "tls/s2n_connection.h"
 
-int s2n_tls13_cert_verify_recv(struct s2n_connection *conn);
-int s2n_tls13_cert_verify_send(struct s2n_connection *conn);
+int s2n_tls13_cert_verify_recv(struct s2n_connection* conn);
+int s2n_tls13_cert_verify_send(struct s2n_connection* conn);

@@ -13,20 +13,17 @@
  * permissions and limitations under the License.
  */
 
+#include "tls/extensions/s2n_cookie.h"
 #include "tls/s2n_tls.h"
 
-#include "tls/extensions/s2n_cookie.h"
-
-int s2n_extensions_server_cookie_recv(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_extensions_server_cookie_recv(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     /* Until HelloRetryRequests are supported, the server does not support cookies */
     S2N_ERROR(S2N_ERR_UNIMPLEMENTED);
 
     return 0;
 }
 
-int s2n_extensions_server_cookie_send(struct s2n_connection *conn, struct s2n_stuffer *out)
-{
+int s2n_extensions_server_cookie_send(struct s2n_connection* conn, struct s2n_stuffer* out) {
     /* Until HelloRetryRequests are supported, the server does not support cookies */
     S2N_ERROR(S2N_ERR_UNIMPLEMENTED);
 

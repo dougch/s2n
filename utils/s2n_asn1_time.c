@@ -14,10 +14,11 @@
  */
 
 #include "utils/s2n_asn1_time.h"
-#include "s2n_safety.h"
 
-#include <time.h>
 #include <ctype.h>
+#include <time.h>
+
+#include "s2n_safety.h"
 
 typedef enum parser_state {
     ON_YEAR_DIGIT_1 = 0,
@@ -44,15 +45,16 @@ typedef enum parser_state {
     PARSE_ERROR
 } parser_state;
 
-static inline long get_gmt_offset(struct tm *t) {
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__ANDROID__) || defined(ANDROID) || defined(__APPLE__) && defined(__MACH__)
+static inline long get_gmt_offset(struct tm* t) {
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__ANDROID__) || defined(ANDROID) || \
+    defined(__APPLE__) && defined(__MACH__)
     return t->tm_gmtoff;
 #else
     return t->__tm_gmtoff;
 #endif
 }
 
-static inline void get_current_timesettings(long *gmt_offset, int *is_dst) {
+static inline void get_current_timesettings(long* gmt_offset, int* is_dst) {
     struct tm time_ptr = {0};
     time_t raw_time;
     time(&raw_time);
@@ -65,7 +67,7 @@ static inline void get_current_timesettings(long *gmt_offset, int *is_dst) {
  * just do a character at a time and change the state per character encountered.
  * when finished the above time structure should be filled in along with some
  * crazy timezone info we'll need shortly afterwards.*/
-static parser_state process_state(parser_state state, char current_char, struct parser_args *args) {
+static parser_state process_state(parser_state state, char current_char, struct parser_args* args) {
     switch (state) {
         case ON_YEAR_DIGIT_1:
             char_to_digit(current_char, args->current_digit);
@@ -205,8 +207,7 @@ static parser_state process_state(parser_state state, char current_char, struct 
     }
 }
 
-int s2n_asn1_time_to_nano_since_epoch_ticks(const char *asn1_time, uint32_t len, uint64_t *ticks) {
-
+int s2n_asn1_time_to_nano_since_epoch_ticks(const char* asn1_time, uint32_t len, uint64_t* ticks) {
     /* figure out if we are on something other than UTC since timegm is not supported everywhere. */
     long gmt_offset_current = 0;
     int is_dst = 0;
@@ -215,16 +216,23 @@ int s2n_asn1_time_to_nano_since_epoch_ticks(const char *asn1_time, uint32_t len,
     uint32_t str_len = len;
     parser_state state = ON_YEAR_DIGIT_1;
 
-    struct parser_args args = {
-        .time = {.tm_hour = 0, .tm_isdst = -1, .tm_mday = 0, .tm_min = 0, .tm_mon = 0,
-                .tm_sec = 0, .tm_wday = 0, .tm_yday = 0, .tm_year = 0,
-        },
-            .current_digit = 0,
-            .local_time_assumed = 1,
-            .offset_hours = 0,
-            .offset_minutes = 0,
-            .offset_negative = 0
-    };
+    struct parser_args args = {.time =
+                                   {
+                                       .tm_hour = 0,
+                                       .tm_isdst = -1,
+                                       .tm_mday = 0,
+                                       .tm_min = 0,
+                                       .tm_mon = 0,
+                                       .tm_sec = 0,
+                                       .tm_wday = 0,
+                                       .tm_yday = 0,
+                                       .tm_year = 0,
+                                   },
+                               .current_digit = 0,
+                               .local_time_assumed = 1,
+                               .offset_hours = 0,
+                               .offset_minutes = 0,
+                               .offset_negative = 0};
 
     size_t current_pos = 0;
 
@@ -249,7 +257,8 @@ int s2n_asn1_time_to_nano_since_epoch_ticks(const char *asn1_time, uint32_t len,
     S2N_ERROR_IF(clock_data < 0, S2N_ERR_SAFETY);
 
     /* if we detected UTC is being used (please always use UTC), we need to add the detected timezone on the local
-     * machine back to the offset. Also, the offset includes an offset for daylight savings time. When the time being parsed
+     * machine back to the offset. Also, the offset includes an offset for daylight savings time. When the time being
+     * parsed
      * and the local time are on different sides of the dst barrier, the offset has to be adjusted to account for it. */
     if (!args.local_time_assumed) {
         gmt_offset -= gmt_offset_current;
@@ -259,7 +268,6 @@ int s2n_asn1_time_to_nano_since_epoch_ticks(const char *asn1_time, uint32_t len,
     S2N_ERROR_IF(clock_data < gmt_offset, S2N_ERR_SAFETY);
 
     /* convert to nanoseconds and add the timezone offset. */
-    *ticks = ((uint64_t) clock_data - gmt_offset) * 1000000000;
+    *ticks = ((uint64_t)clock_data - gmt_offset) * 1000000000;
     return 0;
 }
-

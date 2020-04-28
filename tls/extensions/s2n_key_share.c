@@ -14,11 +14,11 @@
  */
 
 #include "tls/extensions/s2n_key_share.h"
+
 #include "tls/s2n_tls.h"
 #include "utils/s2n_safety.h"
 
-int s2n_ecdhe_parameters_send(struct s2n_ecc_evp_params *ecc_evp_params, struct s2n_stuffer *out)
-{
+int s2n_ecdhe_parameters_send(struct s2n_ecc_evp_params* ecc_evp_params, struct s2n_stuffer* out) {
     notnull_check(out);
     notnull_check(ecc_evp_params);
     notnull_check(ecc_evp_params->negotiated_curve);

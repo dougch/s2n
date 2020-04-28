@@ -13,20 +13,20 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
-#include <stdint.h>
-
 #include "tls/extensions/s2n_client_renegotiation_info.h"
-#include "tls/s2n_tls.h"
 
+#include <stdint.h>
+#include <sys/param.h>
+
+#include "tls/s2n_tls.h"
 #include "utils/s2n_safety.h"
 
-int s2n_recv_client_renegotiation_info(struct s2n_connection *conn, struct s2n_stuffer *extension)
-{
+int s2n_recv_client_renegotiation_info(struct s2n_connection* conn, struct s2n_stuffer* extension) {
     /* RFC5746 Section 3.2: The renegotiated_connection field is of zero length for the initial handshake. */
     uint8_t renegotiated_connection_len;
     GUARD(s2n_stuffer_read_uint8(extension, &renegotiated_connection_len));
-    S2N_ERROR_IF(s2n_stuffer_data_available(extension) || renegotiated_connection_len, S2N_ERR_NON_EMPTY_RENEGOTIATION_INFO);
+    S2N_ERROR_IF(s2n_stuffer_data_available(extension) || renegotiated_connection_len,
+                 S2N_ERR_NON_EMPTY_RENEGOTIATION_INFO);
 
     conn->secure_renegotiation = 1;
     return 0;
