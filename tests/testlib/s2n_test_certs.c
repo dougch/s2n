@@ -13,19 +13,16 @@
  * permissions and limitations under the License.
  */
 
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "error/s2n_errno.h"
-
 #include "stuffer/s2n_stuffer.h"
-
+#include "testlib/s2n_testlib.h"
 #include "utils/s2n_safety.h"
 
-#include "testlib/s2n_testlib.h"
-
-int s2n_test_cert_chain_and_key_new(struct s2n_cert_chain_and_key **chain_and_key,
-        const char *cert_chain_file, const char *prviate_key_file)
+int s2n_test_cert_chain_and_key_new(struct s2n_cert_chain_and_key **chain_and_key, const char *cert_chain_file,
+                                    const char *prviate_key_file)
 {
     char cert_chain_pem[S2N_MAX_TEST_PEM_SIZE];
     char private_key_pem[S2N_MAX_TEST_PEM_SIZE];
@@ -65,4 +62,3 @@ int s2n_read_test_pem(const char *pem_path, char *pem_out, long int max_size)
 
     return 0;
 }
-

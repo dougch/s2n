@@ -13,17 +13,18 @@
  * permissions and limitations under the License.
  */
 
-#define _GNU_SOURCE             /* For syscall on Linux */
-#undef _POSIX_C_SOURCE          /* For syscall() on Mac OS X */
+#define _GNU_SOURCE    /* For syscall on Linux */
+#undef _POSIX_C_SOURCE /* For syscall() on Mac OS X */
 
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <sys/types.h>
+#include "s2n_safety.h"
+
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "s2n_annotations.h"
-#include "s2n_safety.h"
 
 /**
  * Get the process id
@@ -35,7 +36,7 @@ pid_t s2n_actual_getpid()
 {
 #if defined(__GNUC__) && defined(SYS_getpid)
     /* http://yarchive.net/comp/linux/getpid_caching.html */
-    return (pid_t) syscall(SYS_getpid);
+    return (pid_t)syscall(SYS_getpid);
 #else
     return getpid();
 #endif
@@ -46,7 +47,7 @@ pid_t s2n_actual_getpid()
  * hold equal contents.
  *
  * The execution time of this function is independent of the values
- * stored in the arrays.  
+ * stored in the arrays.
  *
  * Timing may depend on the length of the arrays, and on the location
  * of the arrays in memory (e.g. if a buffer has been paged out, this
@@ -55,16 +56,16 @@ pid_t s2n_actual_getpid()
  * Returns:
  *  Whether all bytes in arrays "a" and "b" are identical
  */
-int s2n_constant_time_equals(const uint8_t * a, const uint8_t * b, uint32_t len)
+int s2n_constant_time_equals(const uint8_t *a, const uint8_t *b, uint32_t len)
 {
     S2N_PUBLIC_INPUT(a);
     S2N_PUBLIC_INPUT(b);
     S2N_PUBLIC_INPUT(len);
-    
+
     uint8_t xor = 0;
     for (int i = 0; i < len; i++) {
         /* Invariants must hold for each execution of the loop
-	 * and at loop exit, hence the <= */ 
+         * and at loop exit, hence the <= */
         S2N_INVARIENT(i <= len);
         xor |= a[i] ^ b[i];
     }
@@ -82,13 +83,13 @@ int s2n_constant_time_equals(const uint8_t * a, const uint8_t * b, uint32_t len)
  * will affect the timing of this function).
  *
  */
-int s2n_constant_time_copy_or_dont(uint8_t * dest, const uint8_t * src, uint32_t len, uint8_t dont)
+int s2n_constant_time_copy_or_dont(uint8_t *dest, const uint8_t *src, uint32_t len, uint8_t dont)
 {
     S2N_PUBLIC_INPUT(dest);
     S2N_PUBLIC_INPUT(src);
     S2N_PUBLIC_INPUT(len);
-    
-    uint8_t mask = ((uint_fast16_t)((uint_fast16_t)(dont) - 1)) >> 8;
+
+    uint8_t mask = ((uint_fast16_t)((uint_fast16_t)(dont)-1)) >> 8;
 
     /* dont = 0 : mask = 0xff */
     /* dont > 0 : mask = 0x00 */
@@ -108,7 +109,7 @@ int s2n_constant_time_copy_or_dont(uint8_t * dest, const uint8_t * src, uint32_t
  *
  * Normally, one would fill dst with random bytes before calling this function.
  */
-int s2n_constant_time_pkcs1_unpad_or_dont(uint8_t * dst, const uint8_t * src, uint32_t srclen, uint32_t expectlen)
+int s2n_constant_time_pkcs1_unpad_or_dont(uint8_t *dst, const uint8_t *src, uint32_t srclen, uint32_t expectlen)
 {
     S2N_PUBLIC_INPUT(dst);
     S2N_PUBLIC_INPUT(src);
@@ -153,10 +154,7 @@ int s2n_constant_time_pkcs1_unpad_or_dont(uint8_t * dst, const uint8_t * src, ui
 
 static bool s_s2n_in_unit_test = false;
 
-bool s2n_in_unit_test()
-{
-    return s_s2n_in_unit_test;
-}
+bool s2n_in_unit_test() { return s_s2n_in_unit_test; }
 
 int s2n_in_unit_test_set(bool newval)
 {
@@ -164,34 +162,33 @@ int s2n_in_unit_test_set(bool newval)
     return S2N_SUCCESS;
 }
 
-int s2n_mul_overflow(uint32_t a, uint32_t b, uint32_t* out)
+int s2n_mul_overflow(uint32_t a, uint32_t b, uint32_t *out)
 {
-    const uint64_t result = ((uint64_t) a) * ((uint64_t) b);
+    const uint64_t result = ((uint64_t)a) * ((uint64_t)b);
     S2N_ERROR_IF(result > UINT32_MAX, S2N_ERR_INTEGER_OVERFLOW);
-    *out = (uint32_t) result;
+    *out = (uint32_t)result;
     return S2N_SUCCESS;
 }
 
-int s2n_align_to(uint32_t initial, uint32_t alignment, uint32_t* out)
+int s2n_align_to(uint32_t initial, uint32_t alignment, uint32_t *out)
 {
     S2N_PRECONDITION(alignment != 0);
     if (initial == 0) {
-	*out = 0;
-	return S2N_SUCCESS;
+        *out = 0;
+        return S2N_SUCCESS;
     }
     const uint64_t i = initial;
     const uint64_t a = alignment;
     const uint64_t result = a * (((i - 1) / a) + 1);
     S2N_ERROR_IF(result > UINT32_MAX, S2N_ERR_INTEGER_OVERFLOW);
-    *out = (uint32_t) result;
+    *out = (uint32_t)result;
     return S2N_SUCCESS;
 }
 
-int s2n_add_overflow(uint32_t a, uint32_t b, uint32_t* out)
+int s2n_add_overflow(uint32_t a, uint32_t b, uint32_t *out)
 {
-    uint64_t result = ((uint64_t) a) + ((uint64_t) b);
+    uint64_t result = ((uint64_t)a) + ((uint64_t)b);
     S2N_ERROR_IF(result > UINT32_MAX, S2N_ERR_INTEGER_OVERFLOW);
-    *out = (uint32_t) result;
+    *out = (uint32_t)result;
     return S2N_SUCCESS;
 }
-

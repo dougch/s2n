@@ -15,18 +15,17 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-
 #include <openssl/md5.h>
 #include <openssl/sha.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "crypto/s2n_evp.h"
 
 #define S2N_MAX_DIGEST_LEN SHA512_DIGEST_LENGTH
 
 typedef enum {
-    S2N_HASH_NONE=0,
+    S2N_HASH_NONE = 0,
     S2N_HASH_MD5,
     S2N_HASH_SHA1,
     S2N_HASH_SHA224,
@@ -38,7 +37,8 @@ typedef enum {
     S2N_HASH_SENTINEL
 } s2n_hash_algorithm;
 
-/* The low_level_digest stores all OpenSSL structs that are alg-specific to be used with OpenSSL's low-level hash API's. */
+/* The low_level_digest stores all OpenSSL structs that are alg-specific to be used with OpenSSL's low-level hash API's.
+ */
 union s2n_hash_low_level_digest {
     MD5_CTX md5;
     SHA_CTX sha1;
@@ -46,14 +46,16 @@ union s2n_hash_low_level_digest {
     SHA256_CTX sha256;
     SHA512_CTX sha384;
     SHA512_CTX sha512;
-    struct {
+    struct
+    {
         MD5_CTX md5;
         SHA_CTX sha1;
     } md5_sha1;
 };
 
 /* The evp_digest stores all OpenSSL structs to be used with OpenSSL's EVP hash API's. */
-struct s2n_hash_evp_digest {
+struct s2n_hash_evp_digest
+{
     struct s2n_evp_digest evp;
     /* Always store a secondary evp_digest to allow resetting a hash_state to MD5_SHA1 from another alg. */
     struct s2n_evp_digest evp_md5_secondary;
@@ -62,7 +64,8 @@ struct s2n_hash_evp_digest {
 /* s2n_hash_state stores the s2n_hash implementation being used (low-level or EVP),
  * the hash algorithm being used at the time, and either low_level or high_level (EVP) OpenSSL digest structs.
  */
-struct s2n_hash_state {
+struct s2n_hash_state
+{
     const struct s2n_hash *hash_impl;
     s2n_hash_algorithm alg;
     uint8_t is_ready_for_input;
@@ -76,15 +79,16 @@ struct s2n_hash_state {
 /* The s2n hash implementation is abstracted to allow for separate implementations, using
  * either OpenSSL's low-level algorithm-specific API's or OpenSSL's EVP API's.
  */
-struct s2n_hash {
-    int (*new) (struct s2n_hash_state *state);
-    int (*allow_md5_for_fips) (struct s2n_hash_state *state);
-    int (*init) (struct s2n_hash_state *state, s2n_hash_algorithm alg);
-    int (*update) (struct s2n_hash_state *state, const void *data, uint32_t size);
-    int (*digest) (struct s2n_hash_state *state, void *out, uint32_t size);
-    int (*copy) (struct s2n_hash_state *to, struct s2n_hash_state *from);
-    int (*reset) (struct s2n_hash_state *state);
-    int (*free) (struct s2n_hash_state *state);
+struct s2n_hash
+{
+    int (*new)(struct s2n_hash_state *state);
+    int (*allow_md5_for_fips)(struct s2n_hash_state *state);
+    int (*init)(struct s2n_hash_state *state, s2n_hash_algorithm alg);
+    int (*update)(struct s2n_hash_state *state, const void *data, uint32_t size);
+    int (*digest)(struct s2n_hash_state *state, void *out, uint32_t size);
+    int (*copy)(struct s2n_hash_state *to, struct s2n_hash_state *from);
+    int (*reset)(struct s2n_hash_state *state);
+    int (*free)(struct s2n_hash_state *state);
 };
 
 extern int s2n_hash_digest_size(s2n_hash_algorithm alg, uint8_t *out);

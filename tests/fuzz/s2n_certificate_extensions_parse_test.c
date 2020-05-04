@@ -17,21 +17,19 @@
                      s2n_recv_server_sct_list s2n_server_certificate_status_parse
                      s2n_x509_validator_validate_cert_stapled_ocsp_response */
 
-#include <stdint.h>
-
 #include <openssl/crypto.h>
 #include <openssl/err.h>
-
-#include "tls/extensions/s2n_certificate_extensions.h"
+#include <stdint.h>
 
 #include "api/s2n.h"
+#include "s2n_test.h"
 #include "stuffer/s2n_stuffer.h"
+#include "testlib/s2n_testlib.h"
+#include "tls/extensions/s2n_certificate_extensions.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
-#include "utils/s2n_safety.h"
-#include "s2n_test.h"
-#include "testlib/s2n_testlib.h"
 #include "tls/s2n_tls13.h"
+#include "utils/s2n_safety.h"
 
 static uint32_t write_pem_file_to_stuffer_as_chain(struct s2n_stuffer *chain_out_stuffer, const char *pem_data)
 {
@@ -59,7 +57,8 @@ static uint32_t write_pem_file_to_stuffer_as_chain(struct s2n_stuffer *chain_out
     return chain_size;
 }
 
-struct host_verify_data {
+struct host_verify_data
+{
     const char *name;
     uint8_t found_name;
     uint8_t callback_invoked;
@@ -67,7 +66,7 @@ struct host_verify_data {
 
 static uint8_t verify_host_accept_everything(const char *host_name, size_t host_name_len, void *data)
 {
-    struct host_verify_data *verify_data = (struct host_verify_data *) data;
+    struct host_verify_data *verify_data = (struct host_verify_data *)data;
     verify_data->callback_invoked = 1;
     return 1;
 }
@@ -75,10 +74,7 @@ static uint8_t verify_host_accept_everything(const char *host_name, size_t host_
 /* This test is for TLS versions 1.3 and up only */
 static const uint8_t TLS_VERSIONS[] = {S2N_TLS13};
 
-static void s2n_fuzz_atexit()
-{
-    s2n_cleanup();
-}
+static void s2n_fuzz_atexit() { s2n_cleanup(); }
 
 int LLVMFuzzerInitialize(const uint8_t *buf, size_t len)
 {
@@ -115,25 +111,27 @@ int LLVMFuzzerTestOneInput(const uint8_t *buf, size_t len)
 
     /* Set cert chain and trust store for verification of OCSP response */
     if ((randval >> 6) % 2 && OPENSSL_VERSION_NUMBER >= 0x10101000L) {
-        struct host_verify_data verify_data = { .callback_invoked = 0, .found_name = 0, .name = NULL };
+        struct host_verify_data verify_data = {.callback_invoked = 0, .found_name = 0, .name = NULL};
         GUARD(s2n_connection_set_verify_host_callback(client_conn, verify_host_accept_everything, &verify_data));
         char cert_chain[S2N_MAX_TEST_PEM_SIZE];
         GUARD(s2n_read_test_pem(S2N_OCSP_CA_CERT, cert_chain, S2N_MAX_TEST_PEM_SIZE));
         GUARD(s2n_x509_trust_store_add_pem(client_conn->x509_validator.trust_store, cert_chain));
         uint8_t cert_chain_pem[S2N_MAX_TEST_PEM_SIZE];
-        GUARD(s2n_read_test_pem(S2N_OCSP_SERVER_CERT, (char *) cert_chain_pem, S2N_MAX_TEST_PEM_SIZE));
+        GUARD(s2n_read_test_pem(S2N_OCSP_SERVER_CERT, (char *)cert_chain_pem, S2N_MAX_TEST_PEM_SIZE));
         struct s2n_stuffer chain_stuffer;
-        uint32_t chain_len = write_pem_file_to_stuffer_as_chain(&chain_stuffer, (const char *) cert_chain_pem);
-        uint8_t *chain_data = s2n_stuffer_raw_read(&chain_stuffer, (uint32_t) chain_len);
+        uint32_t chain_len = write_pem_file_to_stuffer_as_chain(&chain_stuffer, (const char *)cert_chain_pem);
+        uint8_t *chain_data = s2n_stuffer_raw_read(&chain_stuffer, (uint32_t)chain_len);
         struct s2n_pkey public_key_out;
         GUARD(s2n_pkey_zero_init(&public_key_out));
         s2n_pkey_type pkey_type;
 
         /* Add cert to chain twice to reach codepaths that need 2+ certs */
-        GUARD(s2n_x509_validator_validate_cert_chain(&client_conn->x509_validator, client_conn, chain_data, chain_len, &pkey_type, &public_key_out));
+        GUARD(s2n_x509_validator_validate_cert_chain(&client_conn->x509_validator, client_conn, chain_data, chain_len,
+                                                     &pkey_type, &public_key_out));
         GUARD(s2n_pkey_free(&public_key_out));
         GUARD(s2n_pkey_zero_init(&public_key_out));
-        GUARD(s2n_x509_validator_validate_cert_chain(&client_conn->x509_validator, client_conn, chain_data, chain_len, &pkey_type, &public_key_out));
+        GUARD(s2n_x509_validator_validate_cert_chain(&client_conn->x509_validator, client_conn, chain_data, chain_len,
+                                                     &pkey_type, &public_key_out));
         GUARD(s2n_stuffer_free(&chain_stuffer));
         GUARD(s2n_pkey_free(&public_key_out));
     }

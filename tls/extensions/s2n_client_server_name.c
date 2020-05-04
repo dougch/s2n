@@ -13,13 +13,13 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
-#include <stdint.h>
-
 #include "tls/extensions/s2n_client_server_name.h"
+
+#include <stdint.h>
+#include <sys/param.h>
+
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-
 #include "utils/s2n_safety.h"
 
 int s2n_extensions_client_server_name_send(struct s2n_connection *conn, struct s2n_stuffer *out)
@@ -37,7 +37,7 @@ int s2n_extensions_client_server_name_send(struct s2n_connection *conn, struct s
     GUARD(s2n_stuffer_write_uint8(out, 0));
 
     struct s2n_blob server_name = {0};
-    server_name.data = (uint8_t *) conn->server_name;
+    server_name.data = (uint8_t *)conn->server_name;
     server_name.size = server_name_len;
     GUARD(s2n_stuffer_write_uint16(out, server_name_len));
     GUARD(s2n_stuffer_write(out, &server_name));

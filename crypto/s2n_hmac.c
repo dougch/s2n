@@ -13,36 +13,51 @@
  * permissions and limitations under the License.
  */
 
+#include "crypto/s2n_hmac.h"
+
 #include <openssl/md5.h>
 #include <openssl/sha.h>
-
-#include "error/s2n_errno.h"
-
-#include "crypto/s2n_hmac.h"
-#include "crypto/s2n_hash.h"
-#include "crypto/s2n_fips.h"
-
-#include "utils/s2n_safety.h"
-#include "utils/s2n_blob.h"
-#include "utils/s2n_mem.h"
-
 #include <stdint.h>
 
+#include "crypto/s2n_fips.h"
+#include "crypto/s2n_hash.h"
+#include "error/s2n_errno.h"
+#include "utils/s2n_blob.h"
+#include "utils/s2n_mem.h"
+#include "utils/s2n_safety.h"
 
 int s2n_hmac_hash_alg(s2n_hmac_algorithm hmac_alg, s2n_hash_algorithm *out)
 {
-    switch(hmac_alg) {
-    case S2N_HMAC_NONE:       *out = S2N_HASH_NONE;   break;
-    case S2N_HMAC_MD5:        *out = S2N_HASH_MD5;    break;
-    case S2N_HMAC_SHA1:       *out = S2N_HASH_SHA1;   break;
-    case S2N_HMAC_SHA224:     *out = S2N_HASH_SHA224; break;
-    case S2N_HMAC_SHA256:     *out = S2N_HASH_SHA256; break;
-    case S2N_HMAC_SHA384:     *out = S2N_HASH_SHA384; break;
-    case S2N_HMAC_SHA512:     *out = S2N_HASH_SHA512; break;
-    case S2N_HMAC_SSLv3_MD5:  *out = S2N_HASH_MD5;    break;
-    case S2N_HMAC_SSLv3_SHA1: *out = S2N_HASH_SHA1;   break;
-    default:
-        S2N_ERROR(S2N_ERR_HMAC_INVALID_ALGORITHM);
+    switch (hmac_alg) {
+        case S2N_HMAC_NONE:
+            *out = S2N_HASH_NONE;
+            break;
+        case S2N_HMAC_MD5:
+            *out = S2N_HASH_MD5;
+            break;
+        case S2N_HMAC_SHA1:
+            *out = S2N_HASH_SHA1;
+            break;
+        case S2N_HMAC_SHA224:
+            *out = S2N_HASH_SHA224;
+            break;
+        case S2N_HMAC_SHA256:
+            *out = S2N_HASH_SHA256;
+            break;
+        case S2N_HMAC_SHA384:
+            *out = S2N_HASH_SHA384;
+            break;
+        case S2N_HMAC_SHA512:
+            *out = S2N_HASH_SHA512;
+            break;
+        case S2N_HMAC_SSLv3_MD5:
+            *out = S2N_HASH_MD5;
+            break;
+        case S2N_HMAC_SSLv3_SHA1:
+            *out = S2N_HASH_SHA1;
+            break;
+        default:
+            S2N_ERROR(S2N_ERR_HMAC_INVALID_ALGORITHM);
     }
     return 0;
 }
@@ -59,23 +74,23 @@ int s2n_hmac_digest_size(s2n_hmac_algorithm hmac_alg, uint8_t *out)
 int s2n_hmac_is_available(s2n_hmac_algorithm hmac_alg)
 {
     int is_available = 0;
-    switch(hmac_alg) {
-    case S2N_HMAC_MD5:
-    case S2N_HMAC_SSLv3_MD5:
-    case S2N_HMAC_SSLv3_SHA1:
-        /* Set is_available to 0 if in FIPS mode, as MD5/SSLv3 algs are not available in FIPS mode. */
-        is_available = !s2n_is_in_fips_mode();
-        break;
-    case S2N_HMAC_NONE:    
-    case S2N_HMAC_SHA1:
-    case S2N_HMAC_SHA224:
-    case S2N_HMAC_SHA256:
-    case S2N_HMAC_SHA384:
-    case S2N_HMAC_SHA512:
-        is_available = 1;
-        break;
-    default:
-        S2N_ERROR(S2N_ERR_HMAC_INVALID_ALGORITHM);
+    switch (hmac_alg) {
+        case S2N_HMAC_MD5:
+        case S2N_HMAC_SSLv3_MD5:
+        case S2N_HMAC_SSLv3_SHA1:
+            /* Set is_available to 0 if in FIPS mode, as MD5/SSLv3 algs are not available in FIPS mode. */
+            is_available = !s2n_is_in_fips_mode();
+            break;
+        case S2N_HMAC_NONE:
+        case S2N_HMAC_SHA1:
+        case S2N_HMAC_SHA224:
+        case S2N_HMAC_SHA256:
+        case S2N_HMAC_SHA384:
+        case S2N_HMAC_SHA512:
+            is_available = 1;
+            break;
+        default:
+            S2N_ERROR(S2N_ERR_HMAC_INVALID_ALGORITHM);
     }
 
     return is_available;
@@ -103,7 +118,7 @@ static int s2n_sslv3_mac_init(struct s2n_hmac_state *state, s2n_hmac_algorithm a
 static int s2n_tls_hmac_init(struct s2n_hmac_state *state, s2n_hmac_algorithm alg, const void *key, uint32_t klen)
 {
     memset(&state->xor_pad, 0, sizeof(state->xor_pad));
-    
+
     if (klen > state->xor_pad_size) {
         GUARD(s2n_hash_update(&state->outer, key, klen));
         GUARD(s2n_hash_digest(&state->outer, state->digest_pad, state->digest_size));
@@ -129,36 +144,72 @@ static int s2n_tls_hmac_init(struct s2n_hmac_state *state, s2n_hmac_algorithm al
 
 int s2n_hmac_xor_pad_size(s2n_hmac_algorithm hmac_alg, uint16_t *xor_pad_size)
 {
-    switch(hmac_alg) {
-    case S2N_HMAC_NONE:       *xor_pad_size = 64;   break;
-    case S2N_HMAC_MD5:        *xor_pad_size = 64;   break;
-    case S2N_HMAC_SHA1:       *xor_pad_size = 64;   break;
-    case S2N_HMAC_SHA224:     *xor_pad_size = 64;   break;
-    case S2N_HMAC_SHA256:     *xor_pad_size = 64;   break;
-    case S2N_HMAC_SHA384:     *xor_pad_size = 128;  break;
-    case S2N_HMAC_SHA512:     *xor_pad_size = 128;  break;
-    case S2N_HMAC_SSLv3_MD5:  *xor_pad_size = 48;   break;
-    case S2N_HMAC_SSLv3_SHA1: *xor_pad_size = 40;   break;
-    default:
-        S2N_ERROR(S2N_ERR_HMAC_INVALID_ALGORITHM);
+    switch (hmac_alg) {
+        case S2N_HMAC_NONE:
+            *xor_pad_size = 64;
+            break;
+        case S2N_HMAC_MD5:
+            *xor_pad_size = 64;
+            break;
+        case S2N_HMAC_SHA1:
+            *xor_pad_size = 64;
+            break;
+        case S2N_HMAC_SHA224:
+            *xor_pad_size = 64;
+            break;
+        case S2N_HMAC_SHA256:
+            *xor_pad_size = 64;
+            break;
+        case S2N_HMAC_SHA384:
+            *xor_pad_size = 128;
+            break;
+        case S2N_HMAC_SHA512:
+            *xor_pad_size = 128;
+            break;
+        case S2N_HMAC_SSLv3_MD5:
+            *xor_pad_size = 48;
+            break;
+        case S2N_HMAC_SSLv3_SHA1:
+            *xor_pad_size = 40;
+            break;
+        default:
+            S2N_ERROR(S2N_ERR_HMAC_INVALID_ALGORITHM);
     }
     return 0;
 }
 
 int s2n_hmac_hash_block_size(s2n_hmac_algorithm hmac_alg, uint16_t *block_size)
 {
-    switch(hmac_alg) {
-    case S2N_HMAC_NONE:       *block_size = 64;   break;
-    case S2N_HMAC_MD5:        *block_size = 64;   break;
-    case S2N_HMAC_SHA1:       *block_size = 64;   break;
-    case S2N_HMAC_SHA224:     *block_size = 64;   break;
-    case S2N_HMAC_SHA256:     *block_size = 64;   break;
-    case S2N_HMAC_SHA384:     *block_size = 128;  break;
-    case S2N_HMAC_SHA512:     *block_size = 128;  break;
-    case S2N_HMAC_SSLv3_MD5:  *block_size = 64;   break;
-    case S2N_HMAC_SSLv3_SHA1: *block_size = 64;   break;
-    default:
-        S2N_ERROR(S2N_ERR_HMAC_INVALID_ALGORITHM);
+    switch (hmac_alg) {
+        case S2N_HMAC_NONE:
+            *block_size = 64;
+            break;
+        case S2N_HMAC_MD5:
+            *block_size = 64;
+            break;
+        case S2N_HMAC_SHA1:
+            *block_size = 64;
+            break;
+        case S2N_HMAC_SHA224:
+            *block_size = 64;
+            break;
+        case S2N_HMAC_SHA256:
+            *block_size = 64;
+            break;
+        case S2N_HMAC_SHA384:
+            *block_size = 128;
+            break;
+        case S2N_HMAC_SHA512:
+            *block_size = 128;
+            break;
+        case S2N_HMAC_SSLv3_MD5:
+            *block_size = 64;
+            break;
+        case S2N_HMAC_SSLv3_SHA1:
+            *block_size = 64;
+            break;
+        default:
+            S2N_ERROR(S2N_ERR_HMAC_INVALID_ALGORITHM);
     }
     return 0;
 }
@@ -223,9 +274,9 @@ int s2n_hmac_update(struct s2n_hmac_state *state, const void *in, uint32_t size)
      * value that is congruent to 0 modulo all of our HMAC block sizes, that is also
      * at least 16k smaller than 2^32. It therefore has no effect on the mathematical
      * result, and no valid record size can cause it to overflow.
-     * 
+     *
      * The value was found with the following python code;
-     * 
+     *
      * x = (2 ** 32) - (2 ** 14)
      * while True:
      *   if x % 40 | x % 48 | x % 64 | x % 128 == 0:
@@ -291,7 +342,7 @@ int s2n_hmac_free(struct s2n_hmac_state *state)
 int s2n_hmac_reset(struct s2n_hmac_state *state)
 {
     GUARD(s2n_hash_copy(&state->inner, &state->inner_just_key));
-    
+
     uint64_t bytes_in_hash;
     GUARD(s2n_hash_get_currently_in_hash_total(&state->inner, &bytes_in_hash));
     /* The length of the key is not private, so don't need to do tricky math here */
@@ -320,18 +371,16 @@ int s2n_hmac_copy(struct s2n_hmac_state *to, struct s2n_hmac_state *from)
     GUARD(s2n_hash_copy(&to->outer, &from->outer));
     GUARD(s2n_hash_copy(&to->outer_just_key, &from->outer_just_key));
 
-
     memcpy_check(to->xor_pad, from->xor_pad, sizeof(to->xor_pad));
     memcpy_check(to->digest_pad, from->digest_pad, sizeof(to->digest_pad));
 
     return 0;
 }
 
-
-/* Preserve the handlers for hmac state pointers to avoid re-allocation 
+/* Preserve the handlers for hmac state pointers to avoid re-allocation
  * Only valid if the HMAC is in EVP mode
  */
-int s2n_hmac_save_evp_hash_state(struct s2n_hmac_evp_backup* backup, struct s2n_hmac_state* hmac)
+int s2n_hmac_save_evp_hash_state(struct s2n_hmac_evp_backup *backup, struct s2n_hmac_state *hmac)
 {
     backup->inner = hmac->inner.digest.high_level;
     backup->inner_just_key = hmac->inner_just_key.digest.high_level;
@@ -340,7 +389,7 @@ int s2n_hmac_save_evp_hash_state(struct s2n_hmac_evp_backup* backup, struct s2n_
     return 0;
 }
 
-int s2n_hmac_restore_evp_hash_state(struct s2n_hmac_evp_backup* backup, struct s2n_hmac_state* hmac)
+int s2n_hmac_restore_evp_hash_state(struct s2n_hmac_evp_backup *backup, struct s2n_hmac_state *hmac)
 {
     hmac->inner.digest.high_level = backup->inner;
     hmac->inner_just_key.digest.high_level = backup->inner_just_key;

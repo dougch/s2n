@@ -13,9 +13,8 @@
  * permissions and limitations under the License.
  */
 
-#include "tls/s2n_tls.h"
-
 #include "tls/extensions/s2n_cookie.h"
+#include "tls/s2n_tls.h"
 
 int s2n_extensions_client_cookie_recv(struct s2n_connection *conn, struct s2n_stuffer *extension)
 {

@@ -13,42 +13,39 @@
  * permissions and limitations under the License.
  */
 
+#include "tls/s2n_client_extensions.h"
+
 #include <stdint.h>
 #include <string.h>
 
 #include "error/s2n_errno.h"
-
-#include "tls/s2n_kem.h"
-#include "tls/s2n_signature_algorithms.h"
-#include "tls/s2n_tls_digest_preferences.h"
-#include "tls/s2n_tls_parameters.h"
+#include "extensions/s2n_client_alpn.h"
+#include "extensions/s2n_client_ec_point_format.h"
+#include "extensions/s2n_client_key_share.h"
+#include "extensions/s2n_client_max_frag_len.h"
+#include "extensions/s2n_client_pq_kem.h"
+#include "extensions/s2n_client_renegotiation_info.h"
+#include "extensions/s2n_client_sct_list.h"
+#include "extensions/s2n_client_server_name.h"
+#include "extensions/s2n_client_session_ticket.h"
+#include "extensions/s2n_client_signature_algorithms.h"
+#include "extensions/s2n_client_status_request.h"
+#include "extensions/s2n_client_supported_groups.h"
+#include "extensions/s2n_client_supported_versions.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_cipher_preferences.h"
 #include "tls/s2n_connection.h"
-#include "tls/s2n_client_extensions.h"
+#include "tls/s2n_ecc_preferences.h"
+#include "tls/s2n_kem.h"
 #include "tls/s2n_resume.h"
 #include "tls/s2n_security_policies.h"
-#include "tls/s2n_cipher_preferences.h"
-#include "tls/s2n_ecc_preferences.h"
-
-#include "extensions/s2n_client_supported_versions.h"
-#include "extensions/s2n_client_signature_algorithms.h"
-#include "extensions/s2n_client_max_frag_len.h"
-#include "extensions/s2n_client_session_ticket.h"
-#include "extensions/s2n_client_server_name.h"
-#include "extensions/s2n_client_alpn.h"
-#include "extensions/s2n_client_status_request.h"
-#include "extensions/s2n_client_key_share.h"
-#include "extensions/s2n_client_sct_list.h"
-#include "extensions/s2n_client_supported_groups.h"
-#include "extensions/s2n_client_pq_kem.h"
-#include "extensions/s2n_client_ec_point_format.h"
-#include "extensions/s2n_client_renegotiation_info.h"
-
-#include "stuffer/s2n_stuffer.h"
-
+#include "tls/s2n_signature_algorithms.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
-#include "utils/s2n_safety.h"
+#include "tls/s2n_tls_digest_preferences.h"
+#include "tls/s2n_tls_parameters.h"
 #include "utils/s2n_blob.h"
+#include "utils/s2n_safety.h"
 
 int s2n_client_extensions_send(struct s2n_connection *conn, struct s2n_stuffer *out)
 {
@@ -96,7 +93,7 @@ int s2n_client_extensions_send(struct s2n_connection *conn, struct s2n_stuffer *
     bool ecc_extension_required = s2n_ecc_is_extension_required(security_policy);
     if (ecc_extension_required) {
         /* Write ECC extensions: Supported Curves and Supported Point Formats */
-        total_size += (5 * sizeof(uint16_t) + 2 * sizeof(uint8_t)) + ecc_pref->count * 2; 
+        total_size += (5 * sizeof(uint16_t) + 2 * sizeof(uint8_t)) + ecc_pref->count * 2;
     }
 
     bool pq_kem_extension_required = s2n_pq_kem_is_extension_required(security_policy);
@@ -179,51 +176,51 @@ int s2n_client_extensions_recv(struct s2n_connection *conn, struct s2n_array *pa
         GUARD(s2n_stuffer_write(&extension, &parsed_extension->extension));
 
         switch (parsed_extension->extension_type) {
-        case TLS_EXTENSION_SERVER_NAME:
-            GUARD(s2n_parse_client_hello_server_name(conn, &extension));
-            break;
-        case TLS_EXTENSION_SIGNATURE_ALGORITHMS:
-            GUARD(s2n_extensions_client_signature_algorithms_recv(conn, &extension));
-            break;
-        case TLS_EXTENSION_ALPN:
-            GUARD(s2n_recv_client_alpn(conn, &extension));
-            break;
-        case TLS_EXTENSION_STATUS_REQUEST:
-            GUARD(s2n_recv_client_status_request(conn, &extension));
-            break;
-        case TLS_EXTENSION_SUPPORTED_GROUPS:
-            GUARD(s2n_recv_client_supported_groups(conn, &extension));
-            break;
-        case TLS_EXTENSION_EC_POINT_FORMATS:
-            GUARD(s2n_recv_client_ec_point_formats(conn, &extension));
-            break;
-        case TLS_EXTENSION_RENEGOTIATION_INFO:
-            GUARD(s2n_recv_client_renegotiation_info(conn, &extension));
-            break;
-        case TLS_EXTENSION_SCT_LIST:
-            GUARD(s2n_recv_client_sct_list(conn, &extension));
-            break;
-        case TLS_EXTENSION_MAX_FRAG_LEN:
-            GUARD(s2n_recv_client_max_frag_len(conn, &extension));
-            break;
-        case TLS_EXTENSION_SESSION_TICKET:
-            GUARD(s2n_recv_client_session_ticket_ext(conn, &extension));
-            break;
-        case TLS_EXTENSION_PQ_KEM_PARAMETERS:
-            GUARD(s2n_recv_pq_kem_extension(conn, &extension));
-            break;
-        case TLS_EXTENSION_SUPPORTED_VERSIONS:
-            /* allow supported versions to be parsed to get highest client version */
-            if (s2n_is_tls13_enabled()) {
-                GUARD(s2n_extensions_client_supported_versions_recv(conn, &extension));
-            }
-            break;
-        case TLS_EXTENSION_KEY_SHARE:
-            /* parse key share only if negiotated protocol is in TLS 1.3 */
-            if (s2n_is_tls13_enabled() && conn->actual_protocol_version == S2N_TLS13) {
-                GUARD(s2n_extensions_client_key_share_recv(conn, &extension));
-            }
-            break;
+            case TLS_EXTENSION_SERVER_NAME:
+                GUARD(s2n_parse_client_hello_server_name(conn, &extension));
+                break;
+            case TLS_EXTENSION_SIGNATURE_ALGORITHMS:
+                GUARD(s2n_extensions_client_signature_algorithms_recv(conn, &extension));
+                break;
+            case TLS_EXTENSION_ALPN:
+                GUARD(s2n_recv_client_alpn(conn, &extension));
+                break;
+            case TLS_EXTENSION_STATUS_REQUEST:
+                GUARD(s2n_recv_client_status_request(conn, &extension));
+                break;
+            case TLS_EXTENSION_SUPPORTED_GROUPS:
+                GUARD(s2n_recv_client_supported_groups(conn, &extension));
+                break;
+            case TLS_EXTENSION_EC_POINT_FORMATS:
+                GUARD(s2n_recv_client_ec_point_formats(conn, &extension));
+                break;
+            case TLS_EXTENSION_RENEGOTIATION_INFO:
+                GUARD(s2n_recv_client_renegotiation_info(conn, &extension));
+                break;
+            case TLS_EXTENSION_SCT_LIST:
+                GUARD(s2n_recv_client_sct_list(conn, &extension));
+                break;
+            case TLS_EXTENSION_MAX_FRAG_LEN:
+                GUARD(s2n_recv_client_max_frag_len(conn, &extension));
+                break;
+            case TLS_EXTENSION_SESSION_TICKET:
+                GUARD(s2n_recv_client_session_ticket_ext(conn, &extension));
+                break;
+            case TLS_EXTENSION_PQ_KEM_PARAMETERS:
+                GUARD(s2n_recv_pq_kem_extension(conn, &extension));
+                break;
+            case TLS_EXTENSION_SUPPORTED_VERSIONS:
+                /* allow supported versions to be parsed to get highest client version */
+                if (s2n_is_tls13_enabled()) {
+                    GUARD(s2n_extensions_client_supported_versions_recv(conn, &extension));
+                }
+                break;
+            case TLS_EXTENSION_KEY_SHARE:
+                /* parse key share only if negiotated protocol is in TLS 1.3 */
+                if (s2n_is_tls13_enabled() && conn->actual_protocol_version == S2N_TLS13) {
+                    GUARD(s2n_extensions_client_key_share_recv(conn, &extension));
+                }
+                break;
         }
     }
 

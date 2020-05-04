@@ -13,8 +13,9 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
 #include "utils/s2n_str.h"
+
+#include "s2n_test.h"
 
 #define BUF_SIZE 10
 

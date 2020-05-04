@@ -13,20 +13,19 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
 #include <stdint.h>
 
+#include "s2n_test.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/extensions/s2n_server_supported_versions.h"
 #include "tls/s2n_config.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
-#include "tls/extensions/s2n_server_supported_versions.h"
-
-#include "stuffer/s2n_stuffer.h"
 #include "utils/s2n_safety.h"
 
-int write_test_supported_version(struct s2n_stuffer *list, uint8_t supported_version) {
+int write_test_supported_version(struct s2n_stuffer *list, uint8_t supported_version)
+{
     GUARD(s2n_stuffer_write_uint8(list, S2N_TLS_PROTOCOL_VERSION_LEN));
 
     GUARD(s2n_stuffer_write_uint8(list, supported_version / 10));
@@ -96,7 +95,8 @@ int main(int argc, char **argv)
         s2n_stuffer_alloc(&extension, supported_version_length);
 
         EXPECT_SUCCESS(write_test_supported_version(&extension, unsupported_version_unknown));
-        EXPECT_FAILURE_WITH_ERRNO(s2n_extensions_server_supported_versions_recv(client_conn, &extension), S2N_ERR_BAD_MESSAGE);
+        EXPECT_FAILURE_WITH_ERRNO(s2n_extensions_server_supported_versions_recv(client_conn, &extension),
+                                  S2N_ERR_BAD_MESSAGE);
 
         EXPECT_SUCCESS(s2n_connection_free(client_conn));
         EXPECT_SUCCESS(s2n_stuffer_free(&extension));
@@ -116,7 +116,8 @@ int main(int argc, char **argv)
         s2n_stuffer_alloc(&extension, supported_version_length);
 
         EXPECT_SUCCESS(write_test_supported_version(&extension, unsupported_version_gt_tls13));
-        EXPECT_FAILURE_WITH_ERRNO(s2n_extensions_server_supported_versions_recv(client_conn, &extension), S2N_ERR_BAD_MESSAGE);
+        EXPECT_FAILURE_WITH_ERRNO(s2n_extensions_server_supported_versions_recv(client_conn, &extension),
+                                  S2N_ERR_BAD_MESSAGE);
 
         EXPECT_SUCCESS(s2n_connection_free(client_conn));
         EXPECT_SUCCESS(s2n_stuffer_free(&extension));
@@ -132,7 +133,8 @@ int main(int argc, char **argv)
         s2n_stuffer_alloc(&extension, 1);
         EXPECT_SUCCESS(s2n_stuffer_write_uint8(&extension, 0));
 
-        EXPECT_FAILURE_WITH_ERRNO(s2n_extensions_server_supported_versions_recv(client_conn, &extension), S2N_ERR_BAD_MESSAGE);
+        EXPECT_FAILURE_WITH_ERRNO(s2n_extensions_server_supported_versions_recv(client_conn, &extension),
+                                  S2N_ERR_BAD_MESSAGE);
 
         EXPECT_SUCCESS(s2n_connection_free(client_conn));
         EXPECT_SUCCESS(s2n_stuffer_free(&extension));
@@ -149,7 +151,8 @@ int main(int argc, char **argv)
 
         EXPECT_SUCCESS(s2n_stuffer_write_uint8(&extension, 13));
 
-        EXPECT_FAILURE_WITH_ERRNO(s2n_extensions_server_supported_versions_recv(client_conn, &extension), S2N_ERR_BAD_MESSAGE);
+        EXPECT_FAILURE_WITH_ERRNO(s2n_extensions_server_supported_versions_recv(client_conn, &extension),
+                                  S2N_ERR_BAD_MESSAGE);
 
         EXPECT_SUCCESS(s2n_connection_free(client_conn));
         EXPECT_SUCCESS(s2n_stuffer_free(&extension));

@@ -18,11 +18,12 @@
 #include <s2n.h>
 #include <strings.h>
 
+#include "crypto/s2n_ecc_evp.h"
 #include "crypto/s2n_hash.h"
 #include "crypto/s2n_signature.h"
-#include "crypto/s2n_ecc_evp.h"
 
-struct s2n_signature_scheme {
+struct s2n_signature_scheme
+{
     uint16_t iana_value;
     s2n_hash_algorithm hash_alg;
     s2n_signature_algorithm sig_alg;
@@ -33,7 +34,8 @@ struct s2n_signature_scheme {
     struct s2n_ecc_named_curve const *signature_curve;
 };
 
-struct s2n_signature_preferences{
+struct s2n_signature_preferences
+{
     uint8_t count;
     const struct s2n_signature_scheme *const *signature_schemes;
 };

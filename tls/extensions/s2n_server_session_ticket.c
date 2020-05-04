@@ -13,15 +13,14 @@
  * permissions and limitations under the License.
  */
 
-#include "stuffer/s2n_stuffer.h"
-
-#include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_connection.h"
-#include "tls/s2n_tls.h"
 #include "tls/extensions/s2n_server_session_ticket.h"
 
-#define s2n_server_can_send_nst(conn) (s2n_server_sending_nst((conn)) && \
-        (conn)->actual_protocol_version < S2N_TLS13)
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_tls.h"
+#include "tls/s2n_tls_parameters.h"
+
+#define s2n_server_can_send_nst(conn) (s2n_server_sending_nst((conn)) && (conn)->actual_protocol_version < S2N_TLS13)
 
 int s2n_recv_server_session_ticket_ext(struct s2n_connection *conn, struct s2n_stuffer *extension)
 {
@@ -32,7 +31,7 @@ int s2n_recv_server_session_ticket_ext(struct s2n_connection *conn, struct s2n_s
 
 int s2n_send_server_session_ticket_ext(struct s2n_connection *conn, struct s2n_stuffer *out)
 {
-    if(s2n_server_can_send_nst(conn)){
+    if (s2n_server_can_send_nst(conn)) {
         GUARD(s2n_stuffer_write_uint16(out, TLS_EXTENSION_SESSION_TICKET));
         GUARD(s2n_stuffer_write_uint16(out, 0));
     }

@@ -13,16 +13,13 @@
  * permissions and limitations under the License.
  */
 
-#include "error/s2n_errno.h"
-
-#include "stuffer/s2n_stuffer.h"
-
-#include "utils/s2n_safety.h"
-
-#include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_connection.h"
-
 #include "tls/extensions/s2n_server_max_fragment_length.h"
+
+#include "error/s2n_errno.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_tls_parameters.h"
+#include "utils/s2n_safety.h"
 
 /* Precalculate size of extension */
 int s2n_server_extensions_max_fragment_length_send_size(struct s2n_connection *conn)

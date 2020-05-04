@@ -46,7 +46,7 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
          * function pointers in standard library, despite that it returns
          * void *. Casting function pointer to void ** and dereferencing it
          * allows to bypass compiler warnings. */
-        *(void **) &orig_posix_memalign = dlsym(RTLD_NEXT, "posix_memalign");
+        *(void **)&orig_posix_memalign = dlsym(RTLD_NEXT, "posix_memalign");
     }
 
     rc = orig_posix_memalign(memptr, alignment, size);
@@ -68,9 +68,8 @@ void *realloc(void *ptr, size_t size)
          * function pointers in standard library, despite that it returns
          * void *. Casting function pointer to void ** and dereferencing it
          * allows to bypass compiler warnings. */
-        *(void **) &orig_realloc = dlsym(RTLD_NEXT, "realloc");
+        *(void **)&orig_realloc = dlsym(RTLD_NEXT, "realloc");
     }
-
 
 #ifdef HAVE_MALLOC_USABLE_SIZE
     /* If malloc_usable_size is available, we can get the size of previously
@@ -88,7 +87,7 @@ void *realloc(void *ptr, size_t size)
     /* If call succeeded and we're enlarging memory, fill the extension with
      * non-zero data */
     if (p && p_alloc_size > ptr_alloc_size) {
-        memset((char *) p + ptr_alloc_size, 0xff, p_alloc_size - ptr_alloc_size);
+        memset((char *)p + ptr_alloc_size, 0xff, p_alloc_size - ptr_alloc_size);
     }
 #else
     /* If we're allocating new buffer and the call succeeded, fill the buffer

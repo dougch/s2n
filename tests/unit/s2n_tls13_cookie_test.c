@@ -13,23 +13,19 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include "testlib/s2n_testlib.h"
-
 #include <s2n.h>
 
+#include "s2n_test.h"
+#include "testlib/s2n_testlib.h"
+#include "tls/extensions/s2n_cookie.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
-
-#include "tls/extensions/s2n_cookie.h"
-
 #include "utils/s2n_safety.h"
 
-#define EXTENSION_LEN       2
-#define EXTENSION_DATA_LEN  2
-#define COOKIE_SIZE_LEN     2
-#define COOKIE_TEST_SIZE    16
+#define EXTENSION_LEN      2
+#define EXTENSION_DATA_LEN 2
+#define COOKIE_SIZE_LEN    2
+#define COOKIE_TEST_SIZE   16
 
 int main(int argc, char *argv[])
 {
@@ -41,7 +37,7 @@ int main(int argc, char *argv[])
         struct s2n_config *config;
         EXPECT_NOT_NULL(config = s2n_config_new());
 
-        uint8_t cookie_data_compare[COOKIE_TEST_SIZE] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5 };
+        uint8_t cookie_data_compare[COOKIE_TEST_SIZE] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5};
         struct s2n_blob compare_blob;
         EXPECT_SUCCESS(s2n_blob_init(&compare_blob, cookie_data_compare, COOKIE_TEST_SIZE));
 
@@ -65,13 +61,14 @@ int main(int argc, char *argv[])
             /* Initialize the extension stuff which will be written to */
             struct s2n_blob out_blob;
             struct s2n_stuffer out_stuffer;
-            uint8_t extension_out[EXTENSION_LEN + EXTENSION_DATA_LEN + COOKIE_SIZE_LEN + COOKIE_TEST_SIZE] = { 0 };
+            uint8_t extension_out[EXTENSION_LEN + EXTENSION_DATA_LEN + COOKIE_SIZE_LEN + COOKIE_TEST_SIZE] = {0};
 
             /* Send the extension and verify the expected number of bytes were written */
             EXPECT_SUCCESS(s2n_blob_init(&out_blob, extension_out, sizeof(extension_out)));
             EXPECT_SUCCESS(s2n_stuffer_init(&out_stuffer, &out_blob));
             EXPECT_SUCCESS(s2n_extensions_cookie_send(conn, &out_stuffer));
-            S2N_STUFFER_LENGTH_WRITTEN_EXPECT_EQUAL(&out_stuffer, EXTENSION_LEN + EXTENSION_DATA_LEN + COOKIE_SIZE_LEN + COOKIE_TEST_SIZE);
+            S2N_STUFFER_LENGTH_WRITTEN_EXPECT_EQUAL(
+                &out_stuffer, EXTENSION_LEN + EXTENSION_DATA_LEN + COOKIE_SIZE_LEN + COOKIE_TEST_SIZE);
 
             /* Reset the extension stuffer and cookie data */
             EXPECT_SUCCESS(s2n_stuffer_wipe(&conn->cookie_stuffer));
@@ -94,16 +91,16 @@ int main(int argc, char *argv[])
             /* Initialize the extension stuff which will be written to */
             struct s2n_blob out_blob;
             struct s2n_stuffer out_stuffer;
-            uint8_t extension_out[EXTENSION_LEN + EXTENSION_DATA_LEN + COOKIE_SIZE_LEN + COOKIE_TEST_SIZE] = { 0 };
+            uint8_t extension_out[EXTENSION_LEN + EXTENSION_DATA_LEN + COOKIE_SIZE_LEN + COOKIE_TEST_SIZE] = {0};
 
             EXPECT_SUCCESS(s2n_blob_init(&out_blob, extension_out, sizeof(extension_out)));
             EXPECT_SUCCESS(s2n_stuffer_init(&out_stuffer, &out_blob));
 
             /* This cookie says it has 3 bytes, but only has 2 bytes */
-            uint8_t bad_size[5] = { TLS_EXTENSION_COOKIE, 0x00, 0x03, 0x00, 0x00 };
+            uint8_t bad_size[5] = {TLS_EXTENSION_COOKIE, 0x00, 0x03, 0x00, 0x00};
             EXPECT_SUCCESS(s2n_stuffer_write_bytes(&out_stuffer, bad_size, sizeof(bad_size)));
 
-            /* The receive should succeed, but since the extension was corrupted it 
+            /* The receive should succeed, but since the extension was corrupted it
              * should not be saved to the connection. */
             EXPECT_SUCCESS(s2n_extensions_cookie_recv(conn, &out_stuffer));
             EXPECT_EQUAL(s2n_extensions_cookie_size(conn), 0);

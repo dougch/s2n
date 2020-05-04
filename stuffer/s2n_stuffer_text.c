@@ -16,13 +16,12 @@
 #include <string.h>
 
 #include "stuffer/s2n_stuffer.h"
-
-#include "utils/s2n_safety.h"
 #include "utils/s2n_mem.h"
+#include "utils/s2n_safety.h"
 
 int s2n_stuffer_peek_char(struct s2n_stuffer *s2n_stuffer, char *c)
 {
-    int r = s2n_stuffer_read_uint8(s2n_stuffer, (uint8_t *) c);
+    int r = s2n_stuffer_read_uint8(s2n_stuffer, (uint8_t *)c);
     if (r == 0) {
         s2n_stuffer->read_cursor--;
     }
@@ -47,15 +46,15 @@ int s2n_stuffer_skip_whitespace(struct s2n_stuffer *s2n_stuffer)
     int skipped = 0;
     while (s2n_stuffer->read_cursor < s2n_stuffer->write_cursor) {
         switch (s2n_stuffer->blob.data[s2n_stuffer->read_cursor]) {
-        case ' ':              /* We don't use isspace, because it changes under locales */
-        case '\t':
-        case '\n':
-        case '\r':
-            s2n_stuffer->read_cursor += 1;
-            skipped += 1;
-            break;
-        default:
-            return skipped;
+            case ' ': /* We don't use isspace, because it changes under locales */
+            case '\t':
+            case '\n':
+            case '\r':
+                s2n_stuffer->read_cursor += 1;
+                skipped += 1;
+                break;
+            default:
+                return skipped;
         }
     }
 
@@ -79,7 +78,7 @@ int s2n_stuffer_skip_read_until(struct s2n_stuffer *stuffer, const char *target)
         char *actual = s2n_stuffer_raw_read(stuffer, len);
         notnull_check(actual);
 
-        if (strncmp(actual, target, len) == 0){
+        if (strncmp(actual, target, len) == 0) {
             return 0;
         } else {
             /* If string doesn't match, rewind stuffer to 1 byte after last read */
@@ -89,7 +88,6 @@ int s2n_stuffer_skip_read_until(struct s2n_stuffer *stuffer, const char *target)
     }
 
     return 0;
-
 }
 
 /* Skips the stuffer until the first instance of the target character or until there is no more data. */
@@ -113,7 +111,7 @@ int s2n_stuffer_skip_expected_char(struct s2n_stuffer *stuffer, const char expec
 {
     int skipped = 0;
     while (stuffer->read_cursor < stuffer->write_cursor && skipped < max) {
-        if (stuffer->blob.data[stuffer->read_cursor] == expected){
+        if (stuffer->blob.data[stuffer->read_cursor] == expected) {
             stuffer->read_cursor += 1;
             skipped += 1;
         } else {

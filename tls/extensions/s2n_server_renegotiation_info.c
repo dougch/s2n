@@ -13,19 +13,17 @@
  * permissions and limitations under the License.
  */
 
-#include "error/s2n_errno.h"
-
-#include "stuffer/s2n_stuffer.h"
-
-#include "utils/s2n_safety.h"
-
-#include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_connection.h"
-#include "tls/s2n_tls.h"
 #include "tls/extensions/s2n_server_renegotiation_info.h"
 
-#define s2n_server_can_send_secure_renegotiation(conn) ((conn)->secure_renegotiation && \
-        (conn)->actual_protocol_version < S2N_TLS13)
+#include "error/s2n_errno.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_tls.h"
+#include "tls/s2n_tls_parameters.h"
+#include "utils/s2n_safety.h"
+
+#define s2n_server_can_send_secure_renegotiation(conn) \
+    ((conn)->secure_renegotiation && (conn)->actual_protocol_version < S2N_TLS13)
 
 int s2n_recv_server_renegotiation_info_ext(struct s2n_connection *conn, struct s2n_stuffer *extension)
 {

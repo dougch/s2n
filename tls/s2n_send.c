@@ -13,32 +13,28 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
 #include <errno.h>
 #include <s2n.h>
+#include <sys/param.h>
 
+#include "crypto/s2n_cipher.h"
 #include "error/s2n_errno.h"
-
+#include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_handshake.h"
 #include "tls/s2n_record.h"
-
-#include "stuffer/s2n_stuffer.h"
-
-#include "crypto/s2n_cipher.h"
-
-#include "utils/s2n_safety.h"
 #include "utils/s2n_blob.h"
+#include "utils/s2n_safety.h"
 
-int s2n_flush(struct s2n_connection *conn, s2n_blocked_status * blocked)
+int s2n_flush(struct s2n_connection *conn, s2n_blocked_status *blocked)
 {
     int w;
 
     *blocked = S2N_BLOCKED_ON_WRITE;
 
     /* Write any data that's already pending */
-  WRITE:
+WRITE:
     while (s2n_stuffer_data_available(&conn->out)) {
         errno = 0;
         w = s2n_connection_send_stuffer(&conn->out, conn, s2n_stuffer_data_available(&conn->out));
@@ -87,7 +83,8 @@ int s2n_flush(struct s2n_connection *conn, s2n_blocked_status * blocked)
     return 0;
 }
 
-ssize_t s2n_sendv_with_offset(struct s2n_connection *conn, const struct iovec *bufs, ssize_t count, ssize_t offs, s2n_blocked_status *blocked)
+ssize_t s2n_sendv_with_offset(struct s2n_connection *conn, const struct iovec *bufs, ssize_t count, ssize_t offs,
+                              s2n_blocked_status *blocked)
 {
     ssize_t user_data_sent, total_size = 0;
     int max_payload_size;
@@ -117,7 +114,7 @@ ssize_t s2n_sendv_with_offset(struct s2n_connection *conn, const struct iovec *b
 
     /* Defensive check against an invalid retry */
     if (offs) {
-        const struct iovec* _bufs = bufs;
+        const struct iovec *_bufs = bufs;
         ssize_t _count = count;
         while (offs >= _bufs->iov_len && _count > 0) {
             offs -= _bufs->iov_len;
@@ -137,7 +134,7 @@ ssize_t s2n_sendv_with_offset(struct s2n_connection *conn, const struct iovec *b
         uint64_t elapsed;
         GUARD(s2n_timer_elapsed(conn->config, &conn->write_timer, &elapsed));
         /* Reset record size back to a single segment after threshold seconds of inactivity */
-        if (elapsed - conn->last_write_elapsed > (uint64_t) conn->dynamic_record_timeout_threshold * 1000000000) {
+        if (elapsed - conn->last_write_elapsed > (uint64_t)conn->dynamic_record_timeout_threshold * 1000000000) {
             conn->active_application_bytes_consumed = 0;
         }
         conn->last_write_elapsed = elapsed;
@@ -148,20 +145,21 @@ ssize_t s2n_sendv_with_offset(struct s2n_connection *conn, const struct iovec *b
         ssize_t to_write = MIN(total_size - conn->current_user_data_consumed, max_payload_size);
 
         /* If dynamic record size is enabled,
-         * use small TLS records that fit into a single TCP segment for the threshold bytes of data     
+         * use small TLS records that fit into a single TCP segment for the threshold bytes of data
          */
-        if (conn->active_application_bytes_consumed < (uint64_t) conn->dynamic_record_resize_threshold) {
+        if (conn->active_application_bytes_consumed < (uint64_t)conn->dynamic_record_resize_threshold) {
             int min_payload_size = s2n_record_min_write_payload_size(conn);
             GUARD(min_payload_size);
             if (min_payload_size < to_write) {
-                to_write = min_payload_size; 
+                to_write = min_payload_size;
             }
         }
 
         /* Don't split messages in server mode for interoperability with naive clients.
          * Some clients may have expectations based on the amount of content in the first record.
          */
-        if (conn->actual_protocol_version < S2N_TLS11 && writer->cipher_suite->record_alg->cipher->type == S2N_CBC && conn->mode != S2N_SERVER) {
+        if (conn->actual_protocol_version < S2N_TLS11 && writer->cipher_suite->record_alg->cipher->type == S2N_CBC
+            && conn->mode != S2N_SERVER) {
             if (to_write > 1 && cbcHackUsed == 0) {
                 to_write = 1;
                 cbcHackUsed = 1;
@@ -170,8 +168,8 @@ ssize_t s2n_sendv_with_offset(struct s2n_connection *conn, const struct iovec *b
 
         /* Write and encrypt the record */
         GUARD(s2n_stuffer_rewrite(&conn->out));
-        GUARD(s2n_record_writev(conn, TLS_APPLICATION_DATA, bufs, count, 
-            conn->current_user_data_consumed + offs, to_write));
+        GUARD(s2n_record_writev(conn, TLS_APPLICATION_DATA, bufs, count, conn->current_user_data_consumed + offs,
+                                to_write));
         conn->current_user_data_consumed += to_write;
         conn->active_application_bytes_consumed += to_write;
 
@@ -208,7 +206,7 @@ ssize_t s2n_sendv(struct s2n_connection *conn, const struct iovec *bufs, ssize_t
 ssize_t s2n_send(struct s2n_connection *conn, const void *buf, ssize_t size, s2n_blocked_status *blocked)
 {
     struct iovec iov;
-    iov.iov_base = (void*)(uintptr_t)buf;
+    iov.iov_base = (void *)(uintptr_t)buf;
     iov.iov_len = size;
     return s2n_sendv_with_offset(conn, &iov, 1, 0, blocked);
 }

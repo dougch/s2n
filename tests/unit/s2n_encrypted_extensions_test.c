@@ -13,19 +13,16 @@
  * permissions and limitations under the License.
  */
 
+#include "error/s2n_errno.h"
 #include "s2n_test.h"
+#include "stuffer/s2n_stuffer.h"
 #include "testlib/s2n_testlib.h"
-
-#include "tls/s2n_tls.h"
-#include "tls/s2n_tls13.h"
-
 #include "tls/extensions/s2n_server_alpn.h"
 #include "tls/extensions/s2n_server_max_fragment_length.h"
 #include "tls/extensions/s2n_server_server_name.h"
 #include "tls/extensions/s2n_server_supported_versions.h"
-
-#include "error/s2n_errno.h"
-#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_tls.h"
+#include "tls/s2n_tls13.h"
 #include "utils/s2n_safety.h"
 
 int main(int argc, char **argv)
@@ -87,7 +84,8 @@ int main(int argc, char **argv)
         EXPECT_EQUAL(s2n_server_extensions_server_name_send_size(server_conn), EMPTY_SERVER_NAME_EXT_SIZE);
         EXPECT_EQUAL(s2n_encrypted_extensions_send_size(server_conn), EMPTY_SERVER_NAME_EXT_SIZE);
         EXPECT_SUCCESS(s2n_encrypted_extensions_send(server_conn));
-        S2N_STUFFER_LENGTH_WRITTEN_EXPECT_EQUAL(extension_stuffer, EMPTY_SERVER_NAME_EXT_SIZE + ENCRYPTED_EXTENSIONS_HEADER_SIZE);
+        S2N_STUFFER_LENGTH_WRITTEN_EXPECT_EQUAL(extension_stuffer,
+                                                EMPTY_SERVER_NAME_EXT_SIZE + ENCRYPTED_EXTENSIONS_HEADER_SIZE);
         /* Reset and check */
         server_conn->server_name_used = 0;
         EXPECT_EQUAL(s2n_encrypted_extensions_send_size(server_conn), 0);
@@ -121,7 +119,8 @@ int main(int argc, char **argv)
         server_conn->mfl_code = S2N_TLS_MAX_FRAG_LEN_1024;
         EXPECT_EQUAL(s2n_encrypted_extensions_send_size(server_conn), EMPTY_SERVER_NAME_EXT_SIZE + MFL_EXT_SIZE);
         EXPECT_SUCCESS(s2n_encrypted_extensions_send(server_conn));
-        S2N_STUFFER_LENGTH_WRITTEN_EXPECT_EQUAL(extension_stuffer, EMPTY_SERVER_NAME_EXT_SIZE + MFL_EXT_SIZE + ENCRYPTED_EXTENSIONS_HEADER_SIZE);
+        S2N_STUFFER_LENGTH_WRITTEN_EXPECT_EQUAL(
+            extension_stuffer, EMPTY_SERVER_NAME_EXT_SIZE + MFL_EXT_SIZE + ENCRYPTED_EXTENSIONS_HEADER_SIZE);
 
         EXPECT_SUCCESS(s2n_connection_free(server_conn));
     }
@@ -153,7 +152,8 @@ int main(int argc, char **argv)
         struct s2n_connection *client_conn;
         EXPECT_NOT_NULL(client_conn = s2n_connection_new(S2N_CLIENT));
         EXPECT_SUCCESS(s2n_connection_set_config(client_conn, config));
-        client_conn->actual_protocol_version = S2N_TLS13;;
+        client_conn->actual_protocol_version = S2N_TLS13;
+        ;
 
         /* Write length of ALPN extension, then write the extension itself */
         strcpy(client_conn->application_protocol, "h2");
@@ -165,7 +165,8 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_stuffer_write_uint16(&client_conn->handshake.io, application_protocol_len + 3));
         EXPECT_SUCCESS(s2n_stuffer_write_uint16(&client_conn->handshake.io, application_protocol_len + 1));
         EXPECT_SUCCESS(s2n_stuffer_write_uint8(&client_conn->handshake.io, application_protocol_len));
-        EXPECT_SUCCESS(s2n_stuffer_write_bytes(&client_conn->handshake.io, (uint8_t *) client_conn->application_protocol, application_protocol_len));
+        EXPECT_SUCCESS(s2n_stuffer_write_bytes(&client_conn->handshake.io, (uint8_t *)client_conn->application_protocol,
+                                               application_protocol_len));
 
         /* Client parses encrypted extensions */
         strcpy(client_conn->application_protocol, "");

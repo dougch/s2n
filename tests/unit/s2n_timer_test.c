@@ -12,13 +12,10 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "s2n_test.h"
-
 #include "utils/s2n_timer.h"
 
+#include "s2n_test.h"
 #include "tls/s2n_config.h"
-
-
 
 int mock_clock(void *in, uint64_t *out)
 {

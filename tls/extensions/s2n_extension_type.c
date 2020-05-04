@@ -13,10 +13,11 @@
  * permissions and limitations under the License.
  */
 
+#include "tls/extensions/s2n_extension_type.h"
+
 #include <s2n.h>
 
 #include "error/s2n_errno.h"
-#include "tls/extensions/s2n_extension_type.h"
 #include "tls/s2n_client_extensions.h"
 #include "tls/s2n_connection.h"
 #include "utils/s2n_bitmap.h"
@@ -87,8 +88,8 @@ int s2n_extension_send(const s2n_extension_type *extension_type, struct s2n_conn
     notnull_check(conn);
 
     /* Do not send response if request not received. */
-    if (extension_type->is_response &&
-            !S2N_CBIT_TEST(conn->extension_requests_received, s2n_extension_type_get_id(extension_type))) {
+    if (extension_type->is_response
+        && !S2N_CBIT_TEST(conn->extension_requests_received, s2n_extension_type_get_id(extension_type))) {
         return S2N_SUCCESS;
     }
 
@@ -104,8 +105,9 @@ int s2n_extension_send(const s2n_extension_type *extension_type, struct s2n_conn
 
     GUARD(extension_type->send(conn, out));
 
-    GUARD(s2n_stuffer_write_uint16(&size_stuffer,
-            s2n_stuffer_data_available(out) - s2n_stuffer_data_available(&size_stuffer) - TLS_EXTENSION_DATA_LENGTH_BYTES));
+    GUARD(s2n_stuffer_write_uint16(
+        &size_stuffer,
+        s2n_stuffer_data_available(out) - s2n_stuffer_data_available(&size_stuffer) - TLS_EXTENSION_DATA_LENGTH_BYTES));
 
     /* Set request bit flag */
     if (!extension_type->is_response) {
@@ -122,8 +124,8 @@ int s2n_extension_recv(const s2n_extension_type *extension_type, struct s2n_conn
     notnull_check(conn);
 
     /* Do not accept a response if we did not send a request */
-    if(extension_type->is_response &&
-            !S2N_CBIT_TEST(conn->extension_requests_sent, s2n_extension_type_get_id(extension_type))) {
+    if (extension_type->is_response
+        && !S2N_CBIT_TEST(conn->extension_requests_sent, s2n_extension_type_get_id(extension_type))) {
         S2N_ERROR(S2N_ERR_UNSUPPORTED_EXTENSION);
     }
 
@@ -147,22 +149,10 @@ int s2n_extension_recv_unimplemented(struct s2n_connection *conn, struct s2n_stu
     S2N_ERROR(S2N_ERR_UNIMPLEMENTED);
 }
 
-int s2n_extension_always_send(struct s2n_connection *conn)
-{
-    return true;
-}
+int s2n_extension_always_send(struct s2n_connection *conn) { return true; }
 
-int s2n_extension_never_send(struct s2n_connection *conn)
-{
-    return false;
-}
+int s2n_extension_never_send(struct s2n_connection *conn) { return false; }
 
-int s2n_extension_error_if_missing(struct s2n_connection *conn)
-{
-    S2N_ERROR(S2N_ERR_MISSING_EXTENSION);
-}
+int s2n_extension_error_if_missing(struct s2n_connection *conn) { S2N_ERROR(S2N_ERR_MISSING_EXTENSION); }
 
-int s2n_extension_noop_if_missing(struct s2n_connection *conn)
-{
-    return S2N_SUCCESS;
-}
+int s2n_extension_noop_if_missing(struct s2n_connection *conn) { return S2N_SUCCESS; }

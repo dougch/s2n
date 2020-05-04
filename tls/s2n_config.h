@@ -23,25 +23,26 @@
 #include "utils/s2n_blob.h"
 #include "utils/s2n_set.h"
 
-#define S2N_MAX_TICKET_KEYS 48
+#define S2N_MAX_TICKET_KEYS       48
 #define S2N_MAX_TICKET_KEY_HASHES 500 /* 10KB */
 
 struct s2n_cipher_preferences;
 
-struct s2n_config {
-    unsigned cert_allocated:1;
-    unsigned default_certs_are_explicit:1;
-    unsigned use_tickets:1;
-    unsigned use_session_cache:1;
+struct s2n_config
+{
+    unsigned cert_allocated : 1;
+    unsigned default_certs_are_explicit : 1;
+    unsigned use_tickets : 1;
+    unsigned use_session_cache : 1;
     /* if this is FALSE, server will ignore client's Maximum Fragment Length request */
-    unsigned accept_mfl:1;
-    unsigned check_ocsp:1;
-    unsigned disable_x509_validation:1;
-    unsigned max_verify_cert_chain_depth_set:1;
+    unsigned accept_mfl : 1;
+    unsigned check_ocsp : 1;
+    unsigned disable_x509_validation : 1;
+    unsigned max_verify_cert_chain_depth_set : 1;
 
     struct s2n_dh_params *dhparams;
     /* Needed until we can deprecate s2n_config_add_cert_chain_and_key. This is
-     * used to release memory allocated only in the deprecated API that the application 
+     * used to release memory allocated only in the deprecated API that the application
      * does not have a reference to. */
     struct s2n_map *domain_name_to_cert_map;
     struct certs_by_type default_certs_by_type;
@@ -83,8 +84,8 @@ struct s2n_config {
 
     s2n_alert_behavior alert_behavior;
 
-    /* Return TRUE if the host should be trusted, If FALSE this will likely be called again for every host/alternative name
-     * in the certificate. If any respond TRUE. If none return TRUE, the cert will be considered untrusted. */
+    /* Return TRUE if the host should be trusted, If FALSE this will likely be called again for every host/alternative
+     * name in the certificate. If any respond TRUE. If none return TRUE, the cert will be considered untrusted. */
     uint8_t (*verify_host)(const char *host_name, size_t host_name_len, void *data);
     void *data_for_verify_host;
 

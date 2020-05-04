@@ -12,13 +12,15 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
+#include "utils/s2n_array.h"
+
 #include "s2n_test.h"
 #include "utils/s2n_blob.h"
 #include "utils/s2n_mem.h"
 #include "utils/s2n_safety.h"
-#include "utils/s2n_array.h"
 
-struct array_element {
+struct array_element
+{
     int first;
     char second;
 };
@@ -86,7 +88,8 @@ int main(int argc, char **argv)
     /* Insert element at given index */
     struct array_element *insert_element = s2n_array_insert(array, 16);
     insert_element->first = 20;
-    insert_element->second = 'a' + 20;;
+    insert_element->second = 'a' + 20;
+    ;
 
     /* Validate array parameters */
     EXPECT_EQUAL(array->capacity, 32);

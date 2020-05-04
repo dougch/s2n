@@ -15,32 +15,32 @@
 #ifndef __SIKE_R1_KEM_H_INCLUDED__
 #define __SIKE_R1_KEM_H_INCLUDED__
 
-#include "sike_r1_namespace.h"
 #include "../pq_utils.h"
+#include "sike_r1_namespace.h"
 
 ////////////////////////////////////////////////////////////////
-//The three APIs below (keypair, enc, dec) are defined by NIST:
+// The three APIs below (keypair, enc, dec) are defined by NIST:
 ////////////////////////////////////////////////////////////////
 // Keygenerate - pk is the public key
 //               sk is the private key
 // Return 0 for success and !0 for failures. See types.h for failure codes
 int SIKE_P503_r1_crypto_kem_keypair(OUT unsigned char *pk, OUT unsigned char *sk);
 
-//Encapsulate - pk is the public key,
+// Encapsulate - pk is the public key,
 //              ct is a key encapsulation message (ciphertext),
 //              ss is the shared secret.
 // Return 0 for success and !0 for failures. See types.h for failure codes
-int SIKE_P503_r1_crypto_kem_enc(OUT unsigned char *ct, OUT unsigned char *ss, IN  const unsigned char *pk);
+int SIKE_P503_r1_crypto_kem_enc(OUT unsigned char *ct, OUT unsigned char *ss, IN const unsigned char *pk);
 
-//Decapsulate - ct is a key encapsulation message (ciphertext),
+// Decapsulate - ct is a key encapsulation message (ciphertext),
 //              sk is the private key,
 //              ss is the shared secret
 // Return 0 for success and !0 for failures. See types.h for failure codes
 int SIKE_P503_r1_crypto_kem_dec(OUT unsigned char *ss, IN const unsigned char *ct, IN const unsigned char *sk);
 
-#define SIKE_P503_R1_SECRET_KEY_BYTES  434
-#define SIKE_P503_R1_PUBLIC_KEY_BYTES  378
-#define SIKE_P503_R1_CIPHERTEXT_BYTES 402
+#define SIKE_P503_R1_SECRET_KEY_BYTES    434
+#define SIKE_P503_R1_PUBLIC_KEY_BYTES    378
+#define SIKE_P503_R1_CIPHERTEXT_BYTES    402
 #define SIKE_P503_R1_SHARED_SECRET_BYTES 16
 
-#endif //__SIKE_r1_KEM_H_INCLUDED__
+#endif  //__SIKE_r1_KEM_H_INCLUDED__

@@ -18,20 +18,20 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <openssl/crypto.h>
+#include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-
-#include <openssl/crypto.h>
-#include <openssl/err.h>
-#include <openssl/x509v3.h>
-#include <openssl/x509.h>
-#include <openssl/pem.h>
+#include <unistd.h>
 
 #include "api/s2n.h"
+#include "s2n_test.h"
 #include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_config.h"
@@ -41,15 +41,11 @@
 #include "tls/s2n_tls_parameters.h"
 #include "utils/s2n_random.h"
 #include "utils/s2n_safety.h"
-#include "s2n_test.h"
 
-#define MAX_TOKENS 1024
+#define MAX_TOKENS       1024
 #define MAX_CERTIFICATES 256
 
-static void s2n_fuzz_atexit()
-{
-    s2n_cleanup();
-}
+static void s2n_fuzz_atexit() { s2n_cleanup(); }
 
 int LLVMFuzzerInitialize(const uint8_t *buf, size_t len)
 {
@@ -70,18 +66,18 @@ size_t find_strings(const uint8_t *buf, size_t len, const char **output_strings,
 {
     size_t num_strings = 0;
     int cursor = 0;
-    while(1) {
+    while (1) {
         if (cursor >= len || num_strings == max_strings) {
             return num_strings;
         }
-        const char *cur_str = (const char *) (buf + cursor);
-        const char *next_null = (const char *) memchr((const void *) cur_str, '\0', (len - cursor));
+        const char *cur_str = (const char *)(buf + cursor);
+        const char *next_null = (const char *)memchr((const void *)cur_str, '\0', (len - cursor));
         if (next_null == NULL) {
             return num_strings;
         }
 
         /* We found a null byte. Move the cursor beyond it. */
-        cursor = (((const uint8_t *) next_null - buf) + 1);
+        cursor = (((const uint8_t *)next_null - buf) + 1);
         if (cursor >= len) {
             return num_strings;
         }
@@ -112,9 +108,9 @@ GENERAL_NAME *string_to_general_name(const char *str)
     return san_name;
 }
 
-static int set_x509_sans(X509* x509_cert, const char **names, size_t num_sans)
+static int set_x509_sans(X509 *x509_cert, const char **names, size_t num_sans)
 {
-    GENERAL_NAMES* san_names = sk_GENERAL_NAME_new_null();
+    GENERAL_NAMES *san_names = sk_GENERAL_NAME_new_null();
     if (!san_names) {
         return -1;
     }
@@ -126,7 +122,6 @@ static int set_x509_sans(X509* x509_cert, const char **names, size_t num_sans)
         }
         sk_GENERAL_NAME_push(san_names, san_name);
     }
-
 
     if (X509_add1_ext_i2d(x509_cert, NID_subject_alt_name, san_names, 0, X509V3_ADD_REPLACE) <= 0) {
         GENERAL_NAMES_free(san_names);
@@ -145,7 +140,8 @@ static int set_x509_cns(X509 *x509_cert, const char **cns, size_t num_cns)
     }
 
     for (int i = 0; i < num_cns; i++) {
-        X509_NAME_add_entry_by_NID(x509_name, NID_commonName, MBSTRING_ASC, (unsigned char *)(uintptr_t) cns[i], -1, -1, 1);
+        X509_NAME_add_entry_by_NID(x509_name, NID_commonName, MBSTRING_ASC, (unsigned char *)(uintptr_t)cns[i], -1, -1,
+                                   1);
     }
 
     X509_set_subject_name(x509_cert, x509_name);
@@ -185,7 +181,7 @@ static struct s2n_cert_chain_and_key *create_cert(const char **names, int num_na
     x509_cert = NULL;
 
     /* Figure out if this should be an RSA or ECDSA certificate */
-    s2n_pkey_type pkey_type = (names[0][0] & 0x2) ? S2N_PKEY_TYPE_RSA: S2N_PKEY_TYPE_ECDSA;
+    s2n_pkey_type pkey_type = (names[0][0] & 0x2) ? S2N_PKEY_TYPE_RSA : S2N_PKEY_TYPE_ECDSA;
     struct s2n_cert *head = calloc(1, sizeof(struct s2n_cert));
     if (!head) {
         goto cert_cleanup;
@@ -196,8 +192,12 @@ static struct s2n_cert_chain_and_key *create_cert(const char **names, int num_na
     return cert;
 
 cert_cleanup:
-    if (cert) { s2n_cert_chain_and_key_free(cert); }
-    if (x509_cert) { X509_free(x509_cert); }
+    if (cert) {
+        s2n_cert_chain_and_key_free(cert);
+    }
+    if (x509_cert) {
+        X509_free(x509_cert);
+    }
     return NULL;
 }
 
@@ -205,7 +205,8 @@ cert_cleanup:
  * Try to create some number of certificates with SANs/CNs provided by a list of input C strings. Return the number of
  * certificates created.
  */
-static size_t create_certs(const char **strings, unsigned int num_strings, struct s2n_cert_chain_and_key **out_certs, unsigned int num_certs)
+static size_t create_certs(const char **strings, unsigned int num_strings, struct s2n_cert_chain_and_key **out_certs,
+                           unsigned int num_certs)
 {
     if (num_certs == 0) {
         return 0;
@@ -219,7 +220,7 @@ static size_t create_certs(const char **strings, unsigned int num_strings, struc
     const int num_names_per_cert = num_strings / num_certs;
     size_t num_certs_added = 0;
     for (int i = 0; i < num_certs; i++) {
-        struct s2n_cert_chain_and_key *cert = create_cert((&strings[i*num_names_per_cert]), num_names_per_cert);
+        struct s2n_cert_chain_and_key *cert = create_cert((&strings[i * num_names_per_cert]), num_names_per_cert);
         if (!cert) {
             continue;
         }
@@ -229,7 +230,6 @@ static size_t create_certs(const char **strings, unsigned int num_strings, struc
 
     return num_certs_added;
 }
-
 
 /*
  * This fuzz test uses the fuzz input to:
@@ -241,7 +241,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *buf, size_t len)
 {
     struct s2n_config *config = s2n_config_new();
     struct s2n_connection *conn = s2n_connection_new(S2N_SERVER);
-    struct s2n_cert_chain_and_key *certs[MAX_CERTIFICATES] = { NULL };
+    struct s2n_cert_chain_and_key *certs[MAX_CERTIFICATES] = {NULL};
 
     if (!config || !conn || len == 0) {
         goto cleanup;
@@ -250,7 +250,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *buf, size_t len)
     /* Create an array of strings based on fuzz input. To populate the cert SANs,CN and
      * input hostname.
      */
-    const char *strings[MAX_TOKENS] = { NULL };
+    const char *strings[MAX_TOKENS] = {NULL};
     size_t num_strings = find_strings(buf, len, strings, MAX_TOKENS);
     if (num_strings == 0) {
         goto cleanup;
@@ -286,8 +286,12 @@ cleanup:
             s2n_cert_chain_and_key_free(certs[i]);
         }
     }
-    if (conn != NULL) { s2n_connection_free(conn); }
-    if (config != NULL) { s2n_config_free(config); }
+    if (conn != NULL) {
+        s2n_connection_free(conn);
+    }
+    if (config != NULL) {
+        s2n_config_free(config);
+    }
 
     return 0;
 }

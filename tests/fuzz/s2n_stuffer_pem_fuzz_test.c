@@ -27,10 +27,7 @@
 #include "stuffer/s2n_stuffer.h"
 #include "utils/s2n_safety.h"
 
-static void s2n_fuzz_atexit()
-{
-    s2n_cleanup();
-}
+static void s2n_fuzz_atexit() { s2n_cleanup(); }
 
 int LLVMFuzzerInitialize(const uint8_t *buf, size_t len)
 {

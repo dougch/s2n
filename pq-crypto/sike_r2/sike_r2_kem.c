@@ -1,14 +1,16 @@
 /********************************************************************************************
-* SIDH: an efficient supersingular isogeny cryptography library
-*
-* Abstract: supersingular isogeny key encapsulation (SIKE) protocol
-*********************************************************************************************/
+ * SIDH: an efficient supersingular isogeny cryptography library
+ *
+ * Abstract: supersingular isogeny key encapsulation (SIKE) protocol
+ *********************************************************************************************/
 
 #include <string.h>
+
 #include "../pq_random.h"
 #include "fips202.h"
 
-int SIKE_P434_r2_crypto_kem_keypair(unsigned char *pk, unsigned char *sk) {
+int SIKE_P434_r2_crypto_kem_keypair(unsigned char *pk, unsigned char *sk)
+{
     // SIKE's key generation
     // Outputs: secret key sk (CRYPTO_SECRETKEYBYTES = MSG_BYTES + SECRETKEY_B_BYTES + CRYPTO_PUBLICKEYBYTES bytes)
     //          public key pk (CRYPTO_PUBLICKEYBYTES bytes)
@@ -30,7 +32,8 @@ int SIKE_P434_r2_crypto_kem_keypair(unsigned char *pk, unsigned char *sk) {
     return 0;
 }
 
-int SIKE_P434_r2_crypto_kem_enc(unsigned char *ct, unsigned char *ss, const unsigned char *pk) {
+int SIKE_P434_r2_crypto_kem_enc(unsigned char *ct, unsigned char *ss, const unsigned char *pk)
+{
     // SIKE's encapsulation
     // Input:   public key pk         (CRYPTO_PUBLICKEYBYTES bytes)
     // Outputs: shared secret ss      (CRYPTO_BYTES bytes)
@@ -38,7 +41,7 @@ int SIKE_P434_r2_crypto_kem_enc(unsigned char *ct, unsigned char *ss, const unsi
 
     union {
         unsigned char b[SECRETKEY_A_BYTES];
-        digit_t       d[SECRETKEY_A_BYTES/sizeof(digit_t)];
+        digit_t d[SECRETKEY_A_BYTES / sizeof(digit_t)];
     } ephemeralsk;
     unsigned char jinvariant[FP2_ENCODED_BYTES];
     unsigned char h[MSG_BYTES];
@@ -64,15 +67,17 @@ int SIKE_P434_r2_crypto_kem_enc(unsigned char *ct, unsigned char *ss, const unsi
     return 0;
 }
 
-int SIKE_P434_r2_crypto_kem_dec(unsigned char *ss, const unsigned char *ct, const unsigned char *sk) {
+int SIKE_P434_r2_crypto_kem_dec(unsigned char *ss, const unsigned char *ct, const unsigned char *sk)
+{
     // SIKE's decapsulation
-    // Input:   secret key sk         (CRYPTO_SECRETKEYBYTES = MSG_BYTES + SECRETKEY_B_BYTES + CRYPTO_PUBLICKEYBYTES bytes)
+    // Input:   secret key sk         (CRYPTO_SECRETKEYBYTES = MSG_BYTES + SECRETKEY_B_BYTES + CRYPTO_PUBLICKEYBYTES
+    // bytes)
     //          ciphertext message ct (CRYPTO_CIPHERTEXTBYTES = CRYPTO_PUBLICKEYBYTES + MSG_BYTES bytes)
     // Outputs: shared secret ss      (CRYPTO_BYTES bytes)
 
     union {
         unsigned char b[SECRETKEY_A_BYTES];
-        digit_t       d[SECRETKEY_A_BYTES/sizeof(digit_t)];
+        digit_t d[SECRETKEY_A_BYTES / sizeof(digit_t)];
     } ephemeralsk_;
     unsigned char jinvariant_[FP2_ENCODED_BYTES];
     unsigned char h_[MSG_BYTES];

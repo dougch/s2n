@@ -13,15 +13,12 @@
  * permissions and limitations under the License.
  */
 
-#include "stuffer/s2n_stuffer.h"
-
-#include "utils/s2n_safety.h"
-
-#include "tls/s2n_connection.h"
-#include "tls/s2n_tls.h"
-
 #include "tls/extensions/s2n_server_alpn.h"
 
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_tls.h"
+#include "utils/s2n_safety.h"
 
 /* Precalculate size of extension */
 int s2n_server_extensions_alpn_send_size(struct s2n_connection *conn)
@@ -48,7 +45,7 @@ int s2n_server_extensions_alpn_send(struct s2n_connection *conn, struct s2n_stuf
     GUARD(s2n_stuffer_write_uint16(out, application_protocol_len + 3));
     GUARD(s2n_stuffer_write_uint16(out, application_protocol_len + 1));
     GUARD(s2n_stuffer_write_uint8(out, application_protocol_len));
-    GUARD(s2n_stuffer_write_bytes(out, (uint8_t *) conn->application_protocol, application_protocol_len));
+    GUARD(s2n_stuffer_write_bytes(out, (uint8_t *)conn->application_protocol, application_protocol_len));
 
     return 0;
 }

@@ -13,16 +13,16 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
-#include <stdint.h>
-
 #include "tls/extensions/s2n_client_supported_versions.h"
+
+#include <stdint.h>
+#include <sys/param.h>
+
 #include "tls/extensions/s2n_supported_versions.h"
 #include "tls/s2n_alerts.h"
 #include "tls/s2n_cipher_preferences.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-
 #include "utils/s2n_safety.h"
 
 /**
@@ -44,7 +44,8 @@
  * is already an assumption made in the old client hello version handling.
  **/
 
-int s2n_extensions_client_supported_versions_size(struct s2n_connection *conn) {
+int s2n_extensions_client_supported_versions_size(struct s2n_connection *conn)
+{
     uint8_t minimum_supported_version;
     GUARD(s2n_connection_get_minimum_supported_version(conn, &minimum_supported_version));
     uint8_t highest_supported_version = conn->client_protocol_version;
@@ -54,7 +55,8 @@ int s2n_extensions_client_supported_versions_size(struct s2n_connection *conn) {
     return version_list_length * S2N_TLS_PROTOCOL_VERSION_LEN + 5;
 }
 
-int s2n_extensions_client_supported_versions_process(struct s2n_connection *conn, struct s2n_stuffer *extension) {
+int s2n_extensions_client_supported_versions_process(struct s2n_connection *conn, struct s2n_stuffer *extension)
+{
     uint8_t highest_supported_version = conn->server_protocol_version;
     uint8_t minimum_supported_version;
     GUARD(s2n_connection_get_minimum_supported_version(conn, &minimum_supported_version));
@@ -100,7 +102,8 @@ int s2n_extensions_client_supported_versions_process(struct s2n_connection *conn
     return 0;
 }
 
-int s2n_extensions_client_supported_versions_recv(struct s2n_connection *conn, struct s2n_stuffer *extension) {
+int s2n_extensions_client_supported_versions_recv(struct s2n_connection *conn, struct s2n_stuffer *extension)
+{
     if (s2n_extensions_client_supported_versions_process(conn, extension) < 0) {
         s2n_queue_reader_unsupported_protocol_version_alert(conn);
         S2N_ERROR(S2N_ERR_BAD_MESSAGE);
@@ -108,7 +111,8 @@ int s2n_extensions_client_supported_versions_recv(struct s2n_connection *conn, s
     return 0;
 }
 
-int s2n_extensions_client_supported_versions_send(struct s2n_connection *conn, struct s2n_stuffer *out) {
+int s2n_extensions_client_supported_versions_send(struct s2n_connection *conn, struct s2n_stuffer *out)
+{
     uint8_t highest_supported_version = conn->client_protocol_version;
     uint8_t minimum_supported_version;
     GUARD(s2n_connection_get_minimum_supported_version(conn, &minimum_supported_version));

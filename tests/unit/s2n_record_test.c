@@ -13,23 +13,21 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include <string.h>
-#include <stdio.h>
+#include "tls/s2n_record.h"
 
 #include <s2n.h>
-#include "tls/s2n_kex.h"
+#include <stdio.h>
+#include <string.h>
 
-#include "testlib/s2n_testlib.h"
-
-#include "tls/s2n_cipher_suites.h"
-#include "stuffer/s2n_stuffer.h"
 #include "crypto/s2n_cipher.h"
-#include "utils/s2n_random.h"
 #include "crypto/s2n_hmac.h"
-#include "tls/s2n_record.h"
+#include "s2n_test.h"
+#include "stuffer/s2n_stuffer.h"
+#include "testlib/s2n_testlib.h"
+#include "tls/s2n_cipher_suites.h"
+#include "tls/s2n_kex.h"
 #include "tls/s2n_prf.h"
+#include "utils/s2n_random.h"
 
 /* Mock block cipher that does nothing */
 int mock_block_endecrypt(struct s2n_session_key *key, struct s2n_blob *iv, struct s2n_blob *in, struct s2n_blob *out)
@@ -40,8 +38,7 @@ int mock_block_endecrypt(struct s2n_session_key *key, struct s2n_blob *iv, struc
 struct s2n_cipher mock_block_cipher = {
     .type = S2N_CBC,
     .key_material_size = 0,
-    .io.cbc = {
-               .block_size = 16,
+    .io.cbc = {.block_size = 16,
                .record_iv_size = 16,
                .encrypt = mock_block_endecrypt,
                .decrypt = mock_block_endecrypt},
@@ -72,7 +69,7 @@ int main(int argc, char **argv)
 {
     struct s2n_connection *conn;
     uint8_t mac_key[] = "sample mac key";
-    struct s2n_blob fixed_iv = {.data = mac_key,.size = sizeof(mac_key) };
+    struct s2n_blob fixed_iv = {.data = mac_key, .size = sizeof(mac_key)};
     struct s2n_hmac_state check_mac;
     uint8_t random_data[S2N_DEFAULT_FRAGMENT_LENGTH + 1];
     struct s2n_blob r = {.data = random_data, .size = sizeof(random_data)};
@@ -94,7 +91,7 @@ int main(int argc, char **argv)
     conn->actual_protocol_version = S2N_TLS11;
 
     for (int i = 0; i <= S2N_DEFAULT_FRAGMENT_LENGTH + 1; i++) {
-        struct s2n_blob in = {.data = random_data,.size = i };
+        struct s2n_blob in = {.data = random_data, .size = i};
         int bytes_written;
 
         EXPECT_SUCCESS(s2n_stuffer_wipe(&conn->out));
@@ -135,7 +132,7 @@ int main(int argc, char **argv)
     conn->actual_protocol_version = S2N_TLS11;
 
     for (int i = 0; i <= S2N_DEFAULT_FRAGMENT_LENGTH + 1; i++) {
-        struct s2n_blob in = {.data = random_data,.size = i };
+        struct s2n_blob in = {.data = random_data, .size = i};
         int bytes_written;
 
         EXPECT_SUCCESS(s2n_hmac_reset(&check_mac));
@@ -195,7 +192,7 @@ int main(int argc, char **argv)
         EXPECT_MEMCPY_SUCCESS(conn->server->client_sequence_number, original_seq_num, 8);
 
         /* Deliberately corrupt a byte of the output and check that the record
-         * won't parse 
+         * won't parse
          */
         uint32_t byte_to_corrupt;
         EXPECT_SUCCESS(byte_to_corrupt = s2n_public_random(fragment_length));
@@ -217,7 +214,7 @@ int main(int argc, char **argv)
 
     uint16_t max_aligned_fragment = S2N_DEFAULT_FRAGMENT_LENGTH - (S2N_DEFAULT_FRAGMENT_LENGTH % 16);
     for (int i = 0; i <= max_aligned_fragment + 1; i++) {
-        struct s2n_blob in = {.data = random_data,.size = i };
+        struct s2n_blob in = {.data = random_data, .size = i};
         int bytes_written;
 
         EXPECT_SUCCESS(s2n_hmac_reset(&check_mac));
@@ -284,7 +281,7 @@ int main(int argc, char **argv)
 
     max_aligned_fragment = S2N_DEFAULT_FRAGMENT_LENGTH - (S2N_DEFAULT_FRAGMENT_LENGTH % 16);
     for (int i = 0; i <= max_aligned_fragment + 1; i++) {
-        struct s2n_blob in = {.data = random_data,.size = i };
+        struct s2n_blob in = {.data = random_data, .size = i};
         int bytes_written;
 
         EXPECT_SUCCESS(s2n_hmac_reset(&check_mac));
@@ -343,11 +340,11 @@ int main(int argc, char **argv)
     }
 
     /* Test TLS record limit */
-    struct s2n_blob empty_blob = { .data = NULL, .size = 0 };
+    struct s2n_blob empty_blob = {.data = NULL, .size = 0};
     conn->initial.cipher_suite = &s2n_null_cipher_suite;
 
     /* Fast forward the sequence number */
-    uint8_t max_num_records[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+    uint8_t max_num_records[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     EXPECT_MEMCPY_SUCCESS(conn->initial.server_sequence_number, max_num_records, sizeof(max_num_records));
     EXPECT_SUCCESS(s2n_stuffer_wipe(&conn->out));
     /* Sequence number should wrap around */

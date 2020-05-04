@@ -13,9 +13,9 @@
  * permissions and limitations under the License.
  */
 
-#include <openssl/crypto.h>
-
 #include "crypto/s2n_fips.h"
+
+#include <openssl/crypto.h>
 
 static int s2n_fips_mode = 0;
 
@@ -34,7 +34,4 @@ int s2n_fips_init(void)
 }
 
 /* Return 1 if FIPS mode is enabled, 0 otherwise. FIPS mode must be enabled prior to calling s2n_init(). */
-int s2n_is_in_fips_mode(void)
-{
-    return s2n_fips_mode;
-}
+int s2n_is_in_fips_mode(void) { return s2n_fips_mode; }

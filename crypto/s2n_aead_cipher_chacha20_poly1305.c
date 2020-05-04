@@ -17,17 +17,15 @@
 
 #include "crypto/s2n_cipher.h"
 #include "crypto/s2n_openssl.h"
-
 #include "tls/s2n_crypto.h"
-
-#include "utils/s2n_safety.h"
 #include "utils/s2n_blob.h"
+#include "utils/s2n_safety.h"
 
 /* EVP for ChaCha20-Poly1305 added in Openssl 1.1.0. See: https://www.openssl.org/news/cl110.txt .
  * LibreSSL and BoringSSL supports the cipher, but the interface is different from Openssl's. We
  * should define a separate s2n_cipher struct for LibreSSL and BoringSSL.
  */
-#if ((S2N_OPENSSL_VERSION_AT_LEAST(1,1,0)) && !defined(LIBRESSL_VERSION_NUMBER) && !defined(OPENSSL_IS_BORINGSSL))
+#if ((S2N_OPENSSL_VERSION_AT_LEAST(1, 1, 0)) && !defined(LIBRESSL_VERSION_NUMBER) && !defined(OPENSSL_IS_BORINGSSL))
 #define S2N_CHACHA20_POLY1305_AVAILABLE
 #endif
 
@@ -40,7 +38,8 @@ static uint8_t s2n_aead_chacha20_poly1305_available(void)
 #endif
 }
 
-static int s2n_aead_chacha20_poly1305_encrypt(struct s2n_session_key *key, struct s2n_blob *iv, struct s2n_blob *aad, struct s2n_blob *in, struct s2n_blob *out)
+static int s2n_aead_chacha20_poly1305_encrypt(struct s2n_session_key *key, struct s2n_blob *iv, struct s2n_blob *aad,
+                                              struct s2n_blob *in, struct s2n_blob *out)
 {
 #ifdef S2N_CHACHA20_POLY1305_AVAILABLE
     gte_check(in->size, S2N_TLS_CHACHA20_POLY1305_TAG_LEN);
@@ -65,7 +64,9 @@ static int s2n_aead_chacha20_poly1305_encrypt(struct s2n_session_key *key, struc
     GUARD_OSSL(EVP_EncryptFinal_ex(key->evp_cipher_ctx, out->data, &out_len), S2N_ERR_ENCRYPT);
 
     /* write the tag */
-    GUARD_OSSL(EVP_CIPHER_CTX_ctrl(key->evp_cipher_ctx, EVP_CTRL_AEAD_GET_TAG, S2N_TLS_CHACHA20_POLY1305_TAG_LEN, tag_data), S2N_ERR_ENCRYPT);
+    GUARD_OSSL(
+        EVP_CIPHER_CTX_ctrl(key->evp_cipher_ctx, EVP_CTRL_AEAD_GET_TAG, S2N_TLS_CHACHA20_POLY1305_TAG_LEN, tag_data),
+        S2N_ERR_ENCRYPT);
 
     return 0;
 #else
@@ -73,7 +74,8 @@ static int s2n_aead_chacha20_poly1305_encrypt(struct s2n_session_key *key, struc
 #endif
 }
 
-static int s2n_aead_chacha20_poly1305_decrypt(struct s2n_session_key *key, struct s2n_blob *iv, struct s2n_blob *aad, struct s2n_blob *in, struct s2n_blob *out)
+static int s2n_aead_chacha20_poly1305_decrypt(struct s2n_session_key *key, struct s2n_blob *iv, struct s2n_blob *aad,
+                                              struct s2n_blob *in, struct s2n_blob *out)
 {
 #ifdef S2N_CHACHA20_POLY1305_AVAILABLE
     gte_check(in->size, S2N_TLS_CHACHA20_POLY1305_TAG_LEN);
@@ -88,7 +90,9 @@ static int s2n_aead_chacha20_poly1305_decrypt(struct s2n_session_key *key, struc
     uint8_t *tag_data = in->data + in->size - S2N_TLS_CHACHA20_POLY1305_TAG_LEN;
 
     /* Set the TAG */
-    GUARD_OSSL(EVP_CIPHER_CTX_ctrl(key->evp_cipher_ctx, EVP_CTRL_GCM_SET_TAG, S2N_TLS_CHACHA20_POLY1305_TAG_LEN, tag_data), S2N_ERR_DECRYPT);
+    GUARD_OSSL(
+        EVP_CIPHER_CTX_ctrl(key->evp_cipher_ctx, EVP_CTRL_GCM_SET_TAG, S2N_TLS_CHACHA20_POLY1305_TAG_LEN, tag_data),
+        S2N_ERR_DECRYPT);
 
     int out_len;
     /* Specify the AAD */
@@ -160,8 +164,7 @@ static int s2n_aead_chacha20_poly1305_destroy_key(struct s2n_session_key *key)
 struct s2n_cipher s2n_chacha20_poly1305 = {
     .key_material_size = S2N_TLS_CHACHA20_POLY1305_KEY_LEN,
     .type = S2N_AEAD,
-    .io.aead = {
-                .record_iv_size = S2N_TLS_CHACHA20_POLY1305_EXPLICIT_IV_LEN,
+    .io.aead = {.record_iv_size = S2N_TLS_CHACHA20_POLY1305_EXPLICIT_IV_LEN,
                 .fixed_iv_size = S2N_TLS_CHACHA20_POLY1305_FIXED_IV_LEN,
                 .tag_size = S2N_TLS_CHACHA20_POLY1305_TAG_LEN,
                 .decrypt = s2n_aead_chacha20_poly1305_decrypt,

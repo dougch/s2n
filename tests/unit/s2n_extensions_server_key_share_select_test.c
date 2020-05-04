@@ -15,10 +15,10 @@
 
 #include "s2n_test.h"
 #include "testlib/s2n_testlib.h"
-#include "tls/s2n_tls.h"
-#include "tls/s2n_tls13.h"
 #include "tls/extensions/s2n_server_key_share.h"
 #include "tls/s2n_ecc_preferences.h"
+#include "tls/s2n_tls.h"
+#include "tls/s2n_tls13.h"
 
 int main(int argc, char **argv)
 {
@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
     {
         /* If client and server have no mutually supported groups and no mutually supported
-         * keyshares, a Hello Retry Request is not sent. 
+         * keyshares, a Hello Retry Request is not sent.
          */
         EXPECT_NOT_NULL(server_conn = s2n_connection_new(S2N_SERVER));
         EXPECT_NULL(server_conn->secure.server_ecc_evp_params.negotiated_curve);
@@ -53,10 +53,10 @@ int main(int argc, char **argv)
     }
 
     {
-        /* If client and server have no mutually supported groups but client and server have 
+        /* If client and server have no mutually supported groups but client and server have
          * found mutually supported keyshares(erroneous behavior), a Hello Retry Request flag is not set and the server
-         * ignores the mutually supported keyshare. 
-         */ 
+         * ignores the mutually supported keyshare.
+         */
         EXPECT_NOT_NULL(server_conn = s2n_connection_new(S2N_SERVER));
         EXPECT_NULL(server_conn->secure.server_ecc_evp_params.negotiated_curve);
         EXPECT_NOT_NULL(server_conn->config);
@@ -69,13 +69,13 @@ int main(int argc, char **argv)
 
         EXPECT_NULL(server_conn->secure.server_ecc_evp_params.negotiated_curve);
         EXPECT_FALSE(s2n_is_hello_retry_required(server_conn));
-        EXPECT_SUCCESS(s2n_connection_free(server_conn)); 
+        EXPECT_SUCCESS(s2n_connection_free(server_conn));
     }
 
     {
         /* If client has sent no keys but server and client have found a mutually supported group,
-         * send Hello Retry Request. 
-         */ 
+         * send Hello Retry Request.
+         */
         EXPECT_NOT_NULL(server_conn = s2n_connection_new(S2N_SERVER));
         EXPECT_NOT_NULL(server_conn->config);
         const struct s2n_ecc_preferences *ecc_pref = server_conn->config->ecc_preferences;
@@ -91,13 +91,13 @@ int main(int argc, char **argv)
         EXPECT_EQUAL(server_conn->secure.server_ecc_evp_params.negotiated_curve, ecc_pref->ecc_curves[0]);
 
         EXPECT_EQUAL(s2n_is_hello_retry_required(server_conn), 1);
-        EXPECT_SUCCESS(s2n_connection_free(server_conn)); 
+        EXPECT_SUCCESS(s2n_connection_free(server_conn));
     }
 
     {
         /* When client and server mutually supported group 0 and group 1, but client has only sent a keyshare for
          * group 1, Hello Retry Request is not sent and server chooses group 1.
-         */ 
+         */
         EXPECT_NOT_NULL(server_conn = s2n_connection_new(S2N_SERVER));
         EXPECT_NULL(server_conn->secure.server_ecc_evp_params.negotiated_curve);
         EXPECT_NOT_NULL(server_conn->config);
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 
         EXPECT_EQUAL(server_conn->secure.server_ecc_evp_params.negotiated_curve, ecc_pref->ecc_curves[1]);
         EXPECT_FALSE(s2n_is_hello_retry_required(server_conn));
-        EXPECT_SUCCESS(s2n_connection_free(server_conn)); 
+        EXPECT_SUCCESS(s2n_connection_free(server_conn));
     }
 
     {
@@ -135,8 +135,8 @@ int main(int argc, char **argv)
 
         EXPECT_EQUAL(server_conn->secure.server_ecc_evp_params.negotiated_curve, ecc_pref->ecc_curves[0]);
         EXPECT_FALSE(s2n_is_hello_retry_required(server_conn));
-        EXPECT_SUCCESS(s2n_connection_free(server_conn)); 
-    } 
+        EXPECT_SUCCESS(s2n_connection_free(server_conn));
+    }
 
     END_TEST();
     return 0;

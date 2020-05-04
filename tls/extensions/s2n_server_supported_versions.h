@@ -13,11 +13,10 @@
  * permissions and limitations under the License.
  */
 
-
 #pragma once
 
-#include "tls/s2n_connection.h"
 #include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
 
 int s2n_extensions_server_supported_versions_recv(struct s2n_connection *conn, struct s2n_stuffer *extension);
 int s2n_extensions_server_supported_versions_send(struct s2n_connection *conn, struct s2n_stuffer *out);

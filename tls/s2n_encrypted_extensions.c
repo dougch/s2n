@@ -14,28 +14,26 @@
  */
 
 #include "error/s2n_errno.h"
-#include "utils/s2n_safety.h"
 #include "stuffer/s2n_stuffer.h"
-
+#include "tls/extensions/s2n_server_alpn.h"
+#include "tls/extensions/s2n_server_max_fragment_length.h"
+#include "tls/extensions/s2n_server_sct_list.h"
+#include "tls/extensions/s2n_server_server_name.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
-
-#include "tls/extensions/s2n_server_alpn.h"
-#include "tls/extensions/s2n_server_sct_list.h"
-#include "tls/extensions/s2n_server_max_fragment_length.h"
-#include "tls/extensions/s2n_server_server_name.h"
+#include "utils/s2n_safety.h"
 
 /**
-  * Specified in https://tools.ietf.org/html/rfc8446#section-4.3.1
-  *
-  * In all handshakes, the server MUST send the EncryptedExtensions
-  * message immediately after the ServerHello message.
-  *
-  * The EncryptedExtensions message contains extensions that can be
-  * protected, i.e., any which are not needed to establish the
-  * cryptographic context but which are not associated with individual
-  * certificates.
-  **/
+ * Specified in https://tools.ietf.org/html/rfc8446#section-4.3.1
+ *
+ * In all handshakes, the server MUST send the EncryptedExtensions
+ * message immediately after the ServerHello message.
+ *
+ * The EncryptedExtensions message contains extensions that can be
+ * protected, i.e., any which are not needed to establish the
+ * cryptographic context but which are not associated with individual
+ * certificates.
+ **/
 
 static int s2n_server_encrypted_extensions_parse(struct s2n_connection *conn, struct s2n_blob *extensions);
 
@@ -124,26 +122,26 @@ int s2n_server_encrypted_extensions_parse(struct s2n_connection *conn, struct s2
         GUARD(s2n_stuffer_write(&extension, &ext));
 
         switch (extension_type) {
-        case TLS_EXTENSION_SERVER_NAME:
-            GUARD(s2n_recv_server_server_name(conn, &extension));
-            break;
-        case TLS_EXTENSION_ALPN:
-            GUARD(s2n_recv_server_alpn(conn, &extension));
-            break;
-        case TLS_EXTENSION_MAX_FRAG_LEN:
-            GUARD(s2n_recv_server_max_fragment_length(conn, &extension));
-            break;
-        /* Error on known extensions that are not supposed to appear in EE
-         * https://tools.ietf.org/html/rfc8446#page-37
-         */
-        case TLS_EXTENSION_RENEGOTIATION_INFO:
-        case TLS_EXTENSION_STATUS_REQUEST:
-        case TLS_EXTENSION_SESSION_TICKET:
-        case TLS_EXTENSION_SUPPORTED_VERSIONS:
-        case TLS_EXTENSION_KEY_SHARE:
-        case TLS_EXTENSION_SCT_LIST:
-            S2N_ERROR(S2N_ERR_BAD_MESSAGE);
-            break;
+            case TLS_EXTENSION_SERVER_NAME:
+                GUARD(s2n_recv_server_server_name(conn, &extension));
+                break;
+            case TLS_EXTENSION_ALPN:
+                GUARD(s2n_recv_server_alpn(conn, &extension));
+                break;
+            case TLS_EXTENSION_MAX_FRAG_LEN:
+                GUARD(s2n_recv_server_max_fragment_length(conn, &extension));
+                break;
+            /* Error on known extensions that are not supposed to appear in EE
+             * https://tools.ietf.org/html/rfc8446#page-37
+             */
+            case TLS_EXTENSION_RENEGOTIATION_INFO:
+            case TLS_EXTENSION_STATUS_REQUEST:
+            case TLS_EXTENSION_SESSION_TICKET:
+            case TLS_EXTENSION_SUPPORTED_VERSIONS:
+            case TLS_EXTENSION_KEY_SHARE:
+            case TLS_EXTENSION_SCT_LIST:
+                S2N_ERROR(S2N_ERR_BAD_MESSAGE);
+                break;
         }
     }
 

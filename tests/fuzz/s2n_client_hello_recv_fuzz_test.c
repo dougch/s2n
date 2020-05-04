@@ -16,25 +16,21 @@
 /* Target Functions: s2n_client_hello_recv s2n_parse_client_hello s2n_populate_client_hello_extensions
                      s2n_process_client_hello s2n_collect_client_hello */
 
-#include <stdint.h>
-
 #include <openssl/crypto.h>
 #include <openssl/err.h>
+#include <stdint.h>
 
 #include "api/s2n.h"
+#include "s2n_test.h"
 #include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
-#include "utils/s2n_safety.h"
-#include "s2n_test.h"
 #include "tls/s2n_tls13.h"
+#include "utils/s2n_safety.h"
 
 static const uint8_t TLS_VERSIONS[] = {S2N_TLS10, S2N_TLS11, S2N_TLS12, S2N_TLS13};
 
-static void s2n_fuzz_atexit()
-{
-    s2n_cleanup();
-}
+static void s2n_fuzz_atexit() { s2n_cleanup(); }
 
 int LLVMFuzzerInitialize(const uint8_t *buf, size_t len)
 {
@@ -50,10 +46,7 @@ int LLVMFuzzerInitialize(const uint8_t *buf, size_t len)
 }
 
 /* Returns the value of ctx as an int when called */
-int client_hello_cb_ret(struct s2n_connection *conn, void *ctx)
-{
-    return *((int*)ctx);
-}
+int client_hello_cb_ret(struct s2n_connection *conn, void *ctx) { return *((int *)ctx); }
 
 int LLVMFuzzerTestOneInput(const uint8_t *buf, size_t len)
 {

@@ -19,8 +19,8 @@
 #include <openssl/err.h>
 
 #include "api/s2n.h"
+#include "s2n_test.h"
 #include "stuffer/s2n_stuffer.h"
-#include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_config.h"
 #include "tls/s2n_connection.h"
@@ -29,7 +29,6 @@
 #include "tls/s2n_tls_parameters.h"
 #include "utils/s2n_random.h"
 #include "utils/s2n_safety.h"
-#include "s2n_test.h"
 
 static char certificate_chain[] =
     "-----BEGIN CERTIFICATE-----\n"
@@ -87,7 +86,6 @@ static char certificate_chain[] =
     "MShYLiN5qLJAk0qwl+js488BJ18M9dg4TxdBYFkwHSzKXSj9TJN77Bb0RZr8LL9T\n"
     "r9IyvfU=\n"
     "-----END CERTIFICATE-----\n";
-
 
 static char private_key[] =
     "-----BEGIN RSA PRIVATE KEY-----\n"

@@ -13,8 +13,8 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
 #include "pq-crypto/sike_r2/sike_r2_kem.h"
+#include "s2n_test.h"
 
 int main(int argc, char **argv)
 {

@@ -13,10 +13,12 @@
  * permissions and limitations under the License.
  */
 #include "s2n_str.h"
+
 #include <string.h>
 #include <sys/param.h>
 
-char *s2n_strcpy(char *buf, char *last, const char *str) {
+char *s2n_strcpy(char *buf, char *last, const char *str)
+{
     if (buf >= last) {
         return buf;
     }
@@ -26,8 +28,8 @@ char *s2n_strcpy(char *buf, char *last, const char *str) {
         return buf;
     }
 
-    /* Free bytes needs to be one byte smaller than size of a storage, 
-     * as strncpy always writes '\0', but doesn't include it in n 
+    /* Free bytes needs to be one byte smaller than size of a storage,
+     * as strncpy always writes '\0', but doesn't include it in n
      */
     size_t bytes_to_copy = MIN(last - buf - 1, strlen(str));
 

@@ -16,13 +16,12 @@
 #include <strings.h>
 
 #include "error/s2n_errno.h"
-
+#include "tls/extensions/s2n_server_certificate_status.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_config.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_x509_validator.h"
-#include "tls/extensions/s2n_server_certificate_status.h"
 #include "utils/s2n_safety.h"
 
 int s2n_server_status_send(struct s2n_connection *conn)
@@ -35,7 +34,7 @@ int s2n_server_status_send(struct s2n_connection *conn)
 int s2n_server_status_recv(struct s2n_connection *conn)
 {
     uint8_t type;
-    struct s2n_blob status = {.data = NULL,.size = 0 };
+    struct s2n_blob status = {.data = NULL, .size = 0};
 
     GUARD(s2n_stuffer_read_uint8(&conn->handshake.io, &type));
     GUARD(s2n_stuffer_read_uint24(&conn->handshake.io, &status.size));

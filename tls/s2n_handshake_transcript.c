@@ -13,16 +13,14 @@
  * permissions and limitations under the License.
  */
 
+#include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13_handshake.h"
-
-#include "stuffer/s2n_stuffer.h"
-
 #include "utils/s2n_blob.h"
 
 /* Length of the synthetic message header */
-#define MESSAGE_HASH_HEADER_LENGTH  4
+#define MESSAGE_HASH_HEADER_LENGTH 4
 
 /* this hook runs after hashes are updated */
 int s2n_conn_post_handshake_hashes_update(struct s2n_connection *conn)
@@ -33,28 +31,30 @@ int s2n_conn_post_handshake_hashes_update(struct s2n_connection *conn)
         return 0;
     }
 
-    struct s2n_blob client_seq = {.data = conn->secure.client_sequence_number,.size = sizeof(conn->secure.client_sequence_number) };
-    struct s2n_blob server_seq = {.data = conn->secure.server_sequence_number,.size = sizeof(conn->secure.server_sequence_number) };
+    struct s2n_blob client_seq = {.data = conn->secure.client_sequence_number,
+                                  .size = sizeof(conn->secure.client_sequence_number)};
+    struct s2n_blob server_seq = {.data = conn->secure.server_sequence_number,
+                                  .size = sizeof(conn->secure.server_sequence_number)};
 
-    switch(s2n_conn_get_current_message_type(conn)) {
-    case HELLO_RETRY_MSG:
-        /* If we are sending a retry request, we didn't decide on a key share. There are no secrets to handle. */
-        break;
-    case SERVER_HELLO:
-        GUARD(s2n_tls13_handle_handshake_secrets(conn));
-        GUARD(s2n_blob_zero(&client_seq));
-        GUARD(s2n_blob_zero(&server_seq));
-        conn->server = &conn->secure;
-        conn->client = &conn->secure;
-        GUARD(s2n_stuffer_wipe(&conn->alert_in));
-        break;
-    case CLIENT_FINISHED:
-        /* Reset sequence numbers for Application Data */
-        GUARD(s2n_blob_zero(&client_seq));
-        GUARD(s2n_blob_zero(&server_seq));
-        break;
-    default:
-        break;
+    switch (s2n_conn_get_current_message_type(conn)) {
+        case HELLO_RETRY_MSG:
+            /* If we are sending a retry request, we didn't decide on a key share. There are no secrets to handle. */
+            break;
+        case SERVER_HELLO:
+            GUARD(s2n_tls13_handle_handshake_secrets(conn));
+            GUARD(s2n_blob_zero(&client_seq));
+            GUARD(s2n_blob_zero(&server_seq));
+            conn->server = &conn->secure;
+            conn->client = &conn->secure;
+            GUARD(s2n_stuffer_wipe(&conn->alert_in));
+            break;
+        case CLIENT_FINISHED:
+            /* Reset sequence numbers for Application Data */
+            GUARD(s2n_blob_zero(&client_seq));
+            GUARD(s2n_blob_zero(&server_seq));
+            break;
+        default:
+            break;
     }
     return 0;
 }
@@ -101,11 +101,11 @@ int s2n_conn_update_handshake_hashes(struct s2n_connection *conn, struct s2n_blo
         GUARD(s2n_hash_update(&conn->handshake.sha1, data->data, data->size));
     }
 
-    const uint8_t md5_sha1_required = (s2n_handshake_is_hash_required(&conn->handshake, S2N_HASH_MD5) &&
-                                       s2n_handshake_is_hash_required(&conn->handshake, S2N_HASH_SHA1));
+    const uint8_t md5_sha1_required = (s2n_handshake_is_hash_required(&conn->handshake, S2N_HASH_MD5)
+                                       && s2n_handshake_is_hash_required(&conn->handshake, S2N_HASH_SHA1));
 
     if (md5_sha1_required) {
-        /* The MD5_SHA1 hash can still be used for TLS 1.0 and 1.1 in FIPS mode for 
+        /* The MD5_SHA1 hash can still be used for TLS 1.0 and 1.1 in FIPS mode for
          * the handshake hashes. This will only be used for the signature check in the
          * CertificateVerify message and the PRF. NIST SP 800-52r1 approves use
          * of MD5_SHA1 for these use cases (see footnotes 15 and 20, and section
@@ -173,4 +173,3 @@ int s2n_server_hello_retry_recreate_transcript(struct s2n_connection *conn)
 
     return 0;
 }
-

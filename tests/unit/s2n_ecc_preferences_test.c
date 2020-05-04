@@ -13,12 +13,12 @@
  * permissions and limitations under the License.
  */
 
+#include "tls/s2n_ecc_preferences.h"
+
 #include <s2n.h>
 
 #include "s2n_test.h"
-
 #include "tls/s2n_config.h"
-#include "tls/s2n_ecc_preferences.h"
 
 int main(int argc, char **argv)
 {
@@ -40,8 +40,7 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_config_set_ecc_preferences(config, "20140601"));
         EXPECT_EQUAL(config->ecc_preferences, &s2n_ecc_preferences_20140601);
 
-        EXPECT_FAILURE_WITH_ERRNO(s2n_config_set_ecc_preferences(config, "notathing"),
-                S2N_ERR_INVALID_ECC_PREFERENCES);
+        EXPECT_FAILURE_WITH_ERRNO(s2n_config_set_ecc_preferences(config, "notathing"), S2N_ERR_INVALID_ECC_PREFERENCES);
 
         s2n_config_free(config);
     }
@@ -49,11 +48,7 @@ int main(int argc, char **argv)
     /* Failure case when s2n_ecc_preference lists contains a curve not present in s2n_all_supported_curves_list */
     {
         const struct s2n_ecc_named_curve test_curve = {
-            .iana_id = 12345, 
-            .libcrypto_nid = 0, 
-            .name = "test_curve", 
-            .share_size = 0
-        };
+            .iana_id = 12345, .libcrypto_nid = 0, .name = "test_curve", .share_size = 0};
 
         const struct s2n_ecc_named_curve *const s2n_ecc_pref_list_test[] = {
             &test_curve,
@@ -66,7 +61,7 @@ int main(int argc, char **argv)
 
         EXPECT_FAILURE(s2n_check_ecc_preferences_curves_list(&s2n_ecc_preferences_new_list));
     }
-    
+
     END_TEST();
     return 0;
 }

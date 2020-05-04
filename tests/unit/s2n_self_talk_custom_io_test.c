@@ -13,23 +13,19 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include "testlib/s2n_testlib.h"
-
+#include <fcntl.h>
+#include <s2n.h>
+#include <signal.h>
+#include <stdint.h>
 #include <sys/poll.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <signal.h>
-#include <stdint.h>
-#include <fcntl.h>
 
-#include <s2n.h>
-
-#include "utils/s2n_random.h"
-
+#include "s2n_test.h"
+#include "testlib/s2n_testlib.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_handshake.h"
+#include "utils/s2n_random.h"
 
 #define MAX_BUF_SIZE 10000
 
@@ -66,7 +62,7 @@ int mock_client(struct s2n_test_piped_io *piped_io)
  * This test creates a server, client, and a pair of pipes. The client uses the
  * pipes directly for I/O in s2n. The server copies data from the pipes into
  * stuffers and manages s2n I/O with a set of I/O callbacks that read and write
- * from the stuffers. 
+ * from the stuffers.
  */
 int main(int argc, char **argv)
 {
@@ -132,7 +128,7 @@ int main(int argc, char **argv)
     EXPECT_SUCCESS(s2n_stuffer_growable_alloc(&in, 0));
     EXPECT_SUCCESS(s2n_stuffer_growable_alloc(&out, 0));
     EXPECT_SUCCESS(s2n_connection_set_io_stuffers(&in, &out, conn));
-    
+
     /* Make our pipes non-blocking */
     EXPECT_SUCCESS(s2n_fd_set_non_blocking(piped_io.server_read));
     EXPECT_SUCCESS(s2n_fd_set_non_blocking(piped_io.server_write));
@@ -143,19 +139,19 @@ int main(int argc, char **argv)
 
         ret = s2n_negotiate(conn, &blocked);
         EXPECT_TRUE(ret == 0 || (blocked && (errno == EAGAIN || errno == EWOULDBLOCK)));
-        
+
         /* check to see if we need to copy more over from the pipes to the buffers
          * to continue the handshake
          */
         s2n_stuffer_recv_from_fd(&in, piped_io.server_read, MAX_BUF_SIZE);
         s2n_stuffer_send_to_fd(&out, piped_io.server_write, s2n_stuffer_data_available(&out));
     } while (blocked);
-   
+
     /* Shutdown after negotiating */
-    uint8_t server_shutdown=0;
+    uint8_t server_shutdown = 0;
     do {
         int ret;
-        
+
         ret = s2n_shutdown(conn, &blocked);
         EXPECT_TRUE(ret == 0 || (blocked && (errno == EAGAIN || errno == EWOULDBLOCK)));
         if (ret == 0) {
@@ -165,7 +161,7 @@ int main(int argc, char **argv)
         s2n_stuffer_recv_from_fd(&in, piped_io.server_read, MAX_BUF_SIZE);
         s2n_stuffer_send_to_fd(&out, piped_io.server_write, s2n_stuffer_data_available(&out));
     } while (!server_shutdown);
-    
+
     EXPECT_SUCCESS(s2n_connection_free(conn));
 
     /* Clean up */
@@ -186,4 +182,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-

@@ -13,12 +13,12 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
 #include "stuffer/s2n_stuffer.h"
-#include "utils/s2n_mem.h"
 
 #include <s2n.h>
+
+#include "s2n_test.h"
+#include "utils/s2n_mem.h"
 
 int main(int argc, char **argv)
 {
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     EXPECT_SUCCESS(s2n_stuffer_alloc(&stuffer, 100));
 
     /* Try to write 101 bytes */
-    struct s2n_blob in = {.data = entropy,.size = 101 };
+    struct s2n_blob in = {.data = entropy, .size = 101};
     EXPECT_FAILURE(s2n_stuffer_write(&stuffer, &in));
 
     /* Try to write 101 1-byte ints bytes */
@@ -139,18 +139,18 @@ int main(int argc, char **argv)
 
     /* Invalid blob should fail init */
     struct s2n_stuffer s1;
-    struct s2n_blob b1 = {.data = 0,.size = 101 };
+    struct s2n_blob b1 = {.data = 0, .size = 101};
     EXPECT_FAILURE(s2n_stuffer_init(&s1, &b1));
 
     /* Valid empty blob should succeed init */
     struct s2n_stuffer s2;
-    struct s2n_blob b2 = {.data = 0,.size = 0 };
+    struct s2n_blob b2 = {.data = 0, .size = 0};
     EXPECT_SUCCESS(s2n_stuffer_init(&s2, &b2));
 
     /* Valid blob should succeed init */
     struct s2n_stuffer s3;
     uint8_t a3[12];
-    struct s2n_blob b3 = {.data = a3,.size = sizeof(a3)};
+    struct s2n_blob b3 = {.data = a3, .size = sizeof(a3)};
     EXPECT_SUCCESS(s2n_stuffer_init(&s3, &b3));
 
     /* Null blob should fail init */
@@ -158,14 +158,14 @@ int main(int argc, char **argv)
     EXPECT_FAILURE(s2n_stuffer_init(&s4, NULL));
 
     /* Null stuffer should fail init */
-    struct s2n_blob b5 = {.data = 0,.size = 0 };
+    struct s2n_blob b5 = {.data = 0, .size = 0};
     EXPECT_FAILURE(s2n_stuffer_init(NULL, &b5));
 
     /* Check s2n_stuffer_is_valid() function */
     EXPECT_FALSE(s2n_stuffer_is_valid(NULL));
     uint8_t valid_blob_array[12];
-    struct s2n_blob blob_valid = {.data = valid_blob_array,.size = sizeof(valid_blob_array)};
-    struct s2n_blob blob_invalid = {.data = 0,.size = sizeof(valid_blob_array)};
+    struct s2n_blob blob_valid = {.data = valid_blob_array, .size = sizeof(valid_blob_array)};
+    struct s2n_blob blob_invalid = {.data = 0, .size = sizeof(valid_blob_array)};
 
     struct s2n_stuffer stuffer_valid;
     EXPECT_SUCCESS(s2n_stuffer_init(&stuffer_valid, &blob_valid));

@@ -15,14 +15,14 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <s2n.h>
+#include <stdint.h>
 
 #include "stuffer/s2n_stuffer.h"
-
 #include "utils/s2n_array.h"
 
-struct s2n_client_hello {
+struct s2n_client_hello
+{
     struct s2n_stuffer raw_message;
 
     /*
@@ -33,7 +33,7 @@ struct s2n_client_hello {
     struct s2n_blob extensions;
     struct s2n_array *parsed_extensions;
 
-    unsigned int parsed:1;
+    unsigned int parsed : 1;
 };
 
 int s2n_client_hello_free(struct s2n_client_hello *client_hello);

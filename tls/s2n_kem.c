@@ -13,11 +13,10 @@
  * permissions and limitations under the License.
  */
 
-#include "stuffer/s2n_stuffer.h"
-
-#include "tls/s2n_tls_parameters.h"
 #include "tls/s2n_kem.h"
 
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_tls_parameters.h"
 #include "utils/s2n_mem.h"
 #include "utils/s2n_safety.h"
 
@@ -30,77 +29,72 @@
 
 /* The names below come from https://tools.ietf.org/html/draft-campagna-tls-bike-sike-hybrid-02#section-5.1.6 */
 const struct s2n_kem s2n_bike1_l1_r1 = {
-        .name = "BIKE1r1-Level1",
-        .kem_extension_id = TLS_PQ_KEM_EXTENSION_ID_BIKE1_L1_R1,
-        .public_key_length = BIKE1_L1_R1_PUBLIC_KEY_BYTES,
-        .private_key_length = BIKE1_L1_R1_SECRET_KEY_BYTES,
-        .shared_secret_key_length = BIKE1_L1_R1_SHARED_SECRET_BYTES,
-        .ciphertext_length = BIKE1_L1_R1_CIPHERTEXT_BYTES,
-        .generate_keypair = &BIKE1_L1_R1_crypto_kem_keypair,
-        .encapsulate = &BIKE1_L1_R1_crypto_kem_enc,
-        .decapsulate = &BIKE1_L1_R1_crypto_kem_dec,
+    .name = "BIKE1r1-Level1",
+    .kem_extension_id = TLS_PQ_KEM_EXTENSION_ID_BIKE1_L1_R1,
+    .public_key_length = BIKE1_L1_R1_PUBLIC_KEY_BYTES,
+    .private_key_length = BIKE1_L1_R1_SECRET_KEY_BYTES,
+    .shared_secret_key_length = BIKE1_L1_R1_SHARED_SECRET_BYTES,
+    .ciphertext_length = BIKE1_L1_R1_CIPHERTEXT_BYTES,
+    .generate_keypair = &BIKE1_L1_R1_crypto_kem_keypair,
+    .encapsulate = &BIKE1_L1_R1_crypto_kem_enc,
+    .decapsulate = &BIKE1_L1_R1_crypto_kem_dec,
 };
 
 const struct s2n_kem s2n_bike1_l1_r2 = {
-        .name = "BIKE1r2-Level1",
-        .kem_extension_id = TLS_PQ_KEM_EXTENSION_ID_BIKE1_L1_R2,
-        .public_key_length = BIKE1_L1_R2_PUBLIC_KEY_BYTES,
-        .private_key_length = BIKE1_L1_R2_SECRET_KEY_BYTES,
-        .shared_secret_key_length = BIKE1_L1_R2_SHARED_SECRET_BYTES,
-        .ciphertext_length = BIKE1_L1_R2_CIPHERTEXT_BYTES,
-        .generate_keypair = &BIKE1_L1_R2_crypto_kem_keypair,
-        .encapsulate = &BIKE1_L1_R2_crypto_kem_enc,
-        .decapsulate = &BIKE1_L1_R2_crypto_kem_dec,
+    .name = "BIKE1r2-Level1",
+    .kem_extension_id = TLS_PQ_KEM_EXTENSION_ID_BIKE1_L1_R2,
+    .public_key_length = BIKE1_L1_R2_PUBLIC_KEY_BYTES,
+    .private_key_length = BIKE1_L1_R2_SECRET_KEY_BYTES,
+    .shared_secret_key_length = BIKE1_L1_R2_SHARED_SECRET_BYTES,
+    .ciphertext_length = BIKE1_L1_R2_CIPHERTEXT_BYTES,
+    .generate_keypair = &BIKE1_L1_R2_crypto_kem_keypair,
+    .encapsulate = &BIKE1_L1_R2_crypto_kem_enc,
+    .decapsulate = &BIKE1_L1_R2_crypto_kem_dec,
 };
 
 const struct s2n_kem s2n_sike_p503_r1 = {
-        .name = "SIKEp503r1-KEM",
-        .kem_extension_id = TLS_PQ_KEM_EXTENSION_ID_SIKE_P503_R1,
-        .public_key_length = SIKE_P503_R1_PUBLIC_KEY_BYTES,
-        .private_key_length = SIKE_P503_R1_SECRET_KEY_BYTES,
-        .shared_secret_key_length = SIKE_P503_R1_SHARED_SECRET_BYTES,
-        .ciphertext_length = SIKE_P503_R1_CIPHERTEXT_BYTES,
-        .generate_keypair = &SIKE_P503_r1_crypto_kem_keypair,
-        .encapsulate = &SIKE_P503_r1_crypto_kem_enc,
-        .decapsulate = &SIKE_P503_r1_crypto_kem_dec,
+    .name = "SIKEp503r1-KEM",
+    .kem_extension_id = TLS_PQ_KEM_EXTENSION_ID_SIKE_P503_R1,
+    .public_key_length = SIKE_P503_R1_PUBLIC_KEY_BYTES,
+    .private_key_length = SIKE_P503_R1_SECRET_KEY_BYTES,
+    .shared_secret_key_length = SIKE_P503_R1_SHARED_SECRET_BYTES,
+    .ciphertext_length = SIKE_P503_R1_CIPHERTEXT_BYTES,
+    .generate_keypair = &SIKE_P503_r1_crypto_kem_keypair,
+    .encapsulate = &SIKE_P503_r1_crypto_kem_enc,
+    .decapsulate = &SIKE_P503_r1_crypto_kem_dec,
 };
 
 const struct s2n_kem s2n_sike_p434_r2 = {
-        .name = "SIKEp434r2-KEM",
-        .kem_extension_id = TLS_PQ_KEM_EXTENSION_ID_SIKE_P434_R2,
-        .public_key_length = SIKE_P434_R2_PUBLIC_KEY_BYTES,
-        .private_key_length = SIKE_P434_R2_SECRET_KEY_BYTES,
-        .shared_secret_key_length = SIKE_P434_R2_SHARED_SECRET_BYTES,
-        .ciphertext_length = SIKE_P434_R2_CIPHERTEXT_BYTES,
-        .generate_keypair = &SIKE_P434_r2_crypto_kem_keypair,
-        .encapsulate = &SIKE_P434_r2_crypto_kem_enc,
-        .decapsulate = &SIKE_P434_r2_crypto_kem_dec,
+    .name = "SIKEp434r2-KEM",
+    .kem_extension_id = TLS_PQ_KEM_EXTENSION_ID_SIKE_P434_R2,
+    .public_key_length = SIKE_P434_R2_PUBLIC_KEY_BYTES,
+    .private_key_length = SIKE_P434_R2_SECRET_KEY_BYTES,
+    .shared_secret_key_length = SIKE_P434_R2_SHARED_SECRET_BYTES,
+    .ciphertext_length = SIKE_P434_R2_CIPHERTEXT_BYTES,
+    .generate_keypair = &SIKE_P434_r2_crypto_kem_keypair,
+    .encapsulate = &SIKE_P434_r2_crypto_kem_enc,
+    .decapsulate = &SIKE_P434_r2_crypto_kem_dec,
 };
 
 /* These lists should be kept up to date with the above KEMs. Order in the lists
  * does not matter. Adding a KEM to these lists will not automatically enable
  * support for the KEM extension - that must be added via the cipher preferences.*/
-const struct s2n_kem *bike_kems[] = {
-        &s2n_bike1_l1_r1,
-        &s2n_bike1_l1_r2
-};
+const struct s2n_kem *bike_kems[] = {&s2n_bike1_l1_r1, &s2n_bike1_l1_r2};
 const struct s2n_kem *sike_kems[] = {
-        &s2n_sike_p503_r1,
-        &s2n_sike_p434_r2,
+    &s2n_sike_p503_r1,
+    &s2n_sike_p434_r2,
 };
 
-const struct s2n_iana_to_kem kem_mapping[2] = {
-        {
-            .iana_value = { TLS_ECDHE_BIKE_RSA_WITH_AES_256_GCM_SHA384 },
-            .kems = bike_kems,
-            .kem_count = s2n_array_len(bike_kems),
-        },
-        {
-            .iana_value = { TLS_ECDHE_SIKE_RSA_WITH_AES_256_GCM_SHA384 },
-            .kems = sike_kems,
-            .kem_count = s2n_array_len(sike_kems),
-        }
-};
+const struct s2n_iana_to_kem kem_mapping[2] = {{
+                                                   .iana_value = {TLS_ECDHE_BIKE_RSA_WITH_AES_256_GCM_SHA384},
+                                                   .kems = bike_kems,
+                                                   .kem_count = s2n_array_len(bike_kems),
+                                               },
+                                               {
+                                                   .iana_value = {TLS_ECDHE_SIKE_RSA_WITH_AES_256_GCM_SHA384},
+                                                   .kems = sike_kems,
+                                                   .kem_count = s2n_array_len(sike_kems),
+                                               }};
 
 #else
 
@@ -164,8 +158,9 @@ int s2n_kem_decapsulate(const struct s2n_kem_keypair *kem_keys, struct s2n_blob 
     return 0;
 }
 
-static int s2n_kem_check_kem_compatibility(const uint8_t iana_value[S2N_TLS_CIPHER_SUITE_LEN], const struct s2n_kem *candidate_kem,
-        uint8_t *kem_is_compatible) {
+static int s2n_kem_check_kem_compatibility(const uint8_t iana_value[S2N_TLS_CIPHER_SUITE_LEN],
+                                           const struct s2n_kem *candidate_kem, uint8_t *kem_is_compatible)
+{
     const struct s2n_iana_to_kem *compatible_kems = NULL;
     GUARD(s2n_cipher_suite_to_kem(iana_value, &compatible_kems));
 
@@ -180,8 +175,10 @@ static int s2n_kem_check_kem_compatibility(const uint8_t iana_value[S2N_TLS_CIPH
     return 0;
 }
 
-int s2n_choose_kem_with_peer_pref_list(const uint8_t iana_value[S2N_TLS_CIPHER_SUITE_LEN], struct s2n_blob *client_kem_ids,
-        const struct s2n_kem *server_kem_pref_list[], const uint8_t num_server_supported_kems, const struct s2n_kem **chosen_kem) {
+int s2n_choose_kem_with_peer_pref_list(const uint8_t iana_value[S2N_TLS_CIPHER_SUITE_LEN],
+                                       struct s2n_blob *client_kem_ids, const struct s2n_kem *server_kem_pref_list[],
+                                       const uint8_t num_server_supported_kems, const struct s2n_kem **chosen_kem)
+{
     struct s2n_stuffer client_kem_ids_stuffer = {0};
     GUARD(s2n_stuffer_init(&client_kem_ids_stuffer, client_kem_ids));
     GUARD(s2n_stuffer_write(&client_kem_ids_stuffer, client_kem_ids));
@@ -215,8 +212,10 @@ int s2n_choose_kem_with_peer_pref_list(const uint8_t iana_value[S2N_TLS_CIPHER_S
     S2N_ERROR(S2N_ERR_KEM_UNSUPPORTED_PARAMS);
 }
 
-int s2n_choose_kem_without_peer_pref_list(const uint8_t iana_value[S2N_TLS_CIPHER_SUITE_LEN], const struct s2n_kem *server_kem_pref_list[],
-        const uint8_t num_server_supported_kems, const struct s2n_kem **chosen_kem) {
+int s2n_choose_kem_without_peer_pref_list(const uint8_t iana_value[S2N_TLS_CIPHER_SUITE_LEN],
+                                          const struct s2n_kem *server_kem_pref_list[],
+                                          const uint8_t num_server_supported_kems, const struct s2n_kem **chosen_kem)
+{
     for (uint8_t i = 0; i < num_server_supported_kems; i++) {
         uint8_t kem_is_compatible = 0;
         GUARD(s2n_kem_check_kem_compatibility(iana_value, server_kem_pref_list[i], &kem_is_compatible));
@@ -232,7 +231,7 @@ int s2n_choose_kem_without_peer_pref_list(const uint8_t iana_value[S2N_TLS_CIPHE
 
 int s2n_kem_free(struct s2n_kem_keypair *kem_keys)
 {
-    if (kem_keys != NULL){
+    if (kem_keys != NULL) {
         GUARD(s2n_blob_zero(&kem_keys->private_key));
         if (kem_keys->private_key.allocated) {
             GUARD(s2n_free(&kem_keys->private_key));
@@ -244,7 +243,8 @@ int s2n_kem_free(struct s2n_kem_keypair *kem_keys)
     return 0;
 }
 
-int s2n_cipher_suite_to_kem(const uint8_t iana_value[S2N_TLS_CIPHER_SUITE_LEN], const struct s2n_iana_to_kem **compatible_params)
+int s2n_cipher_suite_to_kem(const uint8_t iana_value[S2N_TLS_CIPHER_SUITE_LEN],
+                            const struct s2n_iana_to_kem **compatible_params)
 {
     /* cppcheck-suppress knownConditionTrueFalse */
     S2N_ERROR_IF(kem_mapping == NULL, S2N_ERR_KEM_UNSUPPORTED_PARAMS);

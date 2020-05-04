@@ -13,37 +13,35 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
 #include "tls/extensions/s2n_extension_type.h"
-#include "utils/s2n_bitmap.h"
+
+#include "s2n_test.h"
 #include "tls/s2n_tls.h"
+#include "utils/s2n_bitmap.h"
 
 #define S2N_TEST_DATA_LEN 20
 
-#define EXPECT_BITFIELD_CLEAR(field) EXPECT_BYTEARRAY_EQUAL((field), &empty_bitfield, S2N_SUPPORTED_EXTENSIONS_BITFIELD_LEN)
+#define EXPECT_BITFIELD_CLEAR(field) \
+    EXPECT_BYTEARRAY_EQUAL((field), &empty_bitfield, S2N_SUPPORTED_EXTENSIONS_BITFIELD_LEN)
 
 s2n_extension_type_id s2n_extension_iana_value_to_id(uint16_t iana_value);
 
-const s2n_extension_bitfield empty_bitfield = { 0 };
+const s2n_extension_bitfield empty_bitfield = {0};
 
 static int test_send(struct s2n_connection *conn, struct s2n_stuffer *out)
 {
     return s2n_stuffer_skip_write(out, S2N_TEST_DATA_LEN);
 }
 
-static int test_recv(struct s2n_connection *conn, struct s2n_stuffer *in)
-{
-    return S2N_SUCCESS;
-}
+static int test_recv(struct s2n_connection *conn, struct s2n_stuffer *in) { return S2N_SUCCESS; }
 
 const s2n_extension_type test_extension_type = {
-        .iana_value = TLS_EXTENSION_SUPPORTED_VERSIONS,
-        .is_response = false,
-        .send = test_send,
-        .recv = test_recv,
-        .should_send = s2n_extension_always_send,
-        .if_missing = s2n_extension_noop_if_missing,
+    .iana_value = TLS_EXTENSION_SUPPORTED_VERSIONS,
+    .is_response = false,
+    .send = test_send,
+    .recv = test_recv,
+    .should_send = s2n_extension_always_send,
+    .if_missing = s2n_extension_noop_if_missing,
 };
 
 int main()
@@ -91,7 +89,7 @@ int main()
 
     /* Test bitfield behavior */
     {
-        s2n_extension_bitfield test_bitfield = { 0 };
+        s2n_extension_bitfield test_bitfield = {0};
         for (int i = 0; i < S2N_SUPPORTED_EXTENSIONS_COUNT; i++) {
             uint16_t iana = s2n_supported_extensions[i];
             s2n_extension_type_id id = s2n_extension_iana_value_to_id(iana);
@@ -113,7 +111,7 @@ int main()
 
         /* null check tests */
         {
-            struct s2n_connection conn = { 0 };
+            struct s2n_connection conn = {0};
 
             EXPECT_FAILURE(s2n_extension_recv(NULL, &conn, &stuffer));
             EXPECT_FAILURE(s2n_extension_recv(&test_extension_type, NULL, &stuffer));
@@ -125,7 +123,7 @@ int main()
 
         /* request extension */
         {
-            struct s2n_connection conn = { 0 };
+            struct s2n_connection conn = {0};
             s2n_extension_type request_extension_type = test_extension_type;
             request_extension_type.is_response = false;
 
@@ -136,12 +134,13 @@ int main()
 
         /* response extension */
         {
-            struct s2n_connection conn = { 0 };
+            struct s2n_connection conn = {0};
             s2n_extension_type response_extension_type = test_extension_type;
             response_extension_type.is_response = true;
 
             /* Fails if request was not sent */
-            EXPECT_FAILURE_WITH_ERRNO(s2n_extension_recv(&response_extension_type, &conn, &stuffer), S2N_ERR_UNSUPPORTED_EXTENSION);
+            EXPECT_FAILURE_WITH_ERRNO(s2n_extension_recv(&response_extension_type, &conn, &stuffer),
+                                      S2N_ERR_UNSUPPORTED_EXTENSION);
             EXPECT_BITFIELD_CLEAR(conn.extension_requests_received);
 
             /* Succeeds (but does not set request flag) if request was sent */
@@ -152,11 +151,12 @@ int main()
 
         /* "recv" errors */
         {
-            struct s2n_connection conn = { 0 };
+            struct s2n_connection conn = {0};
             s2n_extension_type extension_type_with_failure = test_extension_type;
             extension_type_with_failure.recv = s2n_extension_recv_unimplemented;
 
-            EXPECT_FAILURE_WITH_ERRNO(s2n_extension_recv(&extension_type_with_failure, &conn, &stuffer), S2N_ERR_UNIMPLEMENTED);
+            EXPECT_FAILURE_WITH_ERRNO(s2n_extension_recv(&extension_type_with_failure, &conn, &stuffer),
+                                      S2N_ERR_UNIMPLEMENTED);
             EXPECT_BITFIELD_CLEAR(conn.extension_requests_received);
         }
     }
@@ -165,7 +165,7 @@ int main()
     {
         /* null check tests */
         {
-            struct s2n_connection conn = { 0 };
+            struct s2n_connection conn = {0};
             struct s2n_stuffer stuffer;
 
             EXPECT_FAILURE(s2n_extension_send(NULL, &conn, &stuffer));
@@ -182,7 +182,7 @@ int main()
 
         /* request extension */
         {
-            struct s2n_connection conn = { 0 };
+            struct s2n_connection conn = {0};
             struct s2n_stuffer stuffer;
             s2n_stuffer_alloc(&stuffer, S2N_TEST_DATA_LEN * 2);
 
@@ -209,7 +209,7 @@ int main()
 
         /* response extension */
         {
-            struct s2n_connection conn = { 0 };
+            struct s2n_connection conn = {0};
             struct s2n_stuffer stuffer;
             s2n_stuffer_alloc(&stuffer, S2N_TEST_DATA_LEN * 2);
 
@@ -242,7 +242,7 @@ int main()
 
         /* "should_send" returns false */
         {
-            struct s2n_connection conn = { 0 };
+            struct s2n_connection conn = {0};
             struct s2n_stuffer stuffer;
 
             s2n_extension_type extension_type_with_never_send = test_extension_type;
@@ -255,14 +255,15 @@ int main()
 
         /* "send" errors */
         {
-            struct s2n_connection conn = { 0 };
+            struct s2n_connection conn = {0};
             struct s2n_stuffer stuffer;
             s2n_stuffer_alloc(&stuffer, S2N_TEST_DATA_LEN);
 
             s2n_extension_type extension_type_with_failure = test_extension_type;
             extension_type_with_failure.send = s2n_extension_send_unimplemented;
 
-            EXPECT_FAILURE_WITH_ERRNO(s2n_extension_send(&extension_type_with_failure, &conn, &stuffer), S2N_ERR_UNIMPLEMENTED);
+            EXPECT_FAILURE_WITH_ERRNO(s2n_extension_send(&extension_type_with_failure, &conn, &stuffer),
+                                      S2N_ERR_UNIMPLEMENTED);
             EXPECT_BITFIELD_CLEAR(conn.extension_requests_sent);
 
             s2n_stuffer_free(&stuffer);

@@ -13,21 +13,22 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-#include "testlib/s2n_testlib.h"
+#include "crypto/s2n_rsa_pss.h"
 
 #include "crypto/s2n_certificate.h"
 #include "crypto/s2n_dhe.h"
-#include "crypto/s2n_rsa_pss.h"
+#include "s2n_test.h"
 #include "stuffer/s2n_stuffer.h"
-#include "tls/s2n_connection.h"
+#include "testlib/s2n_testlib.h"
 #include "tls/s2n_config.h"
+#include "tls/s2n_connection.h"
 #include "utils/s2n_random.h"
 
-int s2n_flip_random_bit(struct s2n_blob *blob) {
+int s2n_flip_random_bit(struct s2n_blob *blob)
+{
     /* Flip a random bit in the blob */
     int64_t byte_flip_pos = s2n_public_random(blob->size);
-    int64_t bit_flip_pos =  s2n_public_random(8);
+    int64_t bit_flip_pos = s2n_public_random(8);
 
     uint8_t mask = 0x01 << (uint8_t)bit_flip_pos;
     blob->data[byte_flip_pos] ^= mask;
@@ -72,7 +73,8 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_cert_chain_and_key_load_pem(chain_and_key, cert_chain_pem, private_key_pem));
 
         /* Load the Public Key */
-        EXPECT_SUCCESS(s2n_asn1der_to_public_key_and_type(&public_key, &pkey_type, &chain_and_key->cert_chain->head->raw));
+        EXPECT_SUCCESS(
+            s2n_asn1der_to_public_key_and_type(&public_key, &pkey_type, &chain_and_key->cert_chain->head->raw));
         EXPECT_EQUAL(pkey_type, S2N_PKEY_TYPE_RSA_PSS);
 
         /* Sign and Verify a Random Value to ensure that Public and Private Key Matches */
@@ -104,14 +106,16 @@ int main(int argc, char **argv)
         EXPECT_NOT_NULL(root_private_key_pem = malloc(S2N_MAX_TEST_PEM_SIZE));
         EXPECT_NOT_NULL(server_config = s2n_config_new());
 
-        EXPECT_SUCCESS(s2n_read_test_pem(S2N_RSA_PSS_2048_SHA256_LEAF_CERT, leaf_cert_chain_pem, S2N_MAX_TEST_PEM_SIZE));
+        EXPECT_SUCCESS(
+            s2n_read_test_pem(S2N_RSA_PSS_2048_SHA256_LEAF_CERT, leaf_cert_chain_pem, S2N_MAX_TEST_PEM_SIZE));
 
         /* Incorrectly reading the CA's Private Key from disk, not the Leaf's Private Key */
         EXPECT_SUCCESS(s2n_read_test_pem(S2N_RSA_PSS_2048_SHA256_CA_KEY, root_private_key_pem, S2N_MAX_TEST_PEM_SIZE));
         EXPECT_NOT_NULL(misconfigured_chain_and_key = s2n_cert_chain_and_key_new());
 
         /* Attempting to Load RSA_PSS Certificate with wrong RSA_PSS Key should fail */
-        EXPECT_FAILURE(s2n_cert_chain_and_key_load_pem(misconfigured_chain_and_key, leaf_cert_chain_pem, root_private_key_pem));
+        EXPECT_FAILURE(
+            s2n_cert_chain_and_key_load_pem(misconfigured_chain_and_key, leaf_cert_chain_pem, root_private_key_pem));
 
         /* Release Resources */
         EXPECT_SUCCESS(s2n_cert_chain_and_key_free(misconfigured_chain_and_key));
@@ -144,7 +148,8 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_cert_chain_and_key_set_private_key(chain_and_key, private_key_pem));
 
         /* Parse the leaf cert for the public key and certificate type */
-        EXPECT_SUCCESS(s2n_asn1der_to_public_key_and_type(&public_key, &pkey_type, &chain_and_key->cert_chain->head->raw));
+        EXPECT_SUCCESS(
+            s2n_asn1der_to_public_key_and_type(&public_key, &pkey_type, &chain_and_key->cert_chain->head->raw));
         S2N_ERROR_IF(pkey_type == S2N_PKEY_TYPE_UNKNOWN, S2N_ERR_CERT_TYPE_UNSUPPORTED);
         EXPECT_SUCCESS(s2n_cert_set_cert_type(chain_and_key->cert_chain->head, pkey_type));
 
@@ -211,11 +216,12 @@ int main(int argc, char **argv)
 
         EXPECT_SUCCESS(s2n_read_test_pem(S2N_RSA_PSS_2048_SHA256_CA_CERT, root_cert_chain_pem, S2N_MAX_TEST_PEM_SIZE));
         EXPECT_SUCCESS(s2n_read_test_pem(S2N_RSA_PSS_2048_SHA256_CA_KEY, root_private_key_pem, S2N_MAX_TEST_PEM_SIZE));
-        EXPECT_SUCCESS(s2n_read_test_pem(S2N_RSA_PSS_2048_SHA256_LEAF_CERT, leaf_cert_chain_pem, S2N_MAX_TEST_PEM_SIZE));
-        EXPECT_SUCCESS(s2n_read_test_pem(S2N_RSA_PSS_2048_SHA256_LEAF_KEY, leaf_private_key_pem, S2N_MAX_TEST_PEM_SIZE));
+        EXPECT_SUCCESS(
+            s2n_read_test_pem(S2N_RSA_PSS_2048_SHA256_LEAF_CERT, leaf_cert_chain_pem, S2N_MAX_TEST_PEM_SIZE));
+        EXPECT_SUCCESS(
+            s2n_read_test_pem(S2N_RSA_PSS_2048_SHA256_LEAF_KEY, leaf_private_key_pem, S2N_MAX_TEST_PEM_SIZE));
         EXPECT_NOT_NULL(root_chain_and_key = s2n_cert_chain_and_key_new());
         EXPECT_NOT_NULL(leaf_chain_and_key = s2n_cert_chain_and_key_new());
-
 
         EXPECT_SUCCESS(s2n_cert_chain_and_key_set_cert_chain(root_chain_and_key, root_cert_chain_pem));
         EXPECT_SUCCESS(s2n_cert_chain_and_key_set_private_key(root_chain_and_key, root_private_key_pem));
@@ -223,8 +229,10 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_cert_chain_and_key_set_private_key(leaf_chain_and_key, leaf_private_key_pem));
 
         /* Parse the cert for the public key and certificate type */
-        EXPECT_SUCCESS(s2n_asn1der_to_public_key_and_type(&root_public_key, &root_pkey_type, &root_chain_and_key->cert_chain->head->raw));
-        EXPECT_SUCCESS(s2n_asn1der_to_public_key_and_type(&leaf_public_key, &leaf_pkey_type, &leaf_chain_and_key->cert_chain->head->raw));
+        EXPECT_SUCCESS(s2n_asn1der_to_public_key_and_type(&root_public_key, &root_pkey_type,
+                                                          &root_chain_and_key->cert_chain->head->raw));
+        EXPECT_SUCCESS(s2n_asn1der_to_public_key_and_type(&leaf_public_key, &leaf_pkey_type,
+                                                          &leaf_chain_and_key->cert_chain->head->raw));
         S2N_ERROR_IF(root_pkey_type == S2N_PKEY_TYPE_UNKNOWN, S2N_ERR_CERT_TYPE_UNSUPPORTED);
         S2N_ERROR_IF(leaf_pkey_type == S2N_PKEY_TYPE_UNKNOWN, S2N_ERR_CERT_TYPE_UNSUPPORTED);
 
@@ -301,7 +309,8 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_cert_chain_and_key_set_private_key(chain_and_key, private_key_pem));
 
         /* Parse the leaf cert for the public key and certificate type */
-        EXPECT_SUCCESS(s2n_asn1der_to_public_key_and_type(&public_key, &pkey_type, &chain_and_key->cert_chain->head->raw));
+        EXPECT_SUCCESS(
+            s2n_asn1der_to_public_key_and_type(&public_key, &pkey_type, &chain_and_key->cert_chain->head->raw));
         S2N_ERROR_IF(pkey_type == S2N_PKEY_TYPE_UNKNOWN, S2N_ERR_CERT_TYPE_UNSUPPORTED);
         EXPECT_SUCCESS(s2n_cert_set_cert_type(chain_and_key->cert_chain->head, pkey_type));
 

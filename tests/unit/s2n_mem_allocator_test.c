@@ -13,39 +13,30 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include "testlib/s2n_testlib.h"
-
-#include <sys/wait.h>
-#include <unistd.h>
-#include <time.h>
-#include <stdint.h>
-
 #include <s2n.h>
+#include <stdint.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
 
+#include "s2n_test.h"
+#include "testlib/s2n_testlib.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_handshake.h"
 
 #define SUPPORTED_CERTIFICATE_FORMATS (2)
 
-static const char *certificate_paths[SUPPORTED_CERTIFICATE_FORMATS] = { S2N_RSA_2048_PKCS1_CERT_CHAIN, S2N_RSA_2048_PKCS8_CERT_CHAIN };
-static const char *private_key_paths[SUPPORTED_CERTIFICATE_FORMATS] = { S2N_RSA_2048_PKCS1_KEY, S2N_RSA_2048_PKCS8_KEY };
+static const char *certificate_paths[SUPPORTED_CERTIFICATE_FORMATS] = {S2N_RSA_2048_PKCS1_CERT_CHAIN,
+                                                                       S2N_RSA_2048_PKCS8_CERT_CHAIN};
+static const char *private_key_paths[SUPPORTED_CERTIFICATE_FORMATS] = {S2N_RSA_2048_PKCS1_KEY, S2N_RSA_2048_PKCS8_KEY};
 
 #define HISTOGRAM_SIZE 100
-static uint32_t histogram_values[HISTOGRAM_SIZE] = { 0 };
-static uint32_t histogram_counts[HISTOGRAM_SIZE] = { 0 };
+static uint32_t histogram_values[HISTOGRAM_SIZE] = {0};
+static uint32_t histogram_counts[HISTOGRAM_SIZE] = {0};
 
-static int custom_mem_init(void)
-{
-    return 0;
-}
+static int custom_mem_init(void) { return 0; }
 
-static int custom_mem_cleanup(void)
-{
-
-    return 0;
-}
+static int custom_mem_cleanup(void) { return 0; }
 
 static int custom_mem_malloc(void **ptr, uint32_t requested, uint32_t *allocated)
 {
@@ -134,7 +125,7 @@ void mock_client(struct s2n_test_piped_io *piped_io)
     }
 
     int shutdown_rc = -1;
-    while(shutdown_rc != 0) {
+    while (shutdown_rc != 0) {
         shutdown_rc = s2n_shutdown(conn, &blocked);
     }
 
@@ -224,7 +215,7 @@ int main(int argc, char **argv)
 
         char buffer[0xffff];
         for (int i = 1; i < 0xffff; i += 100) {
-            char * ptr = buffer;
+            char *ptr = buffer;
             int size = i;
 
             do {
@@ -233,7 +224,7 @@ int main(int argc, char **argv)
 
                 size -= bytes_read;
                 ptr += bytes_read;
-            } while(size);
+            } while (size);
 
             for (int j = 0; j < i; j++) {
                 EXPECT_EQUAL(buffer[j], 33);
@@ -247,7 +238,7 @@ int main(int argc, char **argv)
         do {
             shutdown_rc = s2n_shutdown(conn, &blocked);
             EXPECT_TRUE(shutdown_rc == 0 || (errno == EAGAIN && blocked));
-        } while(shutdown_rc != 0);
+        } while (shutdown_rc != 0);
 
         EXPECT_SUCCESS(s2n_connection_free(conn));
         for (int cert = 0; cert < SUPPORTED_CERTIFICATE_FORMATS; cert++) {

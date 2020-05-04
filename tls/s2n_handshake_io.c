@@ -13,30 +13,25 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
-
 #include <errno.h>
 #include <s2n.h>
-
-#include "error/s2n_errno.h"
+#include <sys/param.h>
 
 #include "crypto/s2n_fips.h"
-
+#include "error/s2n_errno.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_alerts.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_connection.h"
+#include "tls/s2n_kex.h"
 #include "tls/s2n_record.h"
 #include "tls/s2n_resume.h"
-#include "tls/s2n_alerts.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
 #include "tls/s2n_tls13_handshake.h"
-#include "tls/s2n_kex.h"
-
-#include "stuffer/s2n_stuffer.h"
-
+#include "utils/s2n_random.h"
 #include "utils/s2n_safety.h"
 #include "utils/s2n_socket.h"
-#include "utils/s2n_random.h"
 #include "utils/s2n_str.h"
 
 /* clang-format off */
@@ -408,36 +403,27 @@ static message_type_t tls13_handshakes[S2N_HANDSHAKES_COUNT][S2N_MAX_HANDSHAKE_L
 #define MAX_HANDSHAKE_TYPE_LEN 128
 static char handshake_type_str[S2N_HANDSHAKES_COUNT][MAX_HANDSHAKE_TYPE_LEN] = {0};
 
-static const char* handshake_type_names[] = {
-    "NEGOTIATED|",
-    "FULL_HANDSHAKE|",
-    "TLS12_PERFECT_FORWARD_SECRECY|",
-    "OCSP_STATUS|",
-    "CLIENT_AUTH|",
-    "WITH_SESSION_TICKET|",
-    "NO_CLIENT_CERT|",
-    "HELLO_RETRY_REQUEST|"
-};
+static const char *handshake_type_names[] = {"NEGOTIATED|",     "FULL_HANDSHAKE|",     "TLS12_PERFECT_FORWARD_SECRECY|",
+                                             "OCSP_STATUS|",    "CLIENT_AUTH|",        "WITH_SESSION_TICKET|",
+                                             "NO_CLIENT_CERT|", "HELLO_RETRY_REQUEST|"};
 
-#define IS_TLS13_HANDSHAKE( conn )    ((conn)->actual_protocol_version == S2N_TLS13)
+#define IS_TLS13_HANDSHAKE(conn) ((conn)->actual_protocol_version == S2N_TLS13)
 
-#define ACTIVE_STATE_MACHINE( conn )  (IS_TLS13_HANDSHAKE(conn) ? tls13_state_machine : state_machine)
-#define ACTIVE_HANDSHAKES( conn )     (IS_TLS13_HANDSHAKE(conn) ? tls13_handshakes : handshakes)
+#define ACTIVE_STATE_MACHINE(conn) (IS_TLS13_HANDSHAKE(conn) ? tls13_state_machine : state_machine)
+#define ACTIVE_HANDSHAKES(conn)    (IS_TLS13_HANDSHAKE(conn) ? tls13_handshakes : handshakes)
 
-#define ACTIVE_MESSAGE( conn )        ACTIVE_HANDSHAKES(conn)[ (conn)->handshake.handshake_type ][ (conn)->handshake.message_number ]
+#define ACTIVE_MESSAGE(conn) ACTIVE_HANDSHAKES(conn)[(conn)->handshake.handshake_type][(conn)->handshake.message_number]
 
-#define ACTIVE_STATE( conn )          ACTIVE_STATE_MACHINE(conn)[ ACTIVE_MESSAGE( (conn) ) ]
-#define CCS_STATE( conn )             (((conn)->mode == S2N_CLIENT) ? ACTIVE_STATE_MACHINE(conn)[SERVER_CHANGE_CIPHER_SPEC] \
-                                                                    : ACTIVE_STATE_MACHINE(conn)[CLIENT_CHANGE_CIPHER_SPEC] )
+#define ACTIVE_STATE(conn) ACTIVE_STATE_MACHINE(conn)[ACTIVE_MESSAGE((conn))]
+#define CCS_STATE(conn)                                                                   \
+    (((conn)->mode == S2N_CLIENT) ? ACTIVE_STATE_MACHINE(conn)[SERVER_CHANGE_CIPHER_SPEC] \
+                                  : ACTIVE_STATE_MACHINE(conn)[CLIENT_CHANGE_CIPHER_SPEC])
 
-#define EXPECTED_RECORD_TYPE( conn )  ACTIVE_STATE( conn ).record_type
-#define EXPECTED_MESSAGE_TYPE( conn ) ACTIVE_STATE( conn ).message_type
+#define EXPECTED_RECORD_TYPE(conn)  ACTIVE_STATE(conn).record_type
+#define EXPECTED_MESSAGE_TYPE(conn) ACTIVE_STATE(conn).message_type
 
 /* Used in our test cases */
-message_type_t s2n_conn_get_current_message_type(struct s2n_connection *conn)
-{
-    return ACTIVE_MESSAGE(conn);
-}
+message_type_t s2n_conn_get_current_message_type(struct s2n_connection *conn) { return ACTIVE_MESSAGE(conn); }
 
 static int s2n_advance_message(struct s2n_connection *conn)
 {
@@ -452,9 +438,8 @@ static int s2n_advance_message(struct s2n_connection *conn)
     conn->handshake.message_number++;
 
     /* When reading and using TLS1.3, skip optional change_cipher_spec states. */
-    if (ACTIVE_STATE(conn).writer != this_mode &&
-            EXPECTED_RECORD_TYPE(conn) == TLS_CHANGE_CIPHER_SPEC &&
-            IS_TLS13_HANDSHAKE(conn)) {
+    if (ACTIVE_STATE(conn).writer != this_mode && EXPECTED_RECORD_TYPE(conn) == TLS_CHANGE_CIPHER_SPEC
+        && IS_TLS13_HANDSHAKE(conn)) {
         conn->handshake.message_number++;
     }
 
@@ -495,7 +480,7 @@ static int s2n_advance_message(struct s2n_connection *conn)
 int s2n_generate_new_client_session_id(struct s2n_connection *conn)
 {
     if (conn->mode == S2N_SERVER) {
-        struct s2n_blob session_id = { .data = conn->session_id, .size = S2N_TLS_SESSION_ID_MAX_LEN };
+        struct s2n_blob session_id = {.data = conn->session_id, .size = S2N_TLS_SESSION_ID_MAX_LEN};
 
         /* Generate a new session id */
         GUARD(s2n_get_public_random_data(&session_id));
@@ -538,7 +523,8 @@ int s2n_conn_set_handshake_type(struct s2n_connection *conn)
         /* If we're a client, and Client Auth is REQUIRED, then the Client must expect the CLIENT_CERT_REQ Message */
         conn->handshake.handshake_type |= CLIENT_AUTH;
     } else if (conn->mode == S2N_SERVER && client_cert_auth_type != S2N_CERT_AUTH_NONE) {
-        /* If we're a server, and Client Auth is REQUIRED or OPTIONAL, then the server must send the CLIENT_CERT_REQ Message*/
+        /* If we're a server, and Client Auth is REQUIRED or OPTIONAL, then the server must send the CLIENT_CERT_REQ
+         * Message*/
         conn->handshake.handshake_type |= CLIENT_AUTH;
     }
 
@@ -570,7 +556,8 @@ int s2n_conn_set_handshake_type(struct s2n_connection *conn)
 
     /* If a TLS session is resumed, the Server should respond in its ServerHello with the same SessionId the
      * Client sent in the ClientHello. */
-    if (conn->actual_protocol_version <= S2N_TLS12 && conn->mode == S2N_SERVER && s2n_allowed_to_cache_connection(conn)) {
+    if (conn->actual_protocol_version <= S2N_TLS12 && conn->mode == S2N_SERVER
+        && s2n_allowed_to_cache_connection(conn)) {
         int r = s2n_resume_from_cache(conn);
         if (r == S2N_SUCCESS || (r < 0 && ERR_IS_BLOCKING(s2n_errno))) {
             return r;
@@ -631,7 +618,7 @@ int s2n_conn_clear_handshake_read_block(struct s2n_connection *conn)
 const char *s2n_connection_get_last_message_name(struct s2n_connection *conn)
 {
     notnull_check_ptr(conn);
-    
+
     return message_names[ACTIVE_MESSAGE(conn)];
 }
 
@@ -668,7 +655,7 @@ const char *s2n_connection_get_handshake_type_name(struct s2n_connection *conn)
 
 /* Writing is relatively straight forward, simply write each message out as a record,
  * we may fragment a message across multiple records, but we never coalesce multiple
- * messages into single records. 
+ * messages into single records.
  * Precondition: secure outbound I/O has already been flushed
  */
 static int s2n_handshake_write_io(struct s2n_connection *conn)
@@ -684,7 +671,7 @@ static int s2n_handshake_write_io(struct s2n_connection *conn)
         if (record_type == TLS_HANDSHAKE) {
             GUARD(s2n_handshake_write_header(&conn->handshake.io, ACTIVE_STATE(conn).message_type));
         }
-        GUARD(ACTIVE_STATE(conn).handler[conn->mode] (conn));
+        GUARD(ACTIVE_STATE(conn).handler[conn->mode](conn));
         if (record_type == TLS_HANDSHAKE) {
             GUARD(s2n_handshake_finish_header(&conn->handshake.io));
         }
@@ -730,12 +717,12 @@ static int s2n_handshake_write_io(struct s2n_connection *conn)
  *  0  - we read the whole handshake message.
  * -1  - error processing the handshake message.
  */
-static int s2n_read_full_handshake_message(struct s2n_connection *conn, uint8_t * message_type)
+static int s2n_read_full_handshake_message(struct s2n_connection *conn, uint8_t *message_type)
 {
     uint32_t current_handshake_data = s2n_stuffer_data_available(&conn->handshake.io);
     if (current_handshake_data < TLS_HANDSHAKE_HEADER_LENGTH) {
         /* The message may be so badly fragmented that we don't even read the full header, take
-         * what we can and then continue to the next record read iteration. 
+         * what we can and then continue to the next record read iteration.
          */
         if (s2n_stuffer_data_available(&conn->in) < (TLS_HANDSHAKE_HEADER_LENGTH - current_handshake_data)) {
             GUARD(s2n_stuffer_copy(&conn->in, &conn->handshake.io, s2n_stuffer_data_available(&conn->in)));
@@ -764,7 +751,7 @@ static int s2n_read_full_handshake_message(struct s2n_connection *conn, uint8_t 
 
     /* We don't have the whole message, so we'll need to go again */
     GUARD(s2n_stuffer_reread(&conn->handshake.io));
- 
+
     return 1;
 }
 
@@ -794,7 +781,7 @@ static int s2n_handshake_handle_sslv2(struct s2n_connection *conn)
     S2N_ERROR_IF(ACTIVE_MESSAGE(conn) != CLIENT_HELLO, S2N_ERR_BAD_MESSAGE);
 
     /* Add the message to our handshake hashes */
-    struct s2n_blob hashed = {.data = conn->header_in.blob.data + 2,.size = 3 };
+    struct s2n_blob hashed = {.data = conn->header_in.blob.data + 2, .size = 3};
     GUARD(s2n_conn_update_handshake_hashes(conn, &hashed));
 
     hashed.data = conn->in.blob.data;
@@ -885,7 +872,7 @@ static int s2n_handshake_read_io(struct s2n_connection *conn)
         S2N_ERROR_IF(s2n_stuffer_data_available(&conn->in) != 1, S2N_ERR_BAD_MESSAGE);
 
         GUARD(s2n_stuffer_copy(&conn->in, &conn->handshake.io, s2n_stuffer_data_available(&conn->in)));
-        GUARD(CCS_STATE(conn).handler[conn->mode] (conn));
+        GUARD(CCS_STATE(conn).handler[conn->mode](conn));
         GUARD(s2n_stuffer_wipe(&conn->handshake.io));
 
         /* We're done with the record, wipe it */
@@ -915,7 +902,7 @@ static int s2n_handshake_read_io(struct s2n_connection *conn)
 
     /* Record is a handshake message */
     S2N_ERROR_IF(s2n_stuffer_data_available(&conn->in) == 0, S2N_ERR_BAD_MESSAGE);
-    
+
     while (s2n_stuffer_data_available(&conn->in)) {
         int r;
         uint8_t actual_handshake_message_type;
@@ -924,7 +911,7 @@ static int s2n_handshake_read_io(struct s2n_connection *conn)
         /* Do we need more data? This happens for message fragmentation */
         if (r == 1) {
             /* Break out of this inner loop, but since we're not changing the state, the
-             * outer loop in s2n_handshake_io() will read another record. 
+             * outer loop in s2n_handshake_io() will read another record.
              */
             GUARD(s2n_stuffer_wipe(&conn->header_in));
             GUARD(s2n_stuffer_wipe(&conn->in));
@@ -937,24 +924,22 @@ static int s2n_handshake_read_io(struct s2n_connection *conn)
 
         /* If we're a Client, and received a ClientCertRequest message, and ClientAuth
          * is set to optional, then switch the State Machine that we're using to expect the ClientCertRequest. */
-        if (conn->mode == S2N_CLIENT
-                && client_cert_auth_type == S2N_CERT_AUTH_OPTIONAL
-                && actual_handshake_message_type == TLS_CERT_REQ) {
+        if (conn->mode == S2N_CLIENT && client_cert_auth_type == S2N_CERT_AUTH_OPTIONAL
+            && actual_handshake_message_type == TLS_CERT_REQ) {
             conn->handshake.handshake_type |= CLIENT_AUTH;
         }
 
         /* According to rfc6066 section 8, server may choose not to send "CertificateStatus" message even if it has
          * sent "status_request" extension in the ServerHello message. */
-        if (conn->mode == S2N_CLIENT
-                && EXPECTED_MESSAGE_TYPE(conn) == TLS_SERVER_CERT_STATUS
-                && actual_handshake_message_type != TLS_SERVER_CERT_STATUS) {
+        if (conn->mode == S2N_CLIENT && EXPECTED_MESSAGE_TYPE(conn) == TLS_SERVER_CERT_STATUS
+            && actual_handshake_message_type != TLS_SERVER_CERT_STATUS) {
             conn->handshake.handshake_type &= ~OCSP_STATUS;
         }
 
         S2N_ERROR_IF(actual_handshake_message_type != EXPECTED_MESSAGE_TYPE(conn), S2N_ERR_BAD_MESSAGE);
 
         /* Call the relevant handler */
-        r = ACTIVE_STATE(conn).handler[conn->mode] (conn);
+        r = ACTIVE_STATE(conn).handler[conn->mode](conn);
 
         /* Don't update handshake hashes until after the handler has executed since some handlers need to read the
          * hash values before they are updated. */
@@ -1002,7 +987,7 @@ static int s2n_handle_retry_state(struct s2n_connection *conn)
      * We aren't going to read more handshake data yet because the current message has
      * not finished processing. */
     s2n_errno = S2N_ERR_T_OK;
-    const int r = ACTIVE_STATE(conn).handler[conn->mode] (conn);
+    const int r = ACTIVE_STATE(conn).handler[conn->mode](conn);
 
     if (r < 0) {
         /* If the handler is still waiting for data, return control to the caller. */
@@ -1030,7 +1015,7 @@ static int s2n_handle_retry_state(struct s2n_connection *conn)
     return 0;
 }
 
-int s2n_negotiate(struct s2n_connection *conn, s2n_blocked_status * blocked)
+int s2n_negotiate(struct s2n_connection *conn, s2n_blocked_status *blocked)
 {
     errno = 0;
     s2n_errno = S2N_ERR_OK;

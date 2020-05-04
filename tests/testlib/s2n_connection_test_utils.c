@@ -13,35 +13,29 @@
  * permissions and limitations under the License.
  */
 
-#include <stdio.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <unistd.h>
 
+#include "testlib/s2n_testlib.h"
 #include "tls/s2n_connection.h"
 #include "utils/s2n_safety.h"
 #include "utils/s2n_socket.h"
-#include "testlib/s2n_testlib.h"
 
+int s2n_fd_set_blocking(int fd) { return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) ^ O_NONBLOCK); }
 
-int s2n_fd_set_blocking(int fd) {
-    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) ^ O_NONBLOCK);
-}
-
-int s2n_fd_set_non_blocking(int fd) {
-    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
-}
+int s2n_fd_set_non_blocking(int fd) { return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK); }
 
 static int buffer_read(void *io_context, uint8_t *buf, uint32_t len)
 {
     struct s2n_stuffer *in_buf;
     int n_read, n_avail;
 
-
     if (buf == NULL) {
         return 0;
     }
 
-    in_buf = (struct s2n_stuffer *) io_context;
+    in_buf = (struct s2n_stuffer *)io_context;
     if (in_buf == NULL) {
         errno = EINVAL;
         return -1;
@@ -68,7 +62,7 @@ static int buffer_write(void *io_context, const uint8_t *buf, uint32_t len)
         return 0;
     }
 
-    out = (struct s2n_stuffer *) io_context;
+    out = (struct s2n_stuffer *)io_context;
     if (out == NULL) {
         errno = EINVAL;
         return -1;
@@ -96,7 +90,8 @@ int s2n_connection_set_io_stuffers(struct s2n_stuffer *input, struct s2n_stuffer
     return 0;
 }
 
-int s2n_piped_io_init(struct s2n_test_piped_io *piped_io) {
+int s2n_piped_io_init(struct s2n_test_piped_io *piped_io)
+{
     signal(SIGPIPE, SIG_IGN);
 
     int server_to_client[2];
@@ -114,7 +109,8 @@ int s2n_piped_io_init(struct s2n_test_piped_io *piped_io) {
     return 0;
 }
 
-int s2n_piped_io_init_non_blocking(struct s2n_test_piped_io *piped_io) {
+int s2n_piped_io_init_non_blocking(struct s2n_test_piped_io *piped_io)
+{
     GUARD(s2n_piped_io_init(piped_io));
 
     GUARD(s2n_fd_set_non_blocking(piped_io->client_read));
@@ -125,7 +121,8 @@ int s2n_piped_io_init_non_blocking(struct s2n_test_piped_io *piped_io) {
     return 0;
 }
 
-int s2n_connection_set_piped_io(struct s2n_connection *conn, struct s2n_test_piped_io* piped_io) {
+int s2n_connection_set_piped_io(struct s2n_connection *conn, struct s2n_test_piped_io *piped_io)
+{
     if (conn->mode == S2N_CLIENT) {
         GUARD(s2n_connection_set_read_fd(conn, piped_io->client_read));
         GUARD(s2n_connection_set_write_fd(conn, piped_io->client_write));
@@ -137,23 +134,27 @@ int s2n_connection_set_piped_io(struct s2n_connection *conn, struct s2n_test_pip
     return 0;
 }
 
-int s2n_connections_set_piped_io(struct s2n_connection *client, struct s2n_connection *server, struct s2n_test_piped_io* piped_io) {
+int s2n_connections_set_piped_io(struct s2n_connection *client, struct s2n_connection *server,
+                                 struct s2n_test_piped_io *piped_io)
+{
     GUARD(s2n_connection_set_piped_io(client, piped_io));
     GUARD(s2n_connection_set_piped_io(server, piped_io));
     return 0;
 }
 
-int s2n_piped_io_close(struct s2n_test_piped_io *piped_io) {
+int s2n_piped_io_close(struct s2n_test_piped_io *piped_io)
+{
     GUARD(s2n_piped_io_close_one_end(piped_io, S2N_CLIENT));
     GUARD(s2n_piped_io_close_one_end(piped_io, S2N_SERVER));
     return 0;
 }
 
-int s2n_piped_io_close_one_end(struct s2n_test_piped_io *piped_io, int mode_to_close) {
+int s2n_piped_io_close_one_end(struct s2n_test_piped_io *piped_io, int mode_to_close)
+{
     if (mode_to_close == S2N_CLIENT) {
         GUARD(close(piped_io->client_read));
         GUARD(close(piped_io->client_write));
-    } else if(mode_to_close == S2N_SERVER) {
+    } else if (mode_to_close == S2N_SERVER) {
         GUARD(close(piped_io->server_read));
         GUARD(close(piped_io->server_write));
     }
@@ -165,7 +166,8 @@ void s2n_print_connection(struct s2n_connection *conn, const char *marker)
     int i;
 
     printf("marker: %s\n", marker);
-    printf("HEADER IN Stuffer (write: %d, read: %d, size: %d)\n", conn->header_in.write_cursor, conn->header_in.read_cursor, conn->header_in.blob.size);
+    printf("HEADER IN Stuffer (write: %d, read: %d, size: %d)\n", conn->header_in.write_cursor,
+           conn->header_in.read_cursor, conn->header_in.blob.size);
     for (i = 0; i < conn->header_in.blob.size; i++) {
         printf("%02x", conn->header_in.blob.data[i]);
         if ((i + 1) % 8 == 0) {
@@ -176,8 +178,9 @@ void s2n_print_connection(struct s2n_connection *conn, const char *marker)
         }
     }
     printf("\n");
- 
-    printf("IN Stuffer (write: %d, read: %d, size: %d)\n", conn->in.write_cursor, conn->in.read_cursor, conn->in.blob.size);
+
+    printf("IN Stuffer (write: %d, read: %d, size: %d)\n", conn->in.write_cursor, conn->in.read_cursor,
+           conn->in.blob.size);
     for (i = 0; i < conn->in.write_cursor; i++) {
         printf("%02x", conn->in.blob.data[i]);
         if ((i + 1) % 8 == 0) {
@@ -189,7 +192,8 @@ void s2n_print_connection(struct s2n_connection *conn, const char *marker)
     }
     printf("\n");
 
-    printf("OUT Stuffer (write: %d, read: %d, size: %d)\n", conn->out.write_cursor, conn->out.read_cursor, conn->out.blob.size);
+    printf("OUT Stuffer (write: %d, read: %d, size: %d)\n", conn->out.write_cursor, conn->out.read_cursor,
+           conn->out.blob.size);
     for (i = 0; i < conn->out.write_cursor; i++) {
         printf("%02x", conn->out.blob.data[i]);
         if ((i + 1) % 8 == 0) {

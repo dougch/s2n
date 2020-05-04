@@ -15,19 +15,18 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <s2n.h>
-
 #include <openssl/rsa.h>
+#include <s2n.h>
+#include <stdint.h>
 
 #include "crypto/s2n_hash.h"
-
 #include "utils/s2n_blob.h"
 
 /* Forward declaration to avoid the circular dependency with s2n_pkey.h */
 struct s2n_pkey;
 
-struct s2n_rsa_key {
+struct s2n_rsa_key
+{
     RSA *rsa;
 };
 

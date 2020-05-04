@@ -13,19 +13,17 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
 #include <stdint.h>
 
-#include "tls/s2n_alerts.h"
-#include "tls/s2n_config.h"
-#include "tls/s2n_connection.h"
-#include "tls/s2n_client_extensions.h"
-#include "tls/s2n_tls.h"
+#include "s2n_test.h"
+#include "stuffer/s2n_stuffer.h"
 #include "tls/extensions/s2n_client_key_share.h"
 #include "tls/extensions/s2n_key_share.h"
-
-#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_alerts.h"
+#include "tls/s2n_client_extensions.h"
+#include "tls/s2n_config.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_tls.h"
 #include "utils/s2n_safety.h"
 
 int main()
@@ -35,8 +33,8 @@ int main()
     {
         /* Test that unknown TLS_EXTENSION_SUPPORTED_GROUPS values are ignored */
         struct s2n_ecc_named_curve unsupported_curves[2] = {
-                { .iana_id = 0x0, .libcrypto_nid = 0, .name = 0x0, .share_size = 0 },
-                { .iana_id = 0xFF01, .libcrypto_nid = 0, .name = 0x0, .share_size = 0 },
+            {.iana_id = 0x0, .libcrypto_nid = 0, .name = 0x0, .share_size = 0},
+            {.iana_id = 0xFF01, .libcrypto_nid = 0, .name = 0x0, .share_size = 0},
         };
         int ec_curves_count = s2n_array_len(unsupported_curves);
         struct s2n_connection *conn;
@@ -56,7 +54,7 @@ int main()
         parsed_named_group_extension->extension = supported_groups_extension.blob;
 
         /* Force a bad value for the negotiated curve so we know extension was parsed and the curve was set to NULL */
-        struct s2n_ecc_named_curve invalid_curve = { 0 };
+        struct s2n_ecc_named_curve invalid_curve = {0};
         conn->secure.server_ecc_evp_params.negotiated_curve = &invalid_curve;
         EXPECT_SUCCESS(s2n_client_extensions_recv(conn, parsed_extensions));
         EXPECT_NULL(conn->secure.server_ecc_evp_params.negotiated_curve);

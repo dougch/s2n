@@ -13,9 +13,7 @@
  * permissions and limitations under the License.
  */
 
-
 #include <errno.h>
-
 #include <s2n.h>
 
 #include "s2n_test.h"

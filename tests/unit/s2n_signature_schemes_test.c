@@ -16,10 +16,9 @@
 #include <s2n.h>
 
 #include "s2n_test.h"
-
 #include "tls/s2n_config.h"
-#include "tls/s2n_signature_scheme.h"
 #include "tls/s2n_signature_algorithms.h"
+#include "tls/s2n_signature_scheme.h"
 
 /* needed for selection */
 #include "tls/s2n_signature_scheme.c"
@@ -42,7 +41,7 @@ int main(int argc, char **argv)
         EXPECT_EQUAL(config->signature_preferences, &s2n_signature_preferences_20200207);
 
         EXPECT_FAILURE_WITH_ERRNO(s2n_config_set_signature_preferences(config, "notathing"),
-                S2N_ERR_INVALID_SIGNATURE_ALGORITHMS_PREFERENCES);
+                                  S2N_ERR_INVALID_SIGNATURE_ALGORITHMS_PREFERENCES);
 
         s2n_config_free(config);
     }

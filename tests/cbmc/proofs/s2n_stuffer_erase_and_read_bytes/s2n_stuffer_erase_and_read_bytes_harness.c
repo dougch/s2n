@@ -13,14 +13,16 @@
  * permissions and limitations under the License.
  */
 
-#include "api/s2n.h"
-#include "stuffer/s2n_stuffer.h"
 #include <assert.h>
-#include <cbmc_proof/proof_allocators.h>
 #include <cbmc_proof/cbmc_utils.h>
 #include <cbmc_proof/make_common_datastructures.h>
+#include <cbmc_proof/proof_allocators.h>
 
-void s2n_stuffer_erase_and_read_bytes_harness() {
+#include "api/s2n.h"
+#include "stuffer/s2n_stuffer.h"
+
+void s2n_stuffer_erase_and_read_bytes_harness()
+{
     struct s2n_stuffer *stuffer = cbmc_allocate_s2n_stuffer();
     struct s2n_blob *blob = cbmc_allocate_s2n_blob();
     __CPROVER_assume(s2n_stuffer_is_valid(stuffer));
@@ -31,7 +33,7 @@ void s2n_stuffer_erase_and_read_bytes_harness() {
     save_byte_from_blob(&stuffer->blob, &old_byte);
 
     struct store_byte_from_buffer copied_byte;
-    if(s2n_stuffer_data_available(stuffer) >= blob->size) {
+    if (s2n_stuffer_data_available(stuffer) >= blob->size) {
         save_byte_from_array(&stuffer->blob.data[old_stuffer.read_cursor], blob->size, &copied_byte);
     }
 

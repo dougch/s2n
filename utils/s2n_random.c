@@ -13,46 +13,42 @@
  * permissions and limitations under the License.
  */
 
-#include <openssl/engine.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/param.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <limits.h>
-#include <fcntl.h>
-#include <string.h>
-#include <stdint.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <openssl/engine.h>
+#include <pthread.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "utils/s2n_compiler.h"
 
 /* clang can define gcc version to be < 4.3, but cpuid.h exists for most releases */
-#if ((defined(__x86_64__) || defined(__i386__)) && (defined(__clang__) || S2N_GCC_VERSION_AT_LEAST(4,3,0)))
+#if ((defined(__x86_64__) || defined(__i386__)) && (defined(__clang__) || S2N_GCC_VERSION_AT_LEAST(4, 3, 0)))
 #include <cpuid.h>
 #endif
 
-#include "stuffer/s2n_stuffer.h"
+#include <openssl/rand.h>
 
 #include "crypto/s2n_drbg.h"
-
 #include "error/s2n_errno.h"
-
-#include "utils/s2n_safety.h"
-#include "utils/s2n_random.h"
+#include "stuffer/s2n_stuffer.h"
 #include "utils/s2n_mem.h"
-
-#include <openssl/rand.h>
+#include "utils/s2n_random.h"
+#include "utils/s2n_safety.h"
 
 #define ENTROPY_SOURCE "/dev/urandom"
 
 /* See https://en.wikipedia.org/wiki/CPUID */
-#define RDRAND_ECX_FLAG     0x40000000
+#define RDRAND_ECX_FLAG 0x40000000
 
 /* One second in nanoseconds */
-#define ONE_S  INT64_C(1000000000)
+#define ONE_S INT64_C(1000000000)
 
 static int entropy_fd = -1;
 
@@ -62,10 +58,7 @@ static __thread struct s2n_drbg per_thread_public_drbg = {0};
 #if !defined(MAP_INHERIT_ZERO)
 static __thread int zero_if_forked = 0;
 
-void s2n_on_fork(void)
-{
-    zero_if_forked = 0;
-}
+void s2n_on_fork(void) { zero_if_forked = 0; }
 
 #else
 
@@ -78,8 +71,8 @@ static inline int s2n_defend_if_forked(void)
 {
     uint8_t s2n_public_drbg[] = "s2n public drbg";
     uint8_t s2n_private_drbg[] = "s2n private drbg";
-    struct s2n_blob public = {.data = s2n_public_drbg,.size = sizeof(s2n_public_drbg) };
-    struct s2n_blob private = {.data = s2n_private_drbg,.size = sizeof(s2n_private_drbg) };
+    struct s2n_blob public = {.data = s2n_public_drbg, .size = sizeof(s2n_public_drbg)};
+    struct s2n_blob private = {.data = s2n_private_drbg, .size = sizeof(s2n_private_drbg)};
 
     if (zero_if_forked == 0) {
         /* Clean up the old drbg first */
@@ -109,21 +102,15 @@ int s2n_get_private_random_data(struct s2n_blob *blob)
     return 0;
 }
 
-int s2n_get_public_random_bytes_used(void)
-{
-    return s2n_drbg_bytes_used(&per_thread_public_drbg);
-}
+int s2n_get_public_random_bytes_used(void) { return s2n_drbg_bytes_used(&per_thread_public_drbg); }
 
-int s2n_get_private_random_bytes_used(void)
-{
-    return s2n_drbg_bytes_used(&per_thread_private_drbg);
-}
+int s2n_get_private_random_bytes_used(void) { return s2n_drbg_bytes_used(&per_thread_private_drbg); }
 
 int s2n_get_urandom_data(struct s2n_blob *blob)
 {
     uint32_t n = blob->size;
     uint8_t *data = blob->data;
-    struct timespec sleep_time = {.tv_sec = 0, .tv_nsec = 0 };
+    struct timespec sleep_time = {.tv_sec = 0, .tv_nsec = 0};
     long backoff = 1;
 
     while (n) {
@@ -153,8 +140,7 @@ int s2n_get_urandom_data(struct s2n_blob *blob)
                 sleep_time.tv_nsec = backoff;
                 do {
                     r = nanosleep(&sleep_time, &sleep_time);
-                }
-                while (r != 0);
+                } while (r != 0);
             }
 
             continue;
@@ -177,7 +163,7 @@ int64_t s2n_public_random(int64_t bound)
     gt_check(bound, 0);
 
     while (1) {
-        struct s2n_blob blob = {.data = (void *)&r, sizeof(r) };
+        struct s2n_blob blob = {.data = (void *)&r, sizeof(r)};
         GUARD(s2n_get_public_random_data(&blob));
 
         /* Imagine an int was one byte and UINT_MAX was 256. If the
@@ -203,7 +189,7 @@ int64_t s2n_public_random(int64_t bound)
 
 int s2n_openssl_compat_rand(unsigned char *buf, int num)
 {
-    struct s2n_blob out = {.data = buf,.size = num };
+    struct s2n_blob out = {.data = buf, .size = num};
 
     if (s2n_get_private_random_data(&out) < 0) {
         return 0;
@@ -211,29 +197,21 @@ int s2n_openssl_compat_rand(unsigned char *buf, int num)
     return 1;
 }
 
-int s2n_openssl_compat_status(void)
-{
-    return 1;
-}
+int s2n_openssl_compat_status(void) { return 1; }
 
-int s2n_openssl_compat_init(ENGINE * unused)
-{
-    return 1;
-}
+int s2n_openssl_compat_init(ENGINE *unused) { return 1; }
 
-RAND_METHOD s2n_openssl_rand_method = {
-    .seed = NULL,
-    .bytes = s2n_openssl_compat_rand,
-    .cleanup = NULL,
-    .add = NULL,
-    .pseudorand = s2n_openssl_compat_rand,
-    .status = s2n_openssl_compat_status
-};
+RAND_METHOD s2n_openssl_rand_method = {.seed = NULL,
+                                       .bytes = s2n_openssl_compat_rand,
+                                       .cleanup = NULL,
+                                       .add = NULL,
+                                       .pseudorand = s2n_openssl_compat_rand,
+                                       .status = s2n_openssl_compat_status};
 #endif
 
 int s2n_rand_init(void)
 {
-  OPEN:
+OPEN:
     entropy_fd = open(ENTROPY_SOURCE, O_RDONLY);
     if (entropy_fd == -1) {
         if (errno == EINTR) {
@@ -256,17 +234,18 @@ int s2n_rand_init(void)
 #if S2N_LIBCRYPTO_SUPPORTS_CUSTOM_RAND
     /* Create an engine */
     ENGINE *e = ENGINE_new();
-    if (e == NULL ||
-        ENGINE_set_id(e, "s2n_rand") != 1 ||
-        ENGINE_set_name(e, "s2n entropy generator") != 1 ||
-        ENGINE_set_flags(e, ENGINE_FLAGS_NO_REGISTER_ALL) != 1 ||
-        ENGINE_set_init_function(e, s2n_openssl_compat_init) != 1 || ENGINE_set_RAND(e, &s2n_openssl_rand_method) != 1 || ENGINE_add(e) != 1 || ENGINE_free(e) != 1) {
+    if (e == NULL || ENGINE_set_id(e, "s2n_rand") != 1 || ENGINE_set_name(e, "s2n entropy generator") != 1
+        || ENGINE_set_flags(e, ENGINE_FLAGS_NO_REGISTER_ALL) != 1
+        || ENGINE_set_init_function(e, s2n_openssl_compat_init) != 1
+        || ENGINE_set_RAND(e, &s2n_openssl_rand_method) != 1 || ENGINE_add(e) != 1 || ENGINE_free(e) != 1) {
         S2N_ERROR(S2N_ERR_OPEN_RANDOM);
     }
 
     /* Use that engine for rand() */
     e = ENGINE_by_id("s2n_rand");
-    S2N_ERROR_IF(e == NULL || ENGINE_init(e) != 1 || ENGINE_set_default(e, ENGINE_METHOD_RAND) != 1 || ENGINE_free(e) != 1, S2N_ERR_OPEN_RANDOM);
+    S2N_ERROR_IF(
+        e == NULL || ENGINE_init(e) != 1 || ENGINE_set_default(e, ENGINE_METHOD_RAND) != 1 || ENGINE_free(e) != 1,
+        S2N_ERR_OPEN_RANDOM);
 #endif
 
     return 0;
@@ -313,10 +292,9 @@ int s2n_set_private_drbg_for_test(struct s2n_drbg drbg)
     return 0;
 }
 
-
 int s2n_cpu_supports_rdrand()
 {
-#if ((defined(__x86_64__) || defined(__i386__)) && (defined(__clang__) || S2N_GCC_VERSION_AT_LEAST(4,3,0)))
+#if ((defined(__x86_64__) || defined(__i386__)) && (defined(__clang__) || S2N_GCC_VERSION_AT_LEAST(4, 3, 0)))
     uint32_t eax, ebx, ecx, edx;
     if (!__get_cpuid(1, &eax, &ebx, &ecx, &edx)) {
         return 0;
@@ -335,14 +313,14 @@ int s2n_cpu_supports_rdrand()
  */
 int s2n_get_rdrand_data(struct s2n_blob *out)
 {
-
 #if defined(__x86_64__) || defined(__i386__)
     int space_remaining = 0;
     struct s2n_stuffer stuffer = {0};
     union {
         uint64_t u64;
 #if defined(__i386__)
-        struct {
+        struct
+        {
             /* since we check first that we're on intel, we can safely assume little endian. */
             uint32_t u_low;
             uint32_t u_high;
@@ -359,44 +337,49 @@ int s2n_get_rdrand_data(struct s2n_blob *out)
         for (int tries = 0; tries < 10; tries++) {
 #if defined(__i386__)
             /* execute the rdrand instruction, store the result in a general purpose register (it's assigned to
-            * output.i386_fields.u_low). Check the carry bit, which will be set on success. Then clober the register and reset
-            * the carry bit. Due to needing to support an ancient assembler we use the opcode syntax.
-            * the %b1 is to force compilers to use c1 instead of ecx.
-            * Here's a description of how the opcode is encoded:
-            * 0x0fc7 (rdrand)
-            * 0xf0 (store the result in eax).
-            */
+             * output.i386_fields.u_low). Check the carry bit, which will be set on success. Then clober the register
+             * and reset the carry bit. Due to needing to support an ancient assembler we use the opcode syntax. the %b1
+             * is to force compilers to use c1 instead of ecx. Here's a description of how the opcode is encoded: 0x0fc7
+             * (rdrand) 0xf0 (store the result in eax).
+             */
             unsigned char success_high = 0, success_low = 0;
-            __asm__ __volatile__(".byte 0x0f, 0xc7, 0xf0;\n" "setc %b1;\n": "=a"(output.i386_fields.u_low), "=qm"(success_low)
-                                 :
-                                 :"cc");
+            __asm__ __volatile__(
+                ".byte 0x0f, 0xc7, 0xf0;\n"
+                "setc %b1;\n"
+                : "=a"(output.i386_fields.u_low), "=qm"(success_low)
+                :
+                : "cc");
 
-            __asm__ __volatile__(".byte 0x0f, 0xc7, 0xf0;\n" "setc %b1;\n": "=a"(output.i386_fields.u_high), "=qm"(success_high)
-                                 :
-                                 :"cc");
+            __asm__ __volatile__(
+                ".byte 0x0f, 0xc7, 0xf0;\n"
+                "setc %b1;\n"
+                : "=a"(output.i386_fields.u_high), "=qm"(success_high)
+                :
+                : "cc");
             /* cppcheck-suppress knownConditionTrueFalse */
             success = success_high & success_low;
 
             /* Treat either all 1 or all 0 bits in either the high or low order
              * bits as failure */
-            if (output.i386_fields.u_low == 0 ||
-                    output.i386_fields.u_low == UINT32_MAX ||
-                    output.i386_fields.u_high == 0 ||
-                    output.i386_fields.u_high == UINT32_MAX) {
+            if (output.i386_fields.u_low == 0 || output.i386_fields.u_low == UINT32_MAX
+                || output.i386_fields.u_high == 0 || output.i386_fields.u_high == UINT32_MAX) {
                 success = 0;
             }
 #else
             /* execute the rdrand instruction, store the result in a general purpose register (it's assigned to
-            * output.u64). Check the carry bit, which will be set on success. Then clober the carry bit.
-            * Due to needing to support an ancient assembler we use the opcode syntax.
-            * the %b1 is to force compilers to use c1 instead of ecx.
-            * Here's a description of how the opcode is encoded:
-            * 0x48 (pick a 64-bit register it does more too, but that's all that matters there)
-            * 0x0fc7 (rdrand)
-            * 0xf0 (store the result in rax). */
-            __asm__ __volatile__(".byte 0x48, 0x0f, 0xc7, 0xf0;\n" "setc %b1;\n": "=a"(output.u64), "=qm"(success)
-            :
-            :"cc");
+             * output.u64). Check the carry bit, which will be set on success. Then clober the carry bit.
+             * Due to needing to support an ancient assembler we use the opcode syntax.
+             * the %b1 is to force compilers to use c1 instead of ecx.
+             * Here's a description of how the opcode is encoded:
+             * 0x48 (pick a 64-bit register it does more too, but that's all that matters there)
+             * 0x0fc7 (rdrand)
+             * 0xf0 (store the result in rax). */
+            __asm__ __volatile__(
+                ".byte 0x48, 0x0f, 0xc7, 0xf0;\n"
+                "setc %b1;\n"
+                : "=a"(output.u64), "=qm"(success)
+                :
+                : "cc");
 #endif /* defined(__i386__) */
 
             /* Some AMD CPUs will find that RDRAND "sticks" on all 1s but still reports success.
@@ -410,8 +393,7 @@ int s2n_get_rdrand_data(struct s2n_blob *out)
              * negligible (1/2^63). Finally, adding processor specific logic would greatly
              * increase the complexity and would cause us to "miss" any unknown processors with
              * similar bugs. */
-            if (output.u64 == UINT64_MAX ||
-                output.u64 == 0) {
+            if (output.u64 == UINT64_MAX || output.u64 == 0) {
                 success = 0;
             }
 

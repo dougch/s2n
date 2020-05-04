@@ -19,9 +19,9 @@
 #include "tests/testlib/s2n_nist_kats.h"
 #include "tests/testlib/s2n_testlib.h"
 #include "tls/s2n_kem.h"
-#include "utils/s2n_safety.h"
-#include "utils/s2n_mem.h"
 #include "utils/s2n_blob.h"
+#include "utils/s2n_mem.h"
+#include "utils/s2n_safety.h"
 
 #define RSP_FILE_NAME "../unit/kats/bike_r1.kat"
 

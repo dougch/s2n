@@ -13,15 +13,15 @@
  * permissions and limitations under the License.
  */
 
-#include "stuffer/s2n_stuffer.h"
-
-#include "tls/s2n_connection.h"
 #include "tls/extensions/s2n_server_server_name.h"
 
-#define s2n_server_can_send_server_name(conn) ((conn)->server_name_used && \
-        !s2n_connection_is_session_resumed((conn)))
+#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
 
-int s2n_server_extensions_server_name_send_size(struct s2n_connection *conn) {
+#define s2n_server_can_send_server_name(conn) ((conn)->server_name_used && !s2n_connection_is_session_resumed((conn)))
+
+int s2n_server_extensions_server_name_send_size(struct s2n_connection *conn)
+{
     if (!s2n_server_can_send_server_name(conn)) {
         return 0;
     }

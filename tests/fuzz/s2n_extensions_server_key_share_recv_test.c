@@ -13,33 +13,29 @@
  * permissions and limitations under the License.
  */
 
-/* Target Functions: s2n_extensions_server_key_share_recv s2n_ecc_evp_read_params_point s2n_ecc_evp_parse_params_point */
-
-#include <stdint.h>
+/* Target Functions: s2n_extensions_server_key_share_recv s2n_ecc_evp_read_params_point s2n_ecc_evp_parse_params_point
+ */
 
 #include <openssl/crypto.h>
 #include <openssl/err.h>
-
-#include "tls/extensions/s2n_server_key_share.h"
-#include "tls/s2n_ecc_preferences.h"
+#include <stdint.h>
 
 #include "api/s2n.h"
-#include "stuffer/s2n_stuffer.h"
-#include "tls/s2n_connection.h"
-#include "tls/s2n_tls.h"
-#include "utils/s2n_safety.h"
-#include "s2n_test.h"
-#include "testlib/s2n_testlib.h"
-#include "tls/s2n_tls13.h"
 #include "crypto/s2n_ecc_evp.h"
+#include "s2n_test.h"
+#include "stuffer/s2n_stuffer.h"
+#include "testlib/s2n_testlib.h"
+#include "tls/extensions/s2n_server_key_share.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_ecc_preferences.h"
+#include "tls/s2n_tls.h"
+#include "tls/s2n_tls13.h"
+#include "utils/s2n_safety.h"
 
 /* This test is for TLS versions 1.3 and up only */
 static const uint8_t TLS_VERSIONS[] = {S2N_TLS13};
 
-static void s2n_fuzz_atexit()
-{
-    s2n_cleanup();
-}
+static void s2n_fuzz_atexit() { s2n_cleanup(); }
 
 int LLVMFuzzerInitialize(const uint8_t *buf, size_t len)
 {
@@ -74,7 +70,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *buf, size_t len)
     EXPECT_NOT_NULL(client_conn->config);
     const struct s2n_ecc_preferences *ecc_preferences = client_conn->config->ecc_preferences;
     EXPECT_NOT_NULL(ecc_preferences);
-    
+
     /* Generate ephemeral keys for all supported curves */
     for (int i = 0; i < ecc_preferences->count; i++) {
         client_conn->secure.client_ecc_evp_params[i].negotiated_curve = ecc_preferences->ecc_curves[i];

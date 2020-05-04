@@ -16,12 +16,14 @@
 
 #include "utils/s2n_map.h"
 
-struct s2n_map_entry {
+struct s2n_map_entry
+{
     struct s2n_blob key;
     struct s2n_blob value;
 };
 
-struct s2n_map {
+struct s2n_map
+{
     /* The total capacity of the table, in number of elements. */
     uint32_t capacity;
 

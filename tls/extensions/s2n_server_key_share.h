@@ -15,10 +15,9 @@
 
 #pragma once
 
-#include "tls/s2n_connection.h"
 #include "stuffer/s2n_stuffer.h"
-
 #include "tls/extensions/s2n_key_share.h"
+#include "tls/s2n_connection.h"
 
 extern int s2n_extensions_server_key_share_send_check(struct s2n_connection *conn);
 extern int s2n_extensions_server_key_share_send_size(struct s2n_connection *conn);

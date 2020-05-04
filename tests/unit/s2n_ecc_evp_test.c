@@ -13,18 +13,19 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
+#include "crypto/s2n_ecc_evp.h"
 
 #include <s2n.h>
 
-#include "crypto/s2n_ecc_evp.h"
+#include "s2n_test.h"
 #include "stuffer/s2n_stuffer.h"
 #include "testlib/s2n_testlib.h"
 #include "utils/s2n_mem.h"
 
 #define ECDHE_PARAMS_LEGACY_FORM 4
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     BEGIN_TEST();
     {
         /* Test generate ephemeral keys for all supported curves */
@@ -138,8 +139,8 @@ int main(int argc, char **argv) {
 
             /* Verify output starts with the known legacy form for curves secp256r1
              * and secp384r1*/
-            if (s2n_all_supported_curves_list[i]->iana_id == TLS_EC_CURVE_SECP_256_R1 ||
-                s2n_all_supported_curves_list[i]->iana_id == TLS_EC_CURVE_SECP_384_R1) {
+            if (s2n_all_supported_curves_list[i]->iana_id == TLS_EC_CURVE_SECP_256_R1
+                || s2n_all_supported_curves_list[i]->iana_id == TLS_EC_CURVE_SECP_384_R1) {
                 EXPECT_SUCCESS(s2n_stuffer_read_uint8(&wire, &legacy_form));
                 EXPECT_EQUAL(legacy_form, ECDHE_PARAMS_LEGACY_FORM);
             }
@@ -221,18 +222,18 @@ int main(int argc, char **argv) {
             /* Server generates a key for a given curve */
             EXPECT_SUCCESS(s2n_ecc_evp_generate_ephemeral_key(&write_params));
 
-             /* Write params points to wire */
+            /* Write params points to wire */
             EXPECT_SUCCESS(s2n_ecc_evp_write_params(&write_params, &wire, &ecdh_params_sent));
             struct s2n_ecdhe_raw_server_params ecdhe_data = {0};
 
-             /* Read params points from the wire */
+            /* Read params points from the wire */
             EXPECT_SUCCESS(s2n_ecc_evp_read_params(&wire, &ecdh_params_received, &ecdhe_data));
             EXPECT_SUCCESS(s2n_ecc_evp_parse_params(&ecdhe_data, &read_params));
 
             /* Check that the point we read is the same we wrote */
             EXPECT_TRUE(EVP_PKEY_cmp(write_params.evp_pkey, read_params.evp_pkey));
 
-            /* Clean up */ 
+            /* Clean up */
             EXPECT_SUCCESS(s2n_stuffer_free(&wire));
             EXPECT_SUCCESS(s2n_ecc_evp_params_free(&write_params));
             EXPECT_SUCCESS(s2n_ecc_evp_params_free(&read_params));
@@ -243,7 +244,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < s2n_all_supported_curves_list_len; i++) {
             struct s2n_ecc_evp_params server_params = {0};
             struct s2n_ecc_evp_params read_params = {0};
-            struct s2n_ecc_evp_params client_params = {0}; 
+            struct s2n_ecc_evp_params client_params = {0};
             struct s2n_stuffer wire;
             struct s2n_blob ecdh_params_sent, ecdh_params_received;
             struct s2n_blob server_shared_secret, client_shared_secret;
@@ -267,26 +268,26 @@ int main(int argc, char **argv) {
             /* Verify if the client correctly read the server public */
             EXPECT_TRUE(EVP_PKEY_cmp(server_params.evp_pkey, read_params.evp_pkey));
 
-             /* Client generates its key for the given curve */
-            client_params.negotiated_curve =s2n_all_supported_curves_list[i];
+            /* Client generates its key for the given curve */
+            client_params.negotiated_curve = s2n_all_supported_curves_list[i];
             EXPECT_SUCCESS(s2n_ecc_evp_generate_ephemeral_key(&client_params));
-        
+
             /* Compute shared secret for the server */
             EXPECT_SUCCESS(
                 s2n_ecc_evp_compute_shared_secret_from_params(&server_params, &client_params, &server_shared_secret));
-            
+
             /* Compute shared secret for the client */
             EXPECT_SUCCESS(
                 s2n_ecc_evp_compute_shared_secret_from_params(&client_params, &read_params, &client_shared_secret));
 
-             /* Verify that shared is the same for the client and the server */
+            /* Verify that shared is the same for the client and the server */
             EXPECT_EQUAL(client_shared_secret.size, server_shared_secret.size);
             EXPECT_BYTEARRAY_EQUAL(client_shared_secret.data, server_shared_secret.data, client_shared_secret.size);
 
             /* Clean up */
             EXPECT_SUCCESS(s2n_stuffer_free(&wire));
             EXPECT_SUCCESS(s2n_free(&server_shared_secret));
-            EXPECT_SUCCESS(s2n_free(&client_shared_secret)); 
+            EXPECT_SUCCESS(s2n_free(&client_shared_secret));
             EXPECT_SUCCESS(s2n_ecc_evp_params_free(&server_params));
             EXPECT_SUCCESS(s2n_ecc_evp_params_free(&read_params));
             EXPECT_SUCCESS(s2n_ecc_evp_params_free(&client_params));
@@ -294,7 +295,7 @@ int main(int argc, char **argv) {
     }
     {
         /* Test generate->write->read->compute_shared with all supported curves */
-    for (int i = 0; i < s2n_all_supported_curves_list_len; i++) {
+        for (int i = 0; i < s2n_all_supported_curves_list_len; i++) {
             struct s2n_ecc_evp_params server_params = {0}, client_params = {0};
             struct s2n_stuffer wire;
             struct s2n_blob server_shared, client_shared, ecdh_params_sent, ecdh_params_received;

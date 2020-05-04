@@ -18,46 +18,46 @@
 #define N0 2
 
 #ifndef LEVEL
-#  define LEVEL 1
+#define LEVEL 1
 #endif
 
-#if(LEVEL == 3)
-#  ifdef INDCPA
-#    define R_BITS 19853
-#  else
-#    define R_BITS 24821
-#  endif
-#  define DV 103
-#  define T1 199
-
-#  define THRESHOLD_COEFF0 15.932
-#  define THRESHOLD_COEFF1 0.0052936
-
-// The gfm code is optimized to a block size in this case:
-#  define BLOCK_SIZE 32768
-#elif(LEVEL == 1)
-// 64-bits of post-quantum security parameters (BIKE paper):
-#  ifdef INDCPA
-#    define R_BITS 10163
-#  else
-#    define R_BITS 11779
-#  endif
-#  define DV 71
-#  define T1 134
-
-#  define THRESHOLD_COEFF0 13.530
-#  define THRESHOLD_COEFF1 0.0069721
-
-// The gfm code is optimized to a block size in this case:
-#  define BLOCK_SIZE       (16384)
+#if (LEVEL == 3)
+#ifdef INDCPA
+#define R_BITS 19853
 #else
-#  error "Bad level, choose one of 1/3"
+#define R_BITS 24821
+#endif
+#define DV 103
+#define T1 199
+
+#define THRESHOLD_COEFF0 15.932
+#define THRESHOLD_COEFF1 0.0052936
+
+// The gfm code is optimized to a block size in this case:
+#define BLOCK_SIZE 32768
+#elif (LEVEL == 1)
+// 64-bits of post-quantum security parameters (BIKE paper):
+#ifdef INDCPA
+#define R_BITS 10163
+#else
+#define R_BITS 11779
+#endif
+#define DV 71
+#define T1 134
+
+#define THRESHOLD_COEFF0 13.530
+#define THRESHOLD_COEFF1 0.0069721
+
+// The gfm code is optimized to a block size in this case:
+#define BLOCK_SIZE       (16384)
+#else
+#error "Bad level, choose one of 1/3"
 #endif
 
 #ifdef INDCPA
-#  define NUM_OF_SEEDS 2
+#define NUM_OF_SEEDS 2
 #else
-#  define NUM_OF_SEEDS 3
+#define NUM_OF_SEEDS 3
 #endif
 
 // Round the size to the nearest byte.

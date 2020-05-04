@@ -15,15 +15,15 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <s2n.h>
+#include <stdint.h>
 
 #include "crypto/s2n_openssl.h"
 #include "crypto/s2n_rsa.h"
 #include "crypto/s2n_rsa_signing.h"
 
-#define RSA_PSS_SIGN_VERIFY_RANDOM_BLOB_SIZE    32
-#define RSA_PSS_SIGN_VERIFY_SIGNATURE_SIZE      256
+#define RSA_PSS_SIGN_VERIFY_RANDOM_BLOB_SIZE 32
+#define RSA_PSS_SIGN_VERIFY_SIGNATURE_SIZE   256
 
 #ifndef EVP_PKEY_RSA_PSS
 #define EVP_PKEY_RSA_PSS EVP_PKEY_NONE

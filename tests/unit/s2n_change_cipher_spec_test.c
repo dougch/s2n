@@ -14,7 +14,6 @@
  */
 
 #include "s2n_test.h"
-
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_crypto.h"
@@ -24,7 +23,7 @@ int main(int argc, char **argv)
 {
     BEGIN_TEST();
 
-    uint8_t empty_finished_array[S2N_TLS_FINISHED_LEN] = { 0 };
+    uint8_t empty_finished_array[S2N_TLS_FINISHED_LEN] = {0};
 
     /* Test s2n_ccs_send */
     {

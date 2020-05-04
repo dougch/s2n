@@ -13,17 +13,15 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
 #include <stdint.h>
 
+#include "s2n_test.h"
+#include "stuffer/s2n_stuffer.h"
+#include "tls/extensions/s2n_server_session_ticket.h"
 #include "tls/s2n_config.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
-#include "tls/extensions/s2n_server_session_ticket.h"
-
-#include "stuffer/s2n_stuffer.h"
 #include "utils/s2n_safety.h"
 
 int main(int argc, char **argv)
@@ -40,7 +38,7 @@ int main(int argc, char **argv)
         EXPECT_NOT_NULL(client_conn = s2n_connection_new(S2N_CLIENT));
         EXPECT_SUCCESS(s2n_connection_set_config(server_conn, config));
         EXPECT_SUCCESS(s2n_connection_set_config(client_conn, config));
-        
+
         /* Zero length extension expected as conn cannot send ext */
         EXPECT_EQUAL(0, s2n_server_session_ticket_ext_size(server_conn));
 

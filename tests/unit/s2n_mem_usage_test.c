@@ -13,21 +13,19 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include "testlib/s2n_testlib.h"
-
 #include <errno.h>
 #include <fcntl.h>
+#include <s2n.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/param.h>
-#include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <s2n.h>
+#include "s2n_test.h"
+#include "testlib/s2n_testlib.h"
 
 /* The number of connection pairs to allocate before measuring memory
  * usage. The greater the value, the more accurate the end result. */
@@ -50,7 +48,7 @@ ssize_t get_vm_data_size()
         return -1;
     }
 
-    FILE *status_file = fopen( "/proc/self/statm", "r" );
+    FILE *status_file = fopen("/proc/self/statm", "r");
     if (fscanf(status_file, "%zd %zd %zd %zd %zd %zd %zd", &size, &resident, &share, &text, &lib, &data, &dt) < 7) {
         fclose(status_file);
         return -1;
@@ -116,8 +114,7 @@ int main(int argc, char **argv)
     EXPECT_NOT_EQUAL(vm_data_initial, -1);
 
     /* Allocate all connections */
-    for (int i = 0; i < connectionsToUse; i++)
-    {
+    for (int i = 0; i < connectionsToUse; i++) {
         struct s2n_connection *client_conn;
         EXPECT_NOT_NULL(client_conn = s2n_connection_new(S2N_CLIENT));
         EXPECT_SUCCESS(s2n_connection_set_config(client_conn, client_config));
@@ -192,4 +189,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-

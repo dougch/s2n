@@ -16,10 +16,12 @@
 #pragma once
 
 #include <stdint.h>
+
 #include "tls/s2n_cipher_preferences.h"
 #include "tls/s2n_kem_preferences.h"
 
-struct s2n_security_policy {
+struct s2n_security_policy
+{
     uint8_t minimum_protocol_version;
     const struct s2n_cipher_preferences *cipher_preferences;
     const struct s2n_kem_preferences *kem_preferences;

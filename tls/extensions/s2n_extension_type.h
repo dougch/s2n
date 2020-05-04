@@ -19,39 +19,32 @@
 #include "tls/s2n_tls_parameters.h"
 
 /* The number of extensions supported by S2N */
-#define S2N_SUPPORTED_EXTENSIONS_COUNT          (sizeof(s2n_supported_extensions) / sizeof(s2n_supported_extensions[0]))
+#define S2N_SUPPORTED_EXTENSIONS_COUNT (sizeof(s2n_supported_extensions) / sizeof(s2n_supported_extensions[0]))
 
 /* The number of bytes needed to assign 1 bit to every supported extension.
  * The +1 is necessary to handle any remainder left over when dividing. */
-#define S2N_SUPPORTED_EXTENSIONS_BITFIELD_LEN   ((S2N_SUPPORTED_EXTENSIONS_COUNT / sizeof(char)) + 1)
+#define S2N_SUPPORTED_EXTENSIONS_BITFIELD_LEN ((S2N_SUPPORTED_EXTENSIONS_COUNT / sizeof(char)) + 1)
 
-typedef struct {
+typedef struct
+{
     uint16_t iana_value;
-    unsigned is_response:1;
+    unsigned is_response : 1;
 
-    int (*send) (struct s2n_connection *conn, struct s2n_stuffer *out);
-    int (*recv) (struct s2n_connection *conn, struct s2n_stuffer *in);
+    int (*send)(struct s2n_connection *conn, struct s2n_stuffer *out);
+    int (*recv)(struct s2n_connection *conn, struct s2n_stuffer *in);
 
     /* Returns true or false to indicate whether the extension should be sent */
-    int (*should_send) (struct s2n_connection *conn);
+    int (*should_send)(struct s2n_connection *conn);
 
     /* Handler called if an extension is not received */
-    int (*if_missing) (struct s2n_connection *conn);
+    int (*if_missing)(struct s2n_connection *conn);
 } s2n_extension_type;
 
 static const uint16_t s2n_supported_extensions[] = {
-    TLS_EXTENSION_RENEGOTIATION_INFO,
-    TLS_EXTENSION_PQ_KEM_PARAMETERS,
-    TLS_EXTENSION_SERVER_NAME,
-    TLS_EXTENSION_MAX_FRAG_LEN,
-    TLS_EXTENSION_STATUS_REQUEST,
-    TLS_EXTENSION_SUPPORTED_GROUPS,
-    TLS_EXTENSION_EC_POINT_FORMATS,
-    TLS_EXTENSION_SIGNATURE_ALGORITHMS,
-    TLS_EXTENSION_ALPN,
-    TLS_EXTENSION_SCT_LIST,
-    TLS_EXTENSION_SESSION_TICKET,
-    TLS_EXTENSION_SUPPORTED_VERSIONS,
+    TLS_EXTENSION_RENEGOTIATION_INFO, TLS_EXTENSION_PQ_KEM_PARAMETERS,    TLS_EXTENSION_SERVER_NAME,
+    TLS_EXTENSION_MAX_FRAG_LEN,       TLS_EXTENSION_STATUS_REQUEST,       TLS_EXTENSION_SUPPORTED_GROUPS,
+    TLS_EXTENSION_EC_POINT_FORMATS,   TLS_EXTENSION_SIGNATURE_ALGORITHMS, TLS_EXTENSION_ALPN,
+    TLS_EXTENSION_SCT_LIST,           TLS_EXTENSION_SESSION_TICKET,       TLS_EXTENSION_SUPPORTED_VERSIONS,
     TLS_EXTENSION_KEY_SHARE,
 };
 

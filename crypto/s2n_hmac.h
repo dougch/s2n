@@ -31,7 +31,8 @@ typedef enum {
     S2N_HMAC_SSLv3_SHA1
 } s2n_hmac_algorithm;
 
-struct s2n_hmac_state {
+struct s2n_hmac_state
+{
     s2n_hmac_algorithm alg;
 
     uint16_t hash_block_size;
@@ -44,7 +45,6 @@ struct s2n_hmac_state {
     struct s2n_hash_state outer;
     struct s2n_hash_state outer_just_key;
 
-
     /* key needs to be as large as the biggest block size */
     uint8_t xor_pad[128];
 
@@ -52,7 +52,8 @@ struct s2n_hmac_state {
     uint8_t digest_pad[SHA512_DIGEST_LENGTH];
 };
 
-struct s2n_hmac_evp_backup {
+struct s2n_hmac_evp_backup
+{
     struct s2n_hash_evp_digest inner;
     struct s2n_hash_evp_digest inner_just_key;
     struct s2n_hash_evp_digest outer;
@@ -73,7 +74,5 @@ extern int s2n_hmac_digest_verify(const void *a, const void *b, uint32_t len);
 extern int s2n_hmac_free(struct s2n_hmac_state *state);
 extern int s2n_hmac_reset(struct s2n_hmac_state *state);
 extern int s2n_hmac_copy(struct s2n_hmac_state *to, struct s2n_hmac_state *from);
-extern int s2n_hmac_save_evp_hash_state(struct s2n_hmac_evp_backup* backup, struct s2n_hmac_state* hmac);
-extern int s2n_hmac_restore_evp_hash_state(struct s2n_hmac_evp_backup* backup, struct s2n_hmac_state* hmac);
-
-
+extern int s2n_hmac_save_evp_hash_state(struct s2n_hmac_evp_backup *backup, struct s2n_hmac_state *hmac);
+extern int s2n_hmac_restore_evp_hash_state(struct s2n_hmac_evp_backup *backup, struct s2n_hmac_state *hmac);

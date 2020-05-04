@@ -13,20 +13,19 @@
  * permissions and limitations under the License.
  */
 
-#include "crypto/s2n_openssl.h"
-#include "crypto/s2n_openssl_x509.h"
-#include "utils/s2n_asn1_time.h"
-#include "utils/s2n_safety.h"
-#include "utils/s2n_rfc5952.h"
-#include "tls/s2n_config.h"
-#include "tls/s2n_connection.h"
-#include "extensions/s2n_certificate_extensions.h"
-
 #include <arpa/inet.h>
+#include <openssl/asn1.h>
+#include <openssl/err.h>
 #include <sys/socket.h>
 
-#include <openssl/err.h>
-#include <openssl/asn1.h>
+#include "crypto/s2n_openssl.h"
+#include "crypto/s2n_openssl_x509.h"
+#include "extensions/s2n_certificate_extensions.h"
+#include "tls/s2n_config.h"
+#include "tls/s2n_connection.h"
+#include "utils/s2n_asn1_time.h"
+#include "utils/s2n_rfc5952.h"
+#include "utils/s2n_safety.h"
 
 #if !defined(OPENSSL_IS_BORINGSSL)
 #include <openssl/ocsp.h>
@@ -47,19 +46,17 @@
 /* Time used by default for nextUpdate if none provided in OCSP: 1 hour since thisUpdate. */
 #define DEFAULT_OCSP_NEXT_UPDATE_PERIOD 3600000000000
 
-uint8_t s2n_x509_ocsp_stapling_supported(void) {
-    return S2N_OCSP_STAPLING_SUPPORTED;
+uint8_t s2n_x509_ocsp_stapling_supported(void) { return S2N_OCSP_STAPLING_SUPPORTED; }
+
+void s2n_x509_trust_store_init_empty(struct s2n_x509_trust_store *store) { store->trust_store = NULL; }
+
+uint8_t s2n_x509_trust_store_has_certs(struct s2n_x509_trust_store *store)
+{
+    return store->trust_store ? (uint8_t)1 : (uint8_t)0;
 }
 
-void s2n_x509_trust_store_init_empty(struct s2n_x509_trust_store *store) {
-    store->trust_store = NULL;
-}
-
-uint8_t s2n_x509_trust_store_has_certs(struct s2n_x509_trust_store *store) {
-    return store->trust_store ? (uint8_t) 1 : (uint8_t) 0;
-}
-
-int s2n_x509_trust_store_from_system_defaults(struct s2n_x509_trust_store *store) {
+int s2n_x509_trust_store_from_system_defaults(struct s2n_x509_trust_store *store)
+{
     if (!store->trust_store) {
         store->trust_store = X509_STORE_new();
         notnull_check(store->trust_store);
@@ -108,8 +105,9 @@ int s2n_x509_trust_store_add_pem(struct s2n_x509_trust_store *store, const char 
     return 0;
 }
 
-int s2n_x509_trust_store_from_ca_file(struct s2n_x509_trust_store *store, const char *ca_pem_filename, const char *ca_dir) {
-
+int s2n_x509_trust_store_from_ca_file(struct s2n_x509_trust_store *store, const char *ca_pem_filename,
+                                      const char *ca_dir)
+{
     if (!store->trust_store) {
         store->trust_store = X509_STORE_new();
         notnull_check(store->trust_store);
@@ -122,24 +120,26 @@ int s2n_x509_trust_store_from_ca_file(struct s2n_x509_trust_store *store, const 
     }
 
     /* It's a likely scenario if this function is called, a self-signed certificate is used, and that is was generated
-     * without a trust anchor. However if you call this function, the assumption is you trust ca_file or path and if a certificate
-     * is encountered that's in that path, it should be trusted. The following flag tells libcrypto to not care that the cert
-     * is missing a root anchor. */
+     * without a trust anchor. However if you call this function, the assumption is you trust ca_file or path and if a
+     * certificate is encountered that's in that path, it should be trusted. The following flag tells libcrypto to not
+     * care that the cert is missing a root anchor. */
     unsigned long flags = X509_VP_FLAG_DEFAULT;
-    flags |=  X509_V_FLAG_PARTIAL_CHAIN;
+    flags |= X509_V_FLAG_PARTIAL_CHAIN;
     X509_STORE_set_flags(store->trust_store, flags);
 
     return 0;
 }
 
-void s2n_x509_trust_store_wipe(struct s2n_x509_trust_store *store) {
+void s2n_x509_trust_store_wipe(struct s2n_x509_trust_store *store)
+{
     if (store->trust_store) {
         X509_STORE_free(store->trust_store);
         store->trust_store = NULL;
     }
 }
 
-int s2n_x509_validator_init_no_x509_validation(struct s2n_x509_validator *validator) {
+int s2n_x509_validator_init_no_x509_validation(struct s2n_x509_validator *validator)
+{
     validator->trust_store = NULL;
     validator->cert_chain = NULL;
     validator->skip_cert_validation = 1;
@@ -149,7 +149,9 @@ int s2n_x509_validator_init_no_x509_validation(struct s2n_x509_validator *valida
     return 0;
 }
 
-int s2n_x509_validator_init(struct s2n_x509_validator *validator, struct s2n_x509_trust_store *trust_store, uint8_t check_ocsp) {
+int s2n_x509_validator_init(struct s2n_x509_validator *validator, struct s2n_x509_trust_store *trust_store,
+                            uint8_t check_ocsp)
+{
     notnull_check(trust_store);
     validator->trust_store = trust_store;
 
@@ -165,7 +167,8 @@ int s2n_x509_validator_init(struct s2n_x509_validator *validator, struct s2n_x50
     return 0;
 }
 
-void s2n_x509_validator_wipe(struct s2n_x509_validator *validator) {
+void s2n_x509_validator_wipe(struct s2n_x509_validator *validator)
+{
     if (validator->cert_chain) {
         sk_X509_pop_free(validator->cert_chain, X509_free);
         validator->cert_chain = NULL;
@@ -175,7 +178,8 @@ void s2n_x509_validator_wipe(struct s2n_x509_validator *validator) {
     validator->skip_cert_validation = 0;
 }
 
-int s2n_x509_validator_set_max_chain_depth(struct s2n_x509_validator *validator, uint16_t max_depth) {
+int s2n_x509_validator_set_max_chain_depth(struct s2n_x509_validator *validator, uint16_t max_depth)
+{
     notnull_check(validator);
     S2N_ERROR_IF(max_depth == 0, S2N_ERR_INVALID_ARGUMENT);
 
@@ -187,7 +191,9 @@ int s2n_x509_validator_set_max_chain_depth(struct s2n_x509_validator *validator,
  * For each name in the cert. Iterate them. Call the callback. If one returns true, then consider it validated,
  * if none of them return true, the cert is considered invalid.
  */
-static uint8_t s2n_verify_host_information(struct s2n_x509_validator *validator, struct s2n_connection *conn, X509 *public_cert) {
+static uint8_t s2n_verify_host_information(struct s2n_x509_validator *validator, struct s2n_connection *conn,
+                                           X509 *public_cert)
+{
     uint8_t verified = 0;
     uint8_t san_found = 0;
 
@@ -199,13 +205,13 @@ static uint8_t s2n_verify_host_information(struct s2n_x509_validator *validator,
         if (current_name->type == GEN_DNS) {
             san_found = 1;
 
-            const char *name = (const char *) ASN1_STRING_data(current_name->d.ia5);
-            size_t name_len = (size_t) ASN1_STRING_length(current_name->d.ia5);
+            const char *name = (const char *)ASN1_STRING_data(current_name->d.ia5);
+            size_t name_len = (size_t)ASN1_STRING_length(current_name->d.ia5);
 
             verified = conn->verify_host_fn(name, name_len, conn->data_for_verify_host);
         } else if (current_name->type == GEN_URI) {
-            const char *name = (const char *) ASN1_STRING_data(current_name->d.ia5);
-            size_t name_len = (size_t) ASN1_STRING_length(current_name->d.ia5);
+            const char *name = (const char *)ASN1_STRING_data(current_name->d.ia5);
+            size_t name_len = (size_t)ASN1_STRING_length(current_name->d.ia5);
 
             verified = conn->verify_host_fn(name, name_len, conn->data_for_verify_host);
         } else if (current_name->type == GEN_IPADD) {
@@ -215,19 +221,17 @@ static uint8_t s2n_verify_host_information(struct s2n_x509_validator *validator,
             size_t ip_addr_len = (size_t)current_name->d.iPAddress->length;
 
             int parse_err = -1;
-            s2n_stack_blob(address, INET6_ADDRSTRLEN + 1, INET6_ADDRSTRLEN + 1); 
+            s2n_stack_blob(address, INET6_ADDRSTRLEN + 1, INET6_ADDRSTRLEN + 1);
             if (ip_addr_len == 4) {
-                parse_err = s2n_inet_ntop(AF_INET, ip_addr, &address);                
+                parse_err = s2n_inet_ntop(AF_INET, ip_addr, &address);
             } else if (ip_addr_len == 16) {
                 parse_err = s2n_inet_ntop(AF_INET6, ip_addr, &address);
             }
 
             /* strlen should be safe here since we made sure we were null terminated AND that inet_ntop succeeded */
             if (!parse_err) {
-                verified = conn->verify_host_fn(
-                               (const char *)address.data, 
-                               strlen((const char *)address.data), 
-                               conn->data_for_verify_host);
+                verified = conn->verify_host_fn((const char *)address.data, strlen((const char *)address.data),
+                                                conn->data_for_verify_host);
             }
         }
     }
@@ -244,22 +248,20 @@ static uint8_t s2n_verify_host_information(struct s2n_x509_validator *validator,
             }
 
             if (curr_idx >= 0) {
-                ASN1_STRING *common_name =
-                        X509_NAME_ENTRY_get_data(X509_NAME_get_entry(subject_name, curr_idx));
+                ASN1_STRING *common_name = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(subject_name, curr_idx));
 
                 if (common_name) {
                     char peer_cn[255];
                     static size_t peer_cn_size = sizeof(peer_cn);
                     memset_check(&peer_cn, 0, peer_cn_size);
-                    
-                    /* X520CommonName allows the following ANSI string types per RFC 5280 Appendix A.1 */
-                    if (ASN1_STRING_type(common_name) == V_ASN1_TELETEXSTRING || 
-                        ASN1_STRING_type(common_name) == V_ASN1_PRINTABLESTRING ||
-                        ASN1_STRING_type(common_name) == V_ASN1_UNIVERSALSTRING ||
-                        ASN1_STRING_type(common_name) == V_ASN1_UTF8STRING ||
-                        ASN1_STRING_type(common_name) == V_ASN1_BMPSTRING ) {
 
-                        size_t len = (size_t) ASN1_STRING_length(common_name);
+                    /* X520CommonName allows the following ANSI string types per RFC 5280 Appendix A.1 */
+                    if (ASN1_STRING_type(common_name) == V_ASN1_TELETEXSTRING
+                        || ASN1_STRING_type(common_name) == V_ASN1_PRINTABLESTRING
+                        || ASN1_STRING_type(common_name) == V_ASN1_UNIVERSALSTRING
+                        || ASN1_STRING_type(common_name) == V_ASN1_UTF8STRING
+                        || ASN1_STRING_type(common_name) == V_ASN1_BMPSTRING) {
+                        size_t len = (size_t)ASN1_STRING_length(common_name);
 
                         lte_check(len, sizeof(peer_cn) - 1);
                         memcpy_check(peer_cn, ASN1_STRING_data(common_name), len);
@@ -273,10 +275,11 @@ static uint8_t s2n_verify_host_information(struct s2n_x509_validator *validator,
     return verified;
 }
 
-s2n_cert_validation_code s2n_x509_validator_validate_cert_chain(struct s2n_x509_validator *validator, struct s2n_connection *conn,
-                                                                uint8_t *cert_chain_in, uint32_t cert_chain_len,
-                                                                s2n_pkey_type *pkey_type, struct s2n_pkey *public_key_out) {
-
+s2n_cert_validation_code s2n_x509_validator_validate_cert_chain(struct s2n_x509_validator *validator,
+                                                                struct s2n_connection *conn, uint8_t *cert_chain_in,
+                                                                uint32_t cert_chain_len, s2n_pkey_type *pkey_type,
+                                                                struct s2n_pkey *public_key_out)
+{
     if (!validator->skip_cert_validation && !s2n_x509_trust_store_has_certs(validator->trust_store)) {
         return S2N_CERT_ERR_UNTRUSTED;
     }
@@ -331,7 +334,7 @@ s2n_cert_validation_code s2n_x509_validator_validate_cert_chain(struct s2n_x509_
                 X509_free(server_cert);
                 return S2N_CERT_ERR_INVALID;
             }
-         }
+        }
 
         /* Pull the public key from the first certificate */
         if (certificate_count == 0) {
@@ -345,15 +348,17 @@ s2n_cert_validation_code s2n_x509_validator_validate_cert_chain(struct s2n_x509_
             uint16_t certificate_extensions_length = 0;
             S2N_ERROR_IF(2 > s2n_stuffer_data_available(&cert_chain_in_stuffer), S2N_ERR_BAD_MESSAGE);
             GUARD(s2n_stuffer_read_uint16(&cert_chain_in_stuffer, &certificate_extensions_length));
-            S2N_ERROR_IF(certificate_extensions_length > s2n_stuffer_data_available(&cert_chain_in_stuffer), S2N_ERR_BAD_MESSAGE);
+            S2N_ERROR_IF(certificate_extensions_length > s2n_stuffer_data_available(&cert_chain_in_stuffer),
+                         S2N_ERR_BAD_MESSAGE);
 
             if (certificate_extensions_length > 0) {
                 struct s2n_blob extensions = {0};
                 extensions.size = certificate_extensions_length;
                 extensions.data = s2n_stuffer_raw_read(&cert_chain_in_stuffer, extensions.size);
                 notnull_check(extensions.data);
-                
-                /* RFC 8446: if an extension applies to the entire chain, it SHOULD be included in the first CertificateEntry */
+
+                /* RFC 8446: if an extension applies to the entire chain, it SHOULD be included in the first
+                 * CertificateEntry */
                 if (certificate_count == 0) {
                     GUARD(s2n_certificate_extensions_parse(conn, &extensions));
                 }
@@ -372,7 +377,6 @@ s2n_cert_validation_code s2n_x509_validator_validate_cert_chain(struct s2n_x509_
         return S2N_CERT_ERR_INVALID;
     }
 
-
     if (!validator->skip_cert_validation) {
         X509 *leaf = sk_X509_value(validator->cert_chain, 0);
         if (!leaf) {
@@ -386,8 +390,7 @@ s2n_cert_validation_code s2n_x509_validator_validate_cert_chain(struct s2n_x509_
         /* now that we have a chain, get the store and check against it. */
         ctx = X509_STORE_CTX_new();
 
-        int op_code = X509_STORE_CTX_init(ctx, validator->trust_store->trust_store, leaf,
-                                          validator->cert_chain);
+        int op_code = X509_STORE_CTX_init(ctx, validator->trust_store->trust_store, leaf, validator->cert_chain);
 
         if (op_code <= 0) {
             return S2N_CERT_ERR_INVALID;
@@ -395,7 +398,6 @@ s2n_cert_validation_code s2n_x509_validator_validate_cert_chain(struct s2n_x509_
 
         X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(ctx);
         X509_VERIFY_PARAM_set_depth(param, validator->max_chain_depth);
-
 
         uint64_t current_sys_time = 0;
         conn->config->wall_clock(conn->config->sys_clock_ctx, &current_sys_time);
@@ -411,7 +413,6 @@ s2n_cert_validation_code s2n_x509_validator_validate_cert_chain(struct s2n_x509_
         }
     }
 
-
     *public_key_out = public_key;
 
     /* Reset the old struct, so we don't clean up public_key_out */
@@ -423,8 +424,8 @@ s2n_cert_validation_code s2n_x509_validator_validate_cert_chain(struct s2n_x509_
 s2n_cert_validation_code s2n_x509_validator_validate_cert_stapled_ocsp_response(struct s2n_x509_validator *validator,
                                                                                 struct s2n_connection *conn,
                                                                                 const uint8_t *ocsp_response_raw,
-                                                                                uint32_t ocsp_response_length) {
-
+                                                                                uint32_t ocsp_response_length)
+{
     if (validator->skip_cert_validation || !validator->check_stapled_ocsp) {
         return S2N_CERT_OK;
     }
@@ -482,7 +483,8 @@ s2n_cert_validation_code s2n_x509_validator_validate_cert_stapled_ocsp_response(
         }
     }
 
-    int ocsp_verify_err = OCSP_basic_verify(basic_response, validator->cert_chain, validator->trust_store->trust_store, 0);
+    int ocsp_verify_err =
+        OCSP_basic_verify(basic_response, validator->cert_chain, validator->trust_store->trust_store, 0);
     /* do the crypto checks on the response.*/
     if (!ocsp_verify_err) {
         ret_val = S2N_CERT_ERR_EXPIRED;
@@ -499,18 +501,17 @@ s2n_cert_validation_code s2n_x509_validator_validate_cert_stapled_ocsp_response(
             goto clean_up;
         }
 
-        ocsp_status = OCSP_single_get0_status(single_response, &status_reason, &revtime,
-                                              &thisupd, &nextupd);
+        ocsp_status = OCSP_single_get0_status(single_response, &status_reason, &revtime, &thisupd, &nextupd);
 
         uint64_t this_update = 0;
-        int thisupd_err = s2n_asn1_time_to_nano_since_epoch_ticks((const char *) thisupd->data,
-                                                                  (uint32_t) thisupd->length, &this_update);
+        int thisupd_err = s2n_asn1_time_to_nano_since_epoch_ticks((const char *)thisupd->data,
+                                                                  (uint32_t)thisupd->length, &this_update);
 
         uint64_t next_update = 0;
         int nextupd_err = 0;
         if (nextupd) {
-            nextupd_err = s2n_asn1_time_to_nano_since_epoch_ticks((const char *) nextupd->data,
-                                                                  (uint32_t) nextupd->length, &next_update);
+            nextupd_err = s2n_asn1_time_to_nano_since_epoch_ticks((const char *)nextupd->data,
+                                                                  (uint32_t)nextupd->length, &next_update);
         } else {
             next_update = this_update + DEFAULT_OCSP_NEXT_UPDATE_PERIOD;
         }
@@ -545,7 +546,7 @@ s2n_cert_validation_code s2n_x509_validator_validate_cert_stapled_ocsp_response(
 
     ret_val = S2N_CERT_OK;
 
-    clean_up:
+clean_up:
     if (basic_response) {
         OCSP_BASICRESP_free(basic_response);
     }
@@ -557,4 +558,3 @@ s2n_cert_validation_code s2n_x509_validator_validate_cert_stapled_ocsp_response(
     return ret_val;
 #endif /* S2N_OCSP_STAPLING_SUPPORTED */
 }
-

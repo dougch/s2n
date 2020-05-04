@@ -17,9 +17,9 @@
 
 #include <s2n.h>
 
-#include "utils/s2n_blob.h"
 #include "crypto/s2n_openssl.h"
 #include "crypto/s2n_rsa.h"
+#include "utils/s2n_blob.h"
 
 /* Check for libcrypto 1.1 for RSA PSS Signing and EV_Key usage */
 #if S2N_OPENSSL_VERSION_AT_LEAST(1, 1, 1) && !defined(LIBRESSL_VERSION_NUMBER)

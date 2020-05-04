@@ -13,24 +13,23 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <poll.h>
-#include <netdb.h>
-
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdio.h>
 #include <errno.h>
-#include <s2n.h>
 #include <error/s2n_errno.h>
+#include <netdb.h>
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
+#include <poll.h>
+#include <s2n.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "crypto/s2n_rsa.h"
 #include "crypto/s2n_pkey.h"
+#include "crypto/s2n_rsa.h"
 
 void print_s2n_error(const char *app_error)
 {
@@ -43,7 +42,8 @@ int negotiate(struct s2n_connection *conn)
     s2n_blocked_status blocked;
     do {
         if (s2n_negotiate(conn, &blocked) < 0) {
-            fprintf(stderr, "Failed to negotiate: '%s'. %s\n", s2n_strerror(s2n_errno, "EN"), s2n_strerror_debug(s2n_errno, "EN"));
+            fprintf(stderr, "Failed to negotiate: '%s'. %s\n", s2n_strerror(s2n_errno, "EN"),
+                    s2n_strerror_debug(s2n_errno, "EN"));
             fprintf(stderr, "Alert: %d\n", s2n_connection_get_alert(conn));
             S2N_ERROR_PRESERVE_ERRNO();
         }
@@ -121,7 +121,7 @@ int echo(struct s2n_connection *conn, int sockfd)
         while ((p = poll(readers, 2, -1)) > 0) {
             char buffer[10240];
             int bytes_read, bytes_written;
-    
+
             if (readers[0].revents & POLLIN) {
                 do {
                     bytes_read = s2n_recv(conn, buffer, 10240, &blocked);
@@ -129,7 +129,8 @@ int echo(struct s2n_connection *conn, int sockfd)
                         return 0;
                     }
                     if (bytes_read < 0) {
-                        fprintf(stderr, "Error reading from connection: '%s' %d\n", s2n_strerror(s2n_errno, "EN"), s2n_connection_get_alert(conn));
+                        fprintf(stderr, "Error reading from connection: '%s' %d\n", s2n_strerror(s2n_errno, "EN"),
+                                s2n_connection_get_alert(conn));
                         exit(1);
                     }
                     bytes_written = write(STDOUT_FILENO, buffer, bytes_read);
@@ -147,21 +148,21 @@ int echo(struct s2n_connection *conn, int sockfd)
                 if (bytes_available > sizeof(buffer)) {
                     bytes_available = sizeof(buffer);
                 }
-    
+
                 /* Read as many bytes as we think we can */
-    	    do {
-    	        bytes_read = read(STDIN_FILENO, buffer, bytes_available);
-    	        if(bytes_read < 0 && errno != EINTR){
-    	            fprintf(stderr, "Error reading from stdin\n");
-    	            exit(1);
-    	        }
-    	    } while (bytes_read < 0);
-    
+                do {
+                    bytes_read = read(STDIN_FILENO, buffer, bytes_available);
+                    if (bytes_read < 0 && errno != EINTR) {
+                        fprintf(stderr, "Error reading from stdin\n");
+                        exit(1);
+                    }
+                } while (bytes_read < 0);
+
                 if (bytes_read == 0) {
                     /* Exit on EOF */
                     return 0;
                 }
-    
+
                 char *buf_ptr = buffer;
                 do {
                     bytes_written = s2n_send(conn, buf_ptr, bytes_available, &blocked);
@@ -169,7 +170,7 @@ int echo(struct s2n_connection *conn, int sockfd)
                         fprintf(stderr, "Error writing to connection: '%s'\n", s2n_strerror(s2n_errno, "EN"));
                         exit(1);
                     }
-    
+
                     bytes_available -= bytes_written;
                     buf_ptr += bytes_written;
                 } while (bytes_available || blocked);
@@ -180,15 +181,13 @@ int echo(struct s2n_connection *conn, int sockfd)
             }
             if (readers[0].revents & (POLLERR | POLLHUP | POLLNVAL)) {
                 fprintf(stderr, "Error polling from socket: err=%d hup=%d nval=%d\n",
-                        (readers[0].revents & POLLERR ) ? 1 : 0,
-                        (readers[0].revents & POLLHUP ) ? 1 : 0,
-                        (readers[0].revents & POLLNVAL ) ? 1 : 0);
+                        (readers[0].revents & POLLERR) ? 1 : 0, (readers[0].revents & POLLHUP) ? 1 : 0,
+                        (readers[0].revents & POLLNVAL) ? 1 : 0);
                 S2N_ERROR(S2N_ERR_POLLING_FROM_SOCKET);
             }
             if (readers[1].revents & (POLLERR | POLLNVAL)) {
-                fprintf(stderr, "Error polling from socket: err=%d nval=%d\n",
-                        (readers[1].revents & POLLERR ) ? 1 : 0,
-                        (readers[1].revents & POLLNVAL ) ? 1 : 0);
+                fprintf(stderr, "Error polling from socket: err=%d nval=%d\n", (readers[1].revents & POLLERR) ? 1 : 0,
+                        (readers[1].revents & POLLNVAL) ? 1 : 0);
                 S2N_ERROR(S2N_ERR_POLLING_FROM_SOCKET);
             }
         }

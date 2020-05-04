@@ -14,6 +14,7 @@
  */
 
 #include "tls/s2n_kex.h"
+
 #include "crypto/s2n_fips.h"
 #include "tls/s2n_cipher_preferences.h"
 #include "tls/s2n_cipher_suites.h"
@@ -33,10 +34,7 @@ static int s2n_get_server_ecc_extension_size(const struct s2n_connection *conn)
     }
 }
 
-static int s2n_get_no_extension_size(const struct s2n_connection *conn)
-{
-    return 0;
-}
+static int s2n_get_no_extension_size(const struct s2n_connection *conn) { return 0; }
 
 /* Write the Supported Points Format extension.
  * RFC 4492 section 5.2 states that the absence of this extension in the Server Hello
@@ -59,10 +57,7 @@ static int s2n_write_server_ecc_extension(const struct s2n_connection *conn, str
     return 0;
 }
 
-static int s2n_write_no_extension(const struct s2n_connection *conn, struct s2n_stuffer *out)
-{
-    return 0;
-}
+static int s2n_write_no_extension(const struct s2n_connection *conn, struct s2n_stuffer *out) { return 0; }
 
 static int s2n_check_rsa_key(const struct s2n_cipher_suite *cipher_suite, struct s2n_connection *conn)
 {
@@ -108,15 +103,17 @@ static int s2n_check_kem(const struct s2n_cipher_suite *cipher_suite, struct s2n
     const struct s2n_kem *chosen_kem = NULL;
     if (client_kem_pref_list == NULL || client_kem_pref_list->data == NULL) {
         /* If the client did not send a PQ KEM extension, then the server can pick its preferred parameter */
-        if (s2n_choose_kem_without_peer_pref_list(cipher_suite->iana_value, server_security_policy->kem_preferences->kems,
-                server_security_policy->kem_preferences->count, &chosen_kem)
+        if (s2n_choose_kem_without_peer_pref_list(cipher_suite->iana_value,
+                                                  server_security_policy->kem_preferences->kems,
+                                                  server_security_policy->kem_preferences->count, &chosen_kem)
             != 0) {
             return 0;
         }
     } else {
         /* If the client did send a PQ KEM extension, then the server must find a mutually supported parameter. */
-        if (s2n_choose_kem_with_peer_pref_list(cipher_suite->iana_value, client_kem_pref_list, server_security_policy->kem_preferences->kems,
-                server_security_policy->kem_preferences->count, &chosen_kem)
+        if (s2n_choose_kem_with_peer_pref_list(cipher_suite->iana_value, client_kem_pref_list,
+                                               server_security_policy->kem_preferences->kems,
+                                               server_security_policy->kem_preferences->count, &chosen_kem)
             != 0) {
             return 0;
         }
@@ -138,21 +135,19 @@ static int s2n_configure_kem(const struct s2n_cipher_suite *cipher_suite, struct
     if (proposed_kems == NULL || proposed_kems->data == NULL) {
         /* If the client did not send a PQ KEM extension, then the server can pick its preferred parameter */
         GUARD(s2n_choose_kem_without_peer_pref_list(cipher_suite->iana_value, security_policy->kem_preferences->kems,
-            security_policy->kem_preferences->count, &chosen_kem));
+                                                    security_policy->kem_preferences->count, &chosen_kem));
     } else {
         /* If the client did send a PQ KEM extension, then the server must find a mutually supported parameter. */
-        GUARD(s2n_choose_kem_with_peer_pref_list(cipher_suite->iana_value, proposed_kems, security_policy->kem_preferences->kems,
-            security_policy->kem_preferences->count, &chosen_kem));
+        GUARD(s2n_choose_kem_with_peer_pref_list(cipher_suite->iana_value, proposed_kems,
+                                                 security_policy->kem_preferences->kems,
+                                                 security_policy->kem_preferences->count, &chosen_kem));
     }
 
     conn->secure.s2n_kem_keys.negotiated_kem = chosen_kem;
     return 0;
 }
 
-static int s2n_no_op_configure(const struct s2n_cipher_suite *cipher_suite, struct s2n_connection *conn)
-{
-    return 0;
-}
+static int s2n_no_op_configure(const struct s2n_cipher_suite *cipher_suite, struct s2n_connection *conn) { return 0; }
 
 static int s2n_check_hybrid_echde_kem(const struct s2n_cipher_suite *cipher_suite, struct s2n_connection *conn)
 {
@@ -234,7 +229,7 @@ const struct s2n_kex s2n_ecdhe = {
 
 const struct s2n_kex s2n_hybrid_ecdhe_kem = {
     .is_ephemeral = 1,
-    .hybrid = { &s2n_ecdhe, &s2n_kem },
+    .hybrid = {&s2n_ecdhe, &s2n_kem},
     .get_server_extension_size = &s2n_get_server_hybrid_extensions_size,
     .write_server_extensions = &s2n_write_server_hybrid_extensions,
     .connection_supported = &s2n_check_hybrid_echde_kem,
@@ -258,7 +253,8 @@ int s2n_kex_server_extension_size(const struct s2n_kex *kex, const struct s2n_co
     return 0;
 }
 
-int s2n_kex_write_server_extension(const struct s2n_kex *kex, const struct s2n_connection *conn, struct s2n_stuffer *out)
+int s2n_kex_write_server_extension(const struct s2n_kex *kex, const struct s2n_connection *conn,
+                                   struct s2n_stuffer *out)
 {
     if (s2n_server_can_send_kex(conn)) {
         notnull_check(kex);
@@ -271,8 +267,10 @@ int s2n_kex_write_server_extension(const struct s2n_kex *kex, const struct s2n_c
 
 int s2n_kex_supported(const struct s2n_cipher_suite *cipher_suite, struct s2n_connection *conn)
 {
-    /* Don't return -1 from notnull_check because that might allow a improperly configured kex to be marked as "supported" */
-    return cipher_suite->key_exchange_alg->connection_supported != NULL && cipher_suite->key_exchange_alg->connection_supported(cipher_suite, conn);
+    /* Don't return -1 from notnull_check because that might allow a improperly configured kex to be marked as
+     * "supported" */
+    return cipher_suite->key_exchange_alg->connection_supported != NULL
+           && cipher_suite->key_exchange_alg->connection_supported(cipher_suite, conn);
 }
 
 int s2n_configure_kex(const struct s2n_cipher_suite *cipher_suite, struct s2n_connection *conn)
@@ -287,13 +285,15 @@ int s2n_kex_is_ephemeral(const struct s2n_kex *kex)
     return kex->is_ephemeral;
 }
 
-int s2n_kex_server_key_recv_parse_data(const struct s2n_kex *kex, struct s2n_connection *conn, struct s2n_kex_raw_server_data *raw_server_data)
+int s2n_kex_server_key_recv_parse_data(const struct s2n_kex *kex, struct s2n_connection *conn,
+                                       struct s2n_kex_raw_server_data *raw_server_data)
 {
     notnull_check(kex->server_key_recv_parse_data);
     return kex->server_key_recv_parse_data(conn, raw_server_data);
 }
 
-int s2n_kex_server_key_recv_read_data(const struct s2n_kex *kex, struct s2n_connection *conn, struct s2n_blob *data_to_verify, struct s2n_kex_raw_server_data *raw_server_data)
+int s2n_kex_server_key_recv_read_data(const struct s2n_kex *kex, struct s2n_connection *conn,
+                                      struct s2n_blob *data_to_verify, struct s2n_kex_raw_server_data *raw_server_data)
 {
     notnull_check(kex->server_key_recv_read_data);
     return kex->server_key_recv_read_data(conn, data_to_verify, raw_server_data);

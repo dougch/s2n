@@ -13,12 +13,12 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
 #include "utils/s2n_blob.h"
-#include "utils/s2n_mem.h"
 
 #include <s2n.h>
+
+#include "s2n_test.h"
+#include "utils/s2n_mem.h"
 
 int main(int argc, char **argv)
 {
@@ -28,11 +28,11 @@ int main(int argc, char **argv)
     EXPECT_FALSE(s2n_blob_is_valid(NULL));
 
     /* Invalid blob is not valid */
-    struct s2n_blob b1 = {.data = 0, .size = 101 };
+    struct s2n_blob b1 = {.data = 0, .size = 101};
     EXPECT_FALSE(s2n_blob_is_valid(&b1));
 
     /* Size of 0 is OK if data is null */
-    struct s2n_blob b2 = {.data = 0, .size = 0 };
+    struct s2n_blob b2 = {.data = 0, .size = 0};
     EXPECT_TRUE(s2n_blob_is_valid(&b2));
 
     /* Valid blob is valid */
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     /* Empty blob is growable */
     struct s2n_blob g3 = {0};
     EXPECT_TRUE(s2n_blob_is_growable(&g3));
-    EXPECT_SUCCESS(s2n_realloc(&g3,24));
+    EXPECT_SUCCESS(s2n_realloc(&g3, 24));
     EXPECT_SUCCESS(s2n_free(&g3));
 
     /* Alloced blob can be freed */
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     struct s2n_blob g7 = {0};
     uint8_t hello[] = "hello ";
     uint8_t world[] = "world";
-    EXPECT_SUCCESS(s2n_blob_slice(&g6, &g7, strlen((char *) hello), sizeof(world)));
+    EXPECT_SUCCESS(s2n_blob_slice(&g6, &g7, strlen((char *)hello), sizeof(world)));
     EXPECT_EQUAL(memcmp(g7.data, world, sizeof(world)), 0);
     EXPECT_EQUAL(g7.size, sizeof(world));
 

@@ -13,14 +13,13 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
 #include <stdint.h>
+#include <sys/param.h>
 
 #include "tls/extensions/s2n_client_signature_algorithms.h"
+#include "tls/s2n_signature_algorithms.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-#include "tls/s2n_signature_algorithms.h"
-
 #include "utils/s2n_safety.h"
 
 int s2n_extensions_server_signature_algorithms_size(struct s2n_connection *conn)

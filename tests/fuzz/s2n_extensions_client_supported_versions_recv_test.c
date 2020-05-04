@@ -17,29 +17,24 @@
 /* Target Functions: s2n_extensions_client_supported_versions_recv s2n_extensions_client_supported_versions_process
                      s2n_connection_get_minimum_supported_version */
 
-#include <stdint.h>
-
 #include <openssl/crypto.h>
 #include <openssl/err.h>
-
-#include "tls/extensions/s2n_client_supported_versions.h"
+#include <stdint.h>
 
 #include "api/s2n.h"
+#include "s2n_test.h"
 #include "stuffer/s2n_stuffer.h"
+#include "testlib/s2n_testlib.h"
+#include "tls/extensions/s2n_client_supported_versions.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
-#include "utils/s2n_safety.h"
-#include "s2n_test.h"
-#include "testlib/s2n_testlib.h"
 #include "tls/s2n_tls13.h"
+#include "utils/s2n_safety.h"
 
 /* This test is for TLS versions 1.3 and up only */
 static const uint8_t TLS_VERSIONS[] = {S2N_TLS13};
 
-static void s2n_fuzz_atexit()
-{
-    s2n_cleanup();
-}
+static void s2n_fuzz_atexit() { s2n_cleanup(); }
 
 int LLVMFuzzerInitialize(const uint8_t *buf, size_t len)
 {
@@ -85,4 +80,3 @@ int LLVMFuzzerTestOneInput(const uint8_t *buf, size_t len)
 
     return 0;
 }
-

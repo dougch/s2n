@@ -13,34 +13,30 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
 #include <stdint.h>
 
-#include "tls/s2n_alerts.h"
-#include "tls/s2n_config.h"
-#include "tls/s2n_connection.h"
-#include "tls/s2n_client_extensions.h"
-#include "tls/s2n_tls.h"
+#include "s2n_test.h"
+#include "stuffer/s2n_stuffer.h"
+#include "testlib/s2n_testlib.h"
 #include "tls/extensions/s2n_client_key_share.h"
 #include "tls/extensions/s2n_key_share.h"
+#include "tls/s2n_alerts.h"
+#include "tls/s2n_client_extensions.h"
+#include "tls/s2n_config.h"
+#include "tls/s2n_connection.h"
 #include "tls/s2n_ecc_preferences.h"
-
-#include "testlib/s2n_testlib.h"
-#include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_tls.h"
 #include "utils/s2n_safety.h"
 
-#define S2N_SIZE_OF_CLIENT_SHARE_SIZE   2
+#define S2N_SIZE_OF_CLIENT_SHARE_SIZE 2
 
-#define S2N_PREPARE_DATA_LENGTH( stuffer )   \
-    EXPECT_SUCCESS(s2n_stuffer_skip_write(stuffer, S2N_SIZE_OF_CLIENT_SHARE_SIZE))
-#define S2N_WRITE_DATA_LENGTH( stuffer )     \
-    EXPECT_SUCCESS(s2n_test_rewrite_length(stuffer))
+#define S2N_PREPARE_DATA_LENGTH(stuffer) EXPECT_SUCCESS(s2n_stuffer_skip_write(stuffer, S2N_SIZE_OF_CLIENT_SHARE_SIZE))
+#define S2N_WRITE_DATA_LENGTH(stuffer)   EXPECT_SUCCESS(s2n_test_rewrite_length(stuffer))
 
 static int s2n_test_rewrite_length(struct s2n_stuffer *stuffer);
 static int s2n_write_named_curve(struct s2n_stuffer *out, const struct s2n_ecc_named_curve *existing_curve);
 static int s2n_write_key_share(struct s2n_stuffer *out, uint16_t iana_value, uint16_t share_size,
-        const struct s2n_ecc_named_curve *existing_curve);
+                               const struct s2n_ecc_named_curve *existing_curve);
 
 int main(int argc, char **argv)
 {
@@ -136,7 +132,7 @@ int main(int argc, char **argv)
             EXPECT_SUCCESS(s2n_stuffer_free(&key_share_extension));
             EXPECT_SUCCESS(s2n_connection_free(conn));
         }
-        
+
         /* Test s2n_extensions_client_key_share_send for a supported curve present in s2n_all_supported_curves_list,
          * but not present in the ecc_preferences list selected */
         if (s2n_is_evp_apis_supported()) {
@@ -156,7 +152,7 @@ int main(int argc, char **argv)
 
             EXPECT_SUCCESS(s2n_extensions_client_key_share_send(conn, &key_share_extension));
 
-            for (int i = 0; i < ecc_preferences->count ; i++) {
+            for (int i = 0; i < ecc_preferences->count; i++) {
                 struct s2n_ecc_evp_params *ecc_evp_params = &conn->secure.client_ecc_evp_params[i];
                 EXPECT_NOT_EQUAL(ecc_evp_params->negotiated_curve, test_curve);
             }
@@ -238,8 +234,8 @@ int main(int argc, char **argv)
 
             /* Write curve with huge length */
             S2N_PREPARE_DATA_LENGTH(&key_share_extension);
-            EXPECT_SUCCESS(s2n_write_key_share(&key_share_extension,
-                                               ecc_pref->ecc_curves[0]->iana_id, ecc_pref->ecc_curves[0]->share_size * 10, ecc_pref->ecc_curves[0]));
+            EXPECT_SUCCESS(s2n_write_key_share(&key_share_extension, ecc_pref->ecc_curves[0]->iana_id,
+                                               ecc_pref->ecc_curves[0]->share_size * 10, ecc_pref->ecc_curves[0]));
             S2N_WRITE_DATA_LENGTH(&key_share_extension);
 
             EXPECT_FAILURE(s2n_extensions_client_key_share_recv(conn, &key_share_extension));
@@ -323,11 +319,11 @@ int main(int argc, char **argv)
 
             /* Write unsupported curves */
             /* 0 -> unallocated_RESERVED */
-            EXPECT_SUCCESS(s2n_write_key_share(&key_share_extension,
-                                               0, ecc_pref->ecc_curves[0]->share_size, ecc_pref->ecc_curves[0]));
+            EXPECT_SUCCESS(s2n_write_key_share(&key_share_extension, 0, ecc_pref->ecc_curves[0]->share_size,
+                                               ecc_pref->ecc_curves[0]));
             /* 0xFF01 -> obsolete_RESERVED */
-            EXPECT_SUCCESS(s2n_write_key_share(&key_share_extension,
-                                               65281, ecc_pref->ecc_curves[0]->share_size, ecc_pref->ecc_curves[0]));
+            EXPECT_SUCCESS(s2n_write_key_share(&key_share_extension, 65281, ecc_pref->ecc_curves[0]->share_size,
+                                               ecc_pref->ecc_curves[0]));
 
             S2N_WRITE_DATA_LENGTH(&key_share_extension);
 
@@ -359,8 +355,8 @@ int main(int argc, char **argv)
 
             /* Write supported curve, but with a different curve's size */
             S2N_PREPARE_DATA_LENGTH(&key_share_extension);
-            EXPECT_SUCCESS(s2n_write_key_share(&key_share_extension,
-                                               ecc_pref->ecc_curves[0]->iana_id, ecc_pref->ecc_curves[1]->share_size, ecc_pref->ecc_curves[1]));
+            EXPECT_SUCCESS(s2n_write_key_share(&key_share_extension, ecc_pref->ecc_curves[0]->iana_id,
+                                               ecc_pref->ecc_curves[1]->share_size, ecc_pref->ecc_curves[1]));
             S2N_WRITE_DATA_LENGTH(&key_share_extension);
 
             EXPECT_SUCCESS(s2n_extensions_client_key_share_recv(conn, &key_share_extension));
@@ -411,8 +407,8 @@ int main(int argc, char **argv)
             EXPECT_EQUAL(s2n_stuffer_data_available(&key_share_extension), 0);
 
             /* should have only copied the first set of params */
-            EXPECT_TRUE(s2n_public_ecc_keys_are_equal(
-                &server_conn->secure.client_ecc_evp_params[supported_curve_index], &first_params));
+            EXPECT_TRUE(s2n_public_ecc_keys_are_equal(&server_conn->secure.client_ecc_evp_params[supported_curve_index],
+                                                      &first_params));
 
             EXPECT_SUCCESS(s2n_stuffer_free(&key_share_extension));
             EXPECT_SUCCESS(s2n_connection_free(server_conn));
@@ -456,7 +452,7 @@ int main(int argc, char **argv)
             EXPECT_SUCCESS(s2n_connection_free(conn));
         }
 
-        /* Test that s2n_extensions_client_key_share_recv ignores a supported curve present in 
+        /* Test that s2n_extensions_client_key_share_recv ignores a supported curve present in
          * s2n_all_supported_curves_list but not in s2n_ecc_preferences list selected
          */
         {
@@ -476,8 +472,8 @@ int main(int argc, char **argv)
 
                 S2N_PREPARE_DATA_LENGTH(&key_share_extension);
 
-                EXPECT_SUCCESS(s2n_write_key_share(&key_share_extension,
-                                                   test_curve->iana_id, test_curve->share_size, test_curve));
+                EXPECT_SUCCESS(
+                    s2n_write_key_share(&key_share_extension, test_curve->iana_id, test_curve->share_size, test_curve));
 
                 S2N_WRITE_DATA_LENGTH(&key_share_extension);
 
@@ -514,32 +510,28 @@ static int s2n_test_rewrite_length(struct s2n_stuffer *stuffer)
     return 0;
 }
 
-static int s2n_write_named_curve(struct s2n_stuffer *out,
-        const struct s2n_ecc_named_curve *existing_curve)
+static int s2n_write_named_curve(struct s2n_stuffer *out, const struct s2n_ecc_named_curve *existing_curve)
 {
     return s2n_write_key_share(out, existing_curve->iana_id, existing_curve->share_size, existing_curve);
 }
 
-static int s2n_write_key_share(struct s2n_stuffer *out,
-        uint16_t iana_value, uint16_t share_size,
-        const struct s2n_ecc_named_curve *existing_curve)
+static int s2n_write_key_share(struct s2n_stuffer *out, uint16_t iana_value, uint16_t share_size,
+                               const struct s2n_ecc_named_curve *existing_curve)
 {
     notnull_check(out);
     notnull_check(existing_curve);
 
     struct s2n_ecc_evp_params ecc_evp_params;
-    const struct s2n_ecc_named_curve test_curve = {
-            .iana_id = iana_value,
-            .libcrypto_nid = existing_curve->libcrypto_nid,
-            .name = existing_curve->name,
-            .share_size = share_size
-    };
+    const struct s2n_ecc_named_curve test_curve = {.iana_id = iana_value,
+                                                   .libcrypto_nid = existing_curve->libcrypto_nid,
+                                                   .name = existing_curve->name,
+                                                   .share_size = share_size};
 
     ecc_evp_params.negotiated_curve = &test_curve;
     ecc_evp_params.evp_pkey = NULL;
     if (s2n_ecdhe_parameters_send(&ecc_evp_params, out) < 0) {
         GUARD(s2n_ecc_evp_params_free(&ecc_evp_params));
-        return 1; 
+        return 1;
     }
 
     GUARD(s2n_ecc_evp_params_free(&ecc_evp_params));

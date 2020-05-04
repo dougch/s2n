@@ -13,19 +13,18 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
+#include <fcntl.h>
+#include <s2n.h>
+#include <stdint.h>
+#include <sys/wait.h>
+#include <tls/s2n_connection.h>
+#include <unistd.h>
 
+#include "s2n_test.h"
 #include "testlib/s2n_testlib.h"
 
-#include <sys/wait.h>
-#include <unistd.h>
-#include <stdint.h>
-#include <fcntl.h>
-
-#include <s2n.h>
-#include <tls/s2n_connection.h>
-
-struct client_hello_context {
+struct client_hello_context
+{
     int invoked;
     int swap_config;
     struct s2n_config *config;
@@ -38,7 +37,7 @@ int mock_client(struct s2n_test_piped_io *piped_io, int expect_failure, int expe
     s2n_blocked_status blocked;
     int result = 0;
     int rc = 0;
-    const char *protocols[] = { "h2", "http/1.1" };
+    const char *protocols[] = {"h2", "http/1.1"};
 
     /* Give the server a chance to listen */
     sleep(1);
@@ -59,7 +58,7 @@ int mock_client(struct s2n_test_piped_io *piped_io, int expect_failure, int expe
             result = 1;
         }
 
-        if (s2n_connection_get_alert(conn) != 40){
+        if (s2n_connection_get_alert(conn) != 40) {
             result = 2;
         }
     } else {
@@ -78,10 +77,10 @@ int mock_client(struct s2n_test_piped_io *piped_io, int expect_failure, int expe
             s2n_send(conn, buffer, i, &blocked);
         }
 
-        int shutdown_rc= -1;
+        int shutdown_rc = -1;
         do {
             shutdown_rc = s2n_shutdown(conn, &blocked);
-        } while(shutdown_rc != 0);
+        } while (shutdown_rc != 0);
     }
 
     s2n_connection_free(conn);
@@ -112,15 +111,14 @@ int client_hello_swap_config(struct s2n_connection *conn, void *ctx)
     client_hello_ctx->invoked++;
 
     /* Validate SNI extension */
-    uint8_t expected_server_name[] = {
-            /* Server names len */
-            0x00, 0x0E,
-            /* Server name type - host name */
-            0x00,
-            /* First server name len */
-            0x00, 0x0B,
-            /* First server name, matches sent_server_name */
-            'e', 'x', 'a', 'm', 'p', 'l', 'e', '.', 'c', 'o', 'm'};
+    uint8_t expected_server_name[] = {/* Server names len */
+                                      0x00, 0x0E,
+                                      /* Server name type - host name */
+                                      0x00,
+                                      /* First server name len */
+                                      0x00, 0x0B,
+                                      /* First server name, matches sent_server_name */
+                                      'e', 'x', 'a', 'm', 'p', 'l', 'e', '.', 'c', 'o', 'm'};
 
     /* Get SNI extension from client hello */
     uint32_t len = s2n_client_hello_get_extension_length(client_hello, S2N_EXTENSION_SERVER_NAME);
@@ -200,7 +198,7 @@ int main(int argc, char **argv)
     EXPECT_SUCCESS(s2n_config_add_cert_chain_and_key_to_store(swap_config, chain_and_key));
 
     /* Add application protocols to swapped config */
-    const char *protocols[] = { "h2" };
+    const char *protocols[] = {"h2"};
     EXPECT_SUCCESS(s2n_config_set_protocol_preferences(swap_config, protocols, 1));
 
     /* Prepare context */
@@ -247,7 +245,7 @@ int main(int argc, char **argv)
     EXPECT_STRING_EQUAL(s2n_get_application_protocol(conn), protocols[0]);
 
     for (int i = 1; i < 0xffff; i += 100) {
-        char * ptr = buffer;
+        char *ptr = buffer;
         int size = i;
 
         do {
@@ -256,7 +254,7 @@ int main(int argc, char **argv)
 
             size -= bytes_read;
             ptr += bytes_read;
-        } while(size);
+        } while (size);
 
         for (int j = 0; j < i; j++) {
             EXPECT_EQUAL(buffer[j], 33);
@@ -315,7 +313,7 @@ int main(int argc, char **argv)
     EXPECT_EQUAL(client_hello_ctx.invoked, 1);
 
     for (int i = 1; i < 0xffff; i += 100) {
-        char * ptr = buffer;
+        char *ptr = buffer;
         int size = i;
 
         do {
@@ -324,7 +322,7 @@ int main(int argc, char **argv)
 
             size -= bytes_read;
             ptr += bytes_read;
-        } while(size);
+        } while (size);
 
         for (int j = 0; j < i; j++) {
             EXPECT_EQUAL(buffer[j], 33);

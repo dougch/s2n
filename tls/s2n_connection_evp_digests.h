@@ -15,12 +15,12 @@
 
 #pragma once
 
+#include "crypto/s2n_hash.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_prf.h"
 
-#include "crypto/s2n_hash.h"
-
-struct s2n_connection_prf_handles {
+struct s2n_connection_prf_handles
+{
     /* TLS PRF HMAC p_hash */
     struct s2n_hmac_evp_backup p_hash_s2n_hmac;
 
@@ -28,7 +28,8 @@ struct s2n_connection_prf_handles {
     struct s2n_evp_hmac_state p_hash_evp_hmac;
 };
 
-struct s2n_connection_hash_handles {
+struct s2n_connection_hash_handles
+{
     /* Handshake hash states */
     struct s2n_hash_evp_digest md5;
     struct s2n_hash_evp_digest sha1;
@@ -52,7 +53,8 @@ struct s2n_connection_hash_handles {
 };
 
 /* Allocationg new EVP structs is expensive, so we back them up here and reuse them */
-struct s2n_connection_hmac_handles {
+struct s2n_connection_hmac_handles
+{
     struct s2n_hmac_evp_backup initial_client;
     struct s2n_hmac_evp_backup initial_client_copy;
     struct s2n_hmac_evp_backup initial_server;
@@ -62,8 +64,13 @@ struct s2n_connection_hmac_handles {
 };
 
 extern int s2n_connection_save_prf_state(struct s2n_connection_prf_handles *prf_handles, struct s2n_connection *conn);
-extern int s2n_connection_save_hash_state(struct s2n_connection_hash_handles *hash_handles, struct s2n_connection *conn);
-extern int s2n_connection_save_hmac_state(struct s2n_connection_hmac_handles *hmac_handles, struct s2n_connection *conn);
-extern int s2n_connection_restore_prf_state(struct s2n_connection *conn, struct s2n_connection_prf_handles *prf_handles);
-extern int s2n_connection_restore_hash_state(struct s2n_connection *conn, struct s2n_connection_hash_handles *hash_handles);
-extern int s2n_connection_restore_hmac_state(struct s2n_connection *conn, struct s2n_connection_hmac_handles *hmac_handles);
+extern int s2n_connection_save_hash_state(struct s2n_connection_hash_handles *hash_handles,
+                                          struct s2n_connection *conn);
+extern int s2n_connection_save_hmac_state(struct s2n_connection_hmac_handles *hmac_handles,
+                                          struct s2n_connection *conn);
+extern int s2n_connection_restore_prf_state(struct s2n_connection *conn,
+                                            struct s2n_connection_prf_handles *prf_handles);
+extern int s2n_connection_restore_hash_state(struct s2n_connection *conn,
+                                             struct s2n_connection_hash_handles *hash_handles);
+extern int s2n_connection_restore_hmac_state(struct s2n_connection *conn,
+                                             struct s2n_connection_hmac_handles *hmac_handles);

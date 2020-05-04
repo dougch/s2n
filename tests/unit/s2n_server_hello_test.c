@@ -13,17 +13,14 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include "testlib/s2n_testlib.h"
-
 #include <s2n.h>
 
+#include "s2n_test.h"
+#include "testlib/s2n_testlib.h"
 #include "tls/s2n_cipher_suites.h"
+#include "tls/s2n_ecc_preferences.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
-#include "tls/s2n_ecc_preferences.h"
-
 #include "utils/s2n_safety.h"
 
 const uint8_t SESSION_ID_SIZE = 1;
@@ -34,14 +31,9 @@ const char hello_retry_random_hex[] =
     "CF21AD74E59A6111BE1D8C021E65B891"
     "C2A211167ABB8C5E079E09E2C8A8339C";
 
+const uint8_t tls12_downgrade_protection_check_bytes[] = {0x44, 0x4F, 0x57, 0x4E, 0x47, 0x52, 0x44, 0x01};
 
-const uint8_t tls12_downgrade_protection_check_bytes[] = {
-    0x44, 0x4F, 0x57, 0x4E, 0x47, 0x52, 0x44, 0x01
-};
-
-const uint8_t tls11_downgrade_protection_check_bytes[] = {
-    0x44, 0x4F, 0x57, 0x4E, 0x47, 0x52, 0x44, 0x00
-};
+const uint8_t tls11_downgrade_protection_check_bytes[] = {0x44, 0x4F, 0x57, 0x4E, 0x47, 0x52, 0x44, 0x00};
 
 int main(int argc, char **argv)
 {
@@ -59,12 +51,8 @@ int main(int argc, char **argv)
         struct s2n_stuffer *hello_stuffer = &conn->handshake.io;
 
         /* Test s2n_server_hello_send */
-        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN
-            + S2N_TLS_RANDOM_DATA_LEN
-            + SESSION_ID_SIZE
-            + conn->session_id_len
-            + S2N_TLS_CIPHER_SUITE_LEN
-            + COMPRESSION_METHOD_SIZE;
+        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN + S2N_TLS_RANDOM_DATA_LEN + SESSION_ID_SIZE
+                               + conn->session_id_len + S2N_TLS_CIPHER_SUITE_LEN + COMPRESSION_METHOD_SIZE;
 
         conn->actual_protocol_version = S2N_TLS12;
         EXPECT_SUCCESS(s2n_server_hello_send(conn));
@@ -125,12 +113,8 @@ int main(int argc, char **argv)
 
         struct s2n_stuffer *server_stuffer = &server_conn->handshake.io;
 
-        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN
-            + S2N_TLS_RANDOM_DATA_LEN
-            + SESSION_ID_SIZE
-            + server_conn->session_id_len
-            + S2N_TLS_CIPHER_SUITE_LEN
-            + COMPRESSION_METHOD_SIZE;
+        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN + S2N_TLS_RANDOM_DATA_LEN + SESSION_ID_SIZE
+                               + server_conn->session_id_len + S2N_TLS_CIPHER_SUITE_LEN + COMPRESSION_METHOD_SIZE;
 
         server_conn->actual_protocol_version = S2N_TLS12;
         server_conn->secure.cipher_suite = &s2n_ecdhe_ecdsa_with_aes_128_gcm_sha256;
@@ -183,7 +167,7 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_stuffer_write_uint8(io, S2N_TLS_SESSION_ID_MAX_LEN));
         EXPECT_SUCCESS(s2n_stuffer_write_bytes(io, session_id, S2N_TLS_SESSION_ID_MAX_LEN));
         EXPECT_SUCCESS(s2n_stuffer_write_uint16(io, (0x13 << 8) + 0x01)); /* cipher suites */
-        EXPECT_SUCCESS(s2n_stuffer_write_uint8(io, 0)); /* no compression */
+        EXPECT_SUCCESS(s2n_stuffer_write_uint8(io, 0));                   /* no compression */
 
         client_conn->server_protocol_version = S2N_TLS13;
         client_conn->session_id_len = 32;
@@ -237,12 +221,8 @@ int main(int argc, char **argv)
 
         struct s2n_stuffer *server_stuffer = &server_conn->handshake.io;
 
-        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN
-            + S2N_TLS_RANDOM_DATA_LEN
-            + SESSION_ID_SIZE
-            + server_conn->session_id_len
-            + S2N_TLS_CIPHER_SUITE_LEN
-            + COMPRESSION_METHOD_SIZE;
+        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN + S2N_TLS_RANDOM_DATA_LEN + SESSION_ID_SIZE
+                               + server_conn->session_id_len + S2N_TLS_CIPHER_SUITE_LEN + COMPRESSION_METHOD_SIZE;
 
         /* Set the negotiated curve, otherwise the server might try to respond with a retry */
         server_conn->secure.server_ecc_evp_params.negotiated_curve = s2n_all_supported_curves_list[0];
@@ -257,7 +237,8 @@ int main(int argc, char **argv)
 
         /* Verify that the downgrade is detected */
         struct s2n_stuffer *client_stuffer = &client_conn->handshake.io;
-        EXPECT_BYTEARRAY_EQUAL(&client_stuffer->blob.data[S2N_TLS_PROTOCOL_VERSION_LEN + 24], tls11_downgrade_protection_check_bytes, 8);
+        EXPECT_BYTEARRAY_EQUAL(&client_stuffer->blob.data[S2N_TLS_PROTOCOL_VERSION_LEN + 24],
+                               tls11_downgrade_protection_check_bytes, 8);
         EXPECT_FAILURE_WITH_ERRNO(s2n_server_hello_recv(client_conn), S2N_ERR_PROTOCOL_DOWNGRADE_DETECTED);
 
         EXPECT_EQUAL(s2n_stuffer_data_available(client_stuffer), 0);
@@ -290,12 +271,8 @@ int main(int argc, char **argv)
 
         struct s2n_stuffer *server_stuffer = &server_conn->handshake.io;
 
-        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN
-            + S2N_TLS_RANDOM_DATA_LEN
-            + SESSION_ID_SIZE
-            + server_conn->session_id_len
-            + S2N_TLS_CIPHER_SUITE_LEN
-            + COMPRESSION_METHOD_SIZE;
+        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN + S2N_TLS_RANDOM_DATA_LEN + SESSION_ID_SIZE
+                               + server_conn->session_id_len + S2N_TLS_CIPHER_SUITE_LEN + COMPRESSION_METHOD_SIZE;
 
         /* Set the negotiated curve, otherwise the server might try to respond with a retry */
         server_conn->secure.server_ecc_evp_params.negotiated_curve = s2n_all_supported_curves_list[0];
@@ -310,7 +287,8 @@ int main(int argc, char **argv)
 
         /* Verify that the downgrade is detected */
         struct s2n_stuffer *client_stuffer = &client_conn->handshake.io;
-        EXPECT_BYTEARRAY_EQUAL(&client_stuffer->blob.data[S2N_TLS_PROTOCOL_VERSION_LEN + 24], tls12_downgrade_protection_check_bytes, 8);
+        EXPECT_BYTEARRAY_EQUAL(&client_stuffer->blob.data[S2N_TLS_PROTOCOL_VERSION_LEN + 24],
+                               tls12_downgrade_protection_check_bytes, 8);
         EXPECT_FAILURE_WITH_ERRNO(s2n_server_hello_recv(client_conn), S2N_ERR_PROTOCOL_DOWNGRADE_DETECTED);
 
         EXPECT_EQUAL(s2n_stuffer_data_available(client_stuffer), 0);
@@ -342,12 +320,8 @@ int main(int argc, char **argv)
 
         struct s2n_stuffer *server_stuffer = &server_conn->handshake.io;
 
-        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN
-            + S2N_TLS_RANDOM_DATA_LEN
-            + SESSION_ID_SIZE
-            + server_conn->session_id_len
-            + S2N_TLS_CIPHER_SUITE_LEN
-            + COMPRESSION_METHOD_SIZE;
+        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN + S2N_TLS_RANDOM_DATA_LEN + SESSION_ID_SIZE
+                               + server_conn->session_id_len + S2N_TLS_CIPHER_SUITE_LEN + COMPRESSION_METHOD_SIZE;
 
         /* The server will respond with TLS1.2 even though it support TLS1.3. This is expected because */
         /* the client only support TLS1.2 */
@@ -393,12 +367,8 @@ int main(int argc, char **argv)
 
         struct s2n_stuffer *server_stuffer = &server_conn->handshake.io;
 
-        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN
-            + S2N_TLS_RANDOM_DATA_LEN
-            + SESSION_ID_SIZE
-            + server_conn->session_id_len
-            + S2N_TLS_CIPHER_SUITE_LEN
-            + COMPRESSION_METHOD_SIZE;
+        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN + S2N_TLS_RANDOM_DATA_LEN + SESSION_ID_SIZE
+                               + server_conn->session_id_len + S2N_TLS_CIPHER_SUITE_LEN + COMPRESSION_METHOD_SIZE;
 
         /* The server will respond with TLS1.2 */
         server_conn->server_protocol_version = S2N_TLS12;
@@ -443,12 +413,8 @@ int main(int argc, char **argv)
 
         struct s2n_stuffer *server_stuffer = &server_conn->handshake.io;
 
-        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN
-            + S2N_TLS_RANDOM_DATA_LEN
-            + SESSION_ID_SIZE
-            + server_conn->session_id_len
-            + S2N_TLS_CIPHER_SUITE_LEN
-            + COMPRESSION_METHOD_SIZE;
+        const uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN + S2N_TLS_RANDOM_DATA_LEN + SESSION_ID_SIZE
+                               + server_conn->session_id_len + S2N_TLS_CIPHER_SUITE_LEN + COMPRESSION_METHOD_SIZE;
 
         /* The server will respond with TLS1.2 even though it support TLS1.3. This is expected because */
         /* the client only support TLS1.2 */

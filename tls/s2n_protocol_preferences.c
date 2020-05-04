@@ -13,11 +13,12 @@
  * permissions and limitations under the License.
  */
 
-#include "tls/s2n_connection.h"
 #include "error/s2n_errno.h"
+#include "tls/s2n_connection.h"
 #include "utils/s2n_safety.h"
 
-int s2n_blob_set_protocol_preferences(struct s2n_blob *application_protocols, const char *const *protocols, int protocol_count)
+int s2n_blob_set_protocol_preferences(struct s2n_blob *application_protocols, const char *const *protocols,
+                                      int protocol_count)
 {
     struct s2n_stuffer protocol_stuffer = {0};
 
@@ -33,7 +34,8 @@ int s2n_blob_set_protocol_preferences(struct s2n_blob *application_protocols, co
         size_t length = strlen(protocols[i]);
         uint8_t protocol[255];
 
-        S2N_ERROR_IF(length > 255 || (s2n_stuffer_data_available(&protocol_stuffer) + length + 1) > 65535, S2N_ERR_APPLICATION_PROTOCOL_TOO_LONG);
+        S2N_ERROR_IF(length > 255 || (s2n_stuffer_data_available(&protocol_stuffer) + length + 1) > 65535,
+                     S2N_ERR_APPLICATION_PROTOCOL_TOO_LONG);
         memcpy_check(protocol, protocols[i], length);
         GUARD(s2n_stuffer_write_uint8(&protocol_stuffer, length));
         GUARD(s2n_stuffer_write_bytes(&protocol_stuffer, protocol, length));
@@ -49,7 +51,8 @@ int s2n_config_set_protocol_preferences(struct s2n_config *config, const char *c
     return s2n_blob_set_protocol_preferences(&config->application_protocols, protocols, protocol_count);
 }
 
-int s2n_connection_set_protocol_preferences(struct s2n_connection *conn, const char * const *protocols, int protocol_count)
+int s2n_connection_set_protocol_preferences(struct s2n_connection *conn, const char *const *protocols,
+                                            int protocol_count)
 {
     return s2n_blob_set_protocol_preferences(&conn->application_protocols_overridden, protocols, protocol_count);
 }

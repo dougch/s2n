@@ -13,17 +13,16 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
+#include "tls/extensions/s2n_server_renegotiation_info.h"
 
 #include <stdint.h>
 
+#include "s2n_test.h"
+#include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_config.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
-#include "tls/extensions/s2n_server_renegotiation_info.h"
-
-#include "stuffer/s2n_stuffer.h"
 #include "utils/s2n_safety.h"
 
 int main(int argc, char **argv)
@@ -41,7 +40,7 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_connection_set_config(server_conn, config));
         EXPECT_SUCCESS(s2n_connection_set_config(client_conn, config));
 
-       /* Zero length extension expected as conn cannot send ext */
+        /* Zero length extension expected as conn cannot send ext */
         EXPECT_EQUAL(0, s2n_server_renegotiation_info_ext_size(server_conn));
 
         /* Set connection to be able to send extension and verify size */

@@ -13,9 +13,9 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
 #include "crypto/s2n_fips.h"
 #include "pq-crypto/bike_r1/bike_r1_kem.h"
+#include "s2n_test.h"
 
 int main(int argc, char **argv)
 {
@@ -43,4 +43,3 @@ int main(int argc, char **argv)
 
     END_TEST();
 }
-

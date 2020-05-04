@@ -15,9 +15,9 @@
 
 #include "tls/extensions/s2n_cookie.h"
 
-#define S2N_SIZE_OF_EXTENSION_TYPE          2
-#define S2N_SIZE_OF_EXTENSION_DATA_SIZE     2
-#define S2N_SIZE_OF_COOKIE_DATA_SIZE        2
+#define S2N_SIZE_OF_EXTENSION_TYPE      2
+#define S2N_SIZE_OF_EXTENSION_DATA_SIZE 2
+#define S2N_SIZE_OF_COOKIE_DATA_SIZE    2
 
 int s2n_extensions_cookie_size(struct s2n_connection *conn)
 {
@@ -27,10 +27,9 @@ int s2n_extensions_cookie_size(struct s2n_connection *conn)
         return 0;
     }
 
-    const int cookie_extension_size = S2N_SIZE_OF_EXTENSION_TYPE
-        + S2N_SIZE_OF_EXTENSION_DATA_SIZE
-        + S2N_SIZE_OF_COOKIE_DATA_SIZE
-        + s2n_stuffer_data_available(&conn->cookie_stuffer);
+    const int cookie_extension_size = S2N_SIZE_OF_EXTENSION_TYPE + S2N_SIZE_OF_EXTENSION_DATA_SIZE
+                                      + S2N_SIZE_OF_COOKIE_DATA_SIZE
+                                      + s2n_stuffer_data_available(&conn->cookie_stuffer);
 
     return cookie_extension_size;
 }
@@ -58,7 +57,8 @@ int s2n_extensions_cookie_send(struct s2n_connection *conn, struct s2n_stuffer *
     notnull_check(out);
 
     if (s2n_extensions_cookie_size(conn) > 0) {
-        const int extension_data_size = s2n_extensions_cookie_size(conn) - S2N_SIZE_OF_EXTENSION_TYPE - S2N_SIZE_OF_EXTENSION_DATA_SIZE;
+        const int extension_data_size =
+            s2n_extensions_cookie_size(conn) - S2N_SIZE_OF_EXTENSION_TYPE - S2N_SIZE_OF_EXTENSION_DATA_SIZE;
         const int cookie_data_size = extension_data_size - S2N_SIZE_OF_COOKIE_DATA_SIZE;
 
         GUARD(s2n_stuffer_write_uint16(out, TLS_EXTENSION_COOKIE));

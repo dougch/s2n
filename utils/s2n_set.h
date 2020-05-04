@@ -15,14 +15,16 @@
 #pragma once
 
 #include <s2n.h>
+
 #include "utils/s2n_array.h"
 
-struct s2n_set {
-  struct s2n_array *data;
-  int (*comparator)(const void*, const void*);
+struct s2n_set
+{
+    struct s2n_array *data;
+    int (*comparator)(const void *, const void *);
 };
 
-extern struct s2n_set *s2n_set_new(size_t element_size, int (*comparator)(const void*, const void*));
+extern struct s2n_set *s2n_set_new(size_t element_size, int (*comparator)(const void *, const void *));
 extern int s2n_set_add(struct s2n_set *set, void *element);
 extern void *s2n_set_get(struct s2n_set *set, uint32_t index);
 extern int s2n_set_remove(struct s2n_set *set, uint32_t index);

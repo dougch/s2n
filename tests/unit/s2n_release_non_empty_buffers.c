@@ -13,27 +13,23 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include "testlib/s2n_testlib.h"
-
+#include <fcntl.h>
+#include <s2n.h>
+#include <signal.h>
+#include <stdint.h>
 #include <sys/poll.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <signal.h>
-#include <stdint.h>
-#include <fcntl.h>
 
-#include <s2n.h>
-
-#include "utils/s2n_random.h"
-
+#include "s2n_test.h"
+#include "testlib/s2n_testlib.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_handshake.h"
+#include "utils/s2n_random.h"
 
 #define MAX_BUF_SIZE 10000
 
-static const uint8_t buf_to_send[1023] = { 27 };
+static const uint8_t buf_to_send[1023] = {27};
 
 int mock_client(struct s2n_test_piped_io *piped_io)
 {
@@ -170,8 +166,7 @@ int main(int argc, char **argv)
         }
 
         ret = s2n_recv(conn, buf, sizeof(buf), &blocked);
-    } while (ret < 0 && s2n_error_get_type(s2n_errno) == S2N_ERR_T_BLOCKED
-                 && blocked == S2N_BLOCKED_ON_READ);
+    } while (ret < 0 && s2n_error_get_type(s2n_errno) == S2N_ERR_T_BLOCKED && blocked == S2N_BLOCKED_ON_READ);
 
     /* Expect that we read the data client sent us */
     EXPECT_TRUE(ret == sizeof(buf_to_send));
@@ -181,7 +176,7 @@ int main(int argc, char **argv)
     EXPECT_SUCCESS(s2n_connection_release_buffers(conn));
 
     /* Shutdown after negotiating */
-    uint8_t server_shutdown=0;
+    uint8_t server_shutdown = 0;
     do {
         ret = s2n_shutdown(conn, &blocked);
         EXPECT_TRUE(ret == 0 || (blocked && (errno == EAGAIN || errno == EWOULDBLOCK)));
@@ -211,4 +206,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-

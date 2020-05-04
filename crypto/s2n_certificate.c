@@ -14,20 +14,21 @@
  */
 
 #ifndef _GNU_SOURCE
-# define _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
 
-#include <s2n.h>
-#include <openssl/x509v3.h>
+#include "crypto/s2n_certificate.h"
+
 #include <openssl/pem.h>
+#include <openssl/x509v3.h>
+#include <s2n.h>
 #include <string.h>
 #include <strings.h>
 
 #include "../tls/extensions/s2n_certificate_extensions.h"
-#include "crypto/s2n_certificate.h"
 #include "utils/s2n_array.h"
-#include "utils/s2n_safety.h"
 #include "utils/s2n_mem.h"
+#include "utils/s2n_safety.h"
 
 int s2n_cert_set_cert_type(struct s2n_cert *cert, s2n_pkey_type pkey_type)
 {
@@ -73,19 +74,20 @@ int s2n_create_cert_chain_from_stuffer(struct s2n_cert_chain *cert_chain_out, st
     } while (s2n_stuffer_data_available(chain_in_stuffer));
 
     GUARD(s2n_stuffer_free(&cert_out_stuffer));
-    
+
     /* Leftover data at this point means one of two things:
      * A bug in s2n's PEM parsing OR a malformed PEM in the user's chain.
      * Be conservative and fail instead of using a partial chain.
      */
     S2N_ERROR_IF(s2n_stuffer_data_available(chain_in_stuffer) > 0, S2N_ERR_INVALID_PEM);
-    
+
     cert_chain_out->chain_size = chain_size;
-    
+
     return 0;
 }
 
-int s2n_cert_chain_and_key_set_cert_chain_from_stuffer(struct s2n_cert_chain_and_key *cert_and_key, struct s2n_stuffer *chain_in_stuffer)
+int s2n_cert_chain_and_key_set_cert_chain_from_stuffer(struct s2n_cert_chain_and_key *cert_and_key,
+                                                       struct s2n_stuffer *chain_in_stuffer)
 {
     return s2n_create_cert_chain_from_stuffer(cert_and_key->cert_chain, chain_in_stuffer);
 }
@@ -127,7 +129,8 @@ int s2n_cert_chain_and_key_set_private_key(struct s2n_cert_chain_and_key *cert_a
     return 0;
 }
 
-int s2n_cert_chain_and_key_set_ocsp_data(struct s2n_cert_chain_and_key *chain_and_key, const uint8_t *data, uint32_t length)
+int s2n_cert_chain_and_key_set_ocsp_data(struct s2n_cert_chain_and_key *chain_and_key, const uint8_t *data,
+                                         uint32_t length)
 {
     notnull_check(chain_and_key);
     GUARD(s2n_free(&chain_and_key->ocsp_status));
@@ -138,7 +141,8 @@ int s2n_cert_chain_and_key_set_ocsp_data(struct s2n_cert_chain_and_key *chain_an
     return 0;
 }
 
-int s2n_cert_chain_and_key_set_sct_list(struct s2n_cert_chain_and_key *chain_and_key, const uint8_t *data, uint32_t length)
+int s2n_cert_chain_and_key_set_sct_list(struct s2n_cert_chain_and_key *chain_and_key, const uint8_t *data,
+                                        uint32_t length)
 {
     notnull_check(chain_and_key);
     GUARD(s2n_free(&chain_and_key->sct_list));
@@ -244,7 +248,7 @@ int s2n_cert_chain_and_key_load_cns(struct s2n_cert_chain_and_key *chain_and_key
     }
 
     int lastpos = -1;
-    while((lastpos = X509_NAME_get_index_by_NID(subject, NID_commonName, lastpos)) >= 0) {
+    while ((lastpos = X509_NAME_get_index_by_NID(subject, NID_commonName, lastpos)) >= 0) {
         X509_NAME_ENTRY *name_entry = X509_NAME_get_entry(subject, lastpos);
         if (!name_entry) {
             continue;
@@ -308,7 +312,8 @@ static int s2n_cert_chain_and_key_set_names(struct s2n_cert_chain_and_key *chain
     return 0;
 }
 
-int s2n_cert_chain_and_key_load_pem(struct s2n_cert_chain_and_key *chain_and_key, const char *chain_pem, const char *private_key_pem)
+int s2n_cert_chain_and_key_load_pem(struct s2n_cert_chain_and_key *chain_and_key, const char *chain_pem,
+                                    const char *private_key_pem)
 {
     notnull_check(chain_and_key);
 
@@ -383,7 +388,8 @@ int s2n_cert_chain_and_key_free(struct s2n_cert_chain_and_key *cert_and_key)
     return 0;
 }
 
-int s2n_send_cert_chain(struct s2n_connection *conn, struct s2n_stuffer *out, struct s2n_cert_chain_and_key *chain_and_key)
+int s2n_send_cert_chain(struct s2n_connection *conn, struct s2n_stuffer *out,
+                        struct s2n_cert_chain_and_key *chain_and_key)
 {
     notnull_check(conn);
     notnull_check(out);
@@ -437,12 +443,14 @@ int s2n_send_empty_cert_chain(struct s2n_stuffer *out)
     return 0;
 }
 
-static int s2n_does_cert_san_match_hostname(const struct s2n_cert_chain_and_key *chain_and_key, const struct s2n_blob *dns_name)
+static int s2n_does_cert_san_match_hostname(const struct s2n_cert_chain_and_key *chain_and_key,
+                                            const struct s2n_blob *dns_name)
 {
     struct s2n_array *san_names = chain_and_key->san_names;
     for (int i = 0; i < s2n_array_num_elements(san_names); i++) {
         struct s2n_blob *san_name = s2n_array_get(san_names, i);
-        if ((dns_name->size == san_name->size) && (strncasecmp((const char *) dns_name->data, (const char *) san_name->data, dns_name->size) == 0)) {
+        if ((dns_name->size == san_name->size)
+            && (strncasecmp((const char *)dns_name->data, (const char *)san_name->data, dns_name->size) == 0)) {
             return 1;
         }
     }
@@ -450,12 +458,14 @@ static int s2n_does_cert_san_match_hostname(const struct s2n_cert_chain_and_key 
     return 0;
 }
 
-static int s2n_does_cert_cn_match_hostname(const struct s2n_cert_chain_and_key *chain_and_key, const struct s2n_blob *dns_name)
+static int s2n_does_cert_cn_match_hostname(const struct s2n_cert_chain_and_key *chain_and_key,
+                                           const struct s2n_blob *dns_name)
 {
     struct s2n_array *cn_names = chain_and_key->cn_names;
     for (int i = 0; i < s2n_array_num_elements(cn_names); i++) {
         struct s2n_blob *cn_name = s2n_array_get(cn_names, i);
-        if ((dns_name->size == cn_name->size) && (strncasecmp((const char *) dns_name->data, (const char *) cn_name->data, dns_name->size) == 0)) {
+        if ((dns_name->size == cn_name->size)
+            && (strncasecmp((const char *)dns_name->data, (const char *)cn_name->data, dns_name->size) == 0)) {
             return 1;
         }
     }
@@ -463,7 +473,8 @@ static int s2n_does_cert_cn_match_hostname(const struct s2n_cert_chain_and_key *
     return 0;
 }
 
-int s2n_cert_chain_and_key_matches_dns_name(const struct s2n_cert_chain_and_key *chain_and_key, const struct s2n_blob *dns_name)
+int s2n_cert_chain_and_key_matches_dns_name(const struct s2n_cert_chain_and_key *chain_and_key,
+                                            const struct s2n_blob *dns_name)
 {
     if (s2n_array_num_elements(chain_and_key->san_names) > 0) {
         if (s2n_does_cert_san_match_hostname(chain_and_key, dns_name)) {
@@ -488,10 +499,7 @@ int s2n_cert_chain_and_key_set_ctx(struct s2n_cert_chain_and_key *cert_and_key, 
     return 0;
 }
 
-void *s2n_cert_chain_and_key_get_ctx(struct s2n_cert_chain_and_key *cert_and_key)
-{
-    return cert_and_key->context;
-}
+void *s2n_cert_chain_and_key_get_ctx(struct s2n_cert_chain_and_key *cert_and_key) { return cert_and_key->context; }
 
 s2n_pkey_type s2n_cert_chain_and_key_get_pkey_type(struct s2n_cert_chain_and_key *chain_and_key)
 {

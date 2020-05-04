@@ -13,30 +13,27 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
+#include "tls/s2n_prf.h"
+
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include <string.h>
+#include <sys/param.h>
 
+#include "crypto/s2n_fips.h"
+#include "crypto/s2n_hash.h"
+#include "crypto/s2n_hmac.h"
+#include "crypto/s2n_openssl.h"
 #include "error/s2n_errno.h"
-
+#include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_connection.h"
-#include "tls/s2n_prf.h"
-
-#include "stuffer/s2n_stuffer.h"
-
-#include "crypto/s2n_hmac.h"
-#include "crypto/s2n_hash.h"
-#include "crypto/s2n_openssl.h"
-#include "crypto/s2n_fips.h"
-
-#include "utils/s2n_safety.h"
 #include "utils/s2n_blob.h"
 #include "utils/s2n_mem.h"
+#include "utils/s2n_safety.h"
 
 static int s2n_sslv3_prf(struct s2n_prf_working_space *ws, struct s2n_blob *secret, struct s2n_blob *seed_a,
-        struct s2n_blob *seed_b, struct s2n_blob *seed_c, struct s2n_blob *out)
+                         struct s2n_blob *seed_b, struct s2n_blob *seed_c, struct s2n_blob *out)
 {
     struct s2n_hash_state *md5 = &ws->ssl3.md5;
     struct s2n_hash_state *sha1 = &ws->ssl3.sha1;
@@ -100,14 +97,15 @@ static int s2n_evp_hmac_p_hash_digest_init(struct s2n_prf_working_space *ws)
     notnull_check(ws->tls.p_hash.evp_hmac.evp_digest.md);
     notnull_check(ws->tls.p_hash.evp_hmac.evp_digest.ctx);
     notnull_check(ws->tls.p_hash.evp_hmac.mac_key);
- 
+
     /* Ignore the MD5 check when in FIPS mode to comply with the TLS 1.0 RFC */
     if (s2n_is_in_fips_mode()) {
         GUARD(s2n_digest_allow_md5_for_fips(&ws->tls.p_hash.evp_hmac.evp_digest));
     }
 
-    GUARD_OSSL(EVP_DigestSignInit(ws->tls.p_hash.evp_hmac.evp_digest.ctx, NULL, ws->tls.p_hash.evp_hmac.evp_digest.md, NULL, ws->tls.p_hash.evp_hmac.mac_key),
-           S2N_ERR_P_HASH_INIT_FAILED);
+    GUARD_OSSL(EVP_DigestSignInit(ws->tls.p_hash.evp_hmac.evp_digest.ctx, NULL, ws->tls.p_hash.evp_hmac.evp_digest.md,
+                                  NULL, ws->tls.p_hash.evp_hmac.mac_key),
+               S2N_ERR_P_HASH_INIT_FAILED);
 
     return 0;
 }
@@ -116,32 +114,33 @@ static int s2n_evp_hmac_p_hash_init(struct s2n_prf_working_space *ws, s2n_hmac_a
 {
     /* Initialize the message digest */
     switch (alg) {
-    case S2N_HMAC_SSLv3_MD5:
-    case S2N_HMAC_MD5:
-        ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_md5();
-        break;
-    case S2N_HMAC_SSLv3_SHA1:
-    case S2N_HMAC_SHA1:
-        ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_sha1();
-        break;
-    case S2N_HMAC_SHA224:
-        ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_sha224();
-        break;
-    case S2N_HMAC_SHA256:
-        ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_sha256();
-        break;
-    case S2N_HMAC_SHA384:
-        ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_sha384();
-        break;
-    case S2N_HMAC_SHA512:
-        ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_sha512();
-        break;
-    default:
-        S2N_ERROR(S2N_ERR_P_HASH_INVALID_ALGORITHM);
+        case S2N_HMAC_SSLv3_MD5:
+        case S2N_HMAC_MD5:
+            ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_md5();
+            break;
+        case S2N_HMAC_SSLv3_SHA1:
+        case S2N_HMAC_SHA1:
+            ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_sha1();
+            break;
+        case S2N_HMAC_SHA224:
+            ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_sha224();
+            break;
+        case S2N_HMAC_SHA256:
+            ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_sha256();
+            break;
+        case S2N_HMAC_SHA384:
+            ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_sha384();
+            break;
+        case S2N_HMAC_SHA512:
+            ws->tls.p_hash.evp_hmac.evp_digest.md = EVP_sha512();
+            break;
+        default:
+            S2N_ERROR(S2N_ERR_P_HASH_INVALID_ALGORITHM);
     }
 
     /* Initialize the mac key using the provided secret */
-    notnull_check(ws->tls.p_hash.evp_hmac.mac_key = EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, NULL, secret->data, secret->size));
+    notnull_check(ws->tls.p_hash.evp_hmac.mac_key =
+                      EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, NULL, secret->data, secret->size));
 
     /* Initialize the message digest context with the above message digest and mac key */
     return s2n_evp_hmac_p_hash_digest_init(ws);
@@ -149,7 +148,8 @@ static int s2n_evp_hmac_p_hash_init(struct s2n_prf_working_space *ws, s2n_hmac_a
 
 static int s2n_evp_hmac_p_hash_update(struct s2n_prf_working_space *ws, const void *data, uint32_t size)
 {
-    GUARD_OSSL(EVP_DigestSignUpdate(ws->tls.p_hash.evp_hmac.evp_digest.ctx, data, (size_t)size), S2N_ERR_P_HASH_UPDATE_FAILED);
+    GUARD_OSSL(EVP_DigestSignUpdate(ws->tls.p_hash.evp_hmac.evp_digest.ctx, data, (size_t)size),
+               S2N_ERR_P_HASH_UPDATE_FAILED);
 
     return 0;
 }
@@ -159,14 +159,15 @@ static int s2n_evp_hmac_p_hash_digest(struct s2n_prf_working_space *ws, void *di
     /* EVP_DigestSign API's require size_t data structures */
     size_t digest_size = size;
 
-    GUARD_OSSL(EVP_DigestSignFinal(ws->tls.p_hash.evp_hmac.evp_digest.ctx, (unsigned char *)digest, &digest_size), S2N_ERR_P_HASH_FINAL_FAILED);
+    GUARD_OSSL(EVP_DigestSignFinal(ws->tls.p_hash.evp_hmac.evp_digest.ctx, (unsigned char *)digest, &digest_size),
+               S2N_ERR_P_HASH_FINAL_FAILED);
 
     return 0;
 }
 
 static int s2n_evp_hmac_p_hash_wipe(struct s2n_prf_working_space *ws)
 {
-  GUARD_OSSL(S2N_EVP_MD_CTX_RESET(ws->tls.p_hash.evp_hmac.evp_digest.ctx), S2N_ERR_P_HASH_WIPE_FAILED);
+    GUARD_OSSL(S2N_EVP_MD_CTX_RESET(ws->tls.p_hash.evp_hmac.evp_digest.ctx), S2N_ERR_P_HASH_WIPE_FAILED);
 
     return 0;
 }
@@ -233,20 +234,11 @@ static int s2n_hmac_p_hash_digest(struct s2n_prf_working_space *ws, void *digest
     return s2n_hmac_digest(&ws->tls.p_hash.s2n_hmac, digest, size);
 }
 
-static int s2n_hmac_p_hash_reset(struct s2n_prf_working_space *ws)
-{
-    return s2n_hmac_reset(&ws->tls.p_hash.s2n_hmac);
-}
+static int s2n_hmac_p_hash_reset(struct s2n_prf_working_space *ws) { return s2n_hmac_reset(&ws->tls.p_hash.s2n_hmac); }
 
-static int s2n_hmac_p_hash_cleanup(struct s2n_prf_working_space *ws)
-{
-    return s2n_hmac_p_hash_reset(ws);
-}
+static int s2n_hmac_p_hash_cleanup(struct s2n_prf_working_space *ws) { return s2n_hmac_p_hash_reset(ws); }
 
-static int s2n_hmac_p_hash_free(struct s2n_prf_working_space *ws)
-{
-    return s2n_hmac_free(&ws->tls.p_hash.s2n_hmac);
-}
+static int s2n_hmac_p_hash_free(struct s2n_prf_working_space *ws) { return s2n_hmac_free(&ws->tls.p_hash.s2n_hmac); }
 
 static const struct s2n_p_hash_hmac s2n_hmac = {
     .new = &s2n_hmac_p_hash_new,
@@ -258,8 +250,9 @@ static const struct s2n_p_hash_hmac s2n_hmac = {
     .free = &s2n_hmac_p_hash_free,
 };
 
-static int s2n_p_hash(struct s2n_prf_working_space *ws, s2n_hmac_algorithm alg, struct s2n_blob *secret, struct s2n_blob *label,
-                      struct s2n_blob *seed_a, struct s2n_blob *seed_b, struct s2n_blob *seed_c, struct s2n_blob *out)
+static int s2n_p_hash(struct s2n_prf_working_space *ws, s2n_hmac_algorithm alg, struct s2n_blob *secret,
+                      struct s2n_blob *label, struct s2n_blob *seed_a, struct s2n_blob *seed_b, struct s2n_blob *seed_c,
+                      struct s2n_blob *out)
 {
     uint8_t digest_size;
     GUARD(s2n_hmac_digest_size(alg, &digest_size));
@@ -318,27 +311,28 @@ static int s2n_p_hash(struct s2n_prf_working_space *ws, s2n_hmac_algorithm alg, 
     return 0;
 }
 
-const struct s2n_p_hash_hmac *s2n_get_hmac_implementation() {
+const struct s2n_p_hash_hmac *s2n_get_hmac_implementation()
+{
 #ifdef OPENSSL_IS_BORINGSSL
-  return &s2n_hmac;
+    return &s2n_hmac;
 #else
-  return s2n_is_in_fips_mode() ? &s2n_evp_hmac : &s2n_hmac;
+    return s2n_is_in_fips_mode() ? &s2n_evp_hmac : &s2n_hmac;
 #endif
 }
 
 int s2n_prf_new(struct s2n_connection *conn)
 {
-    /* Set p_hash_hmac_impl on initial prf creation. 
+    /* Set p_hash_hmac_impl on initial prf creation.
      * When in FIPS mode, the EVP API's must be used for the p_hash HMAC.
      */
     conn->prf_space.tls.p_hash_hmac_impl = s2n_get_hmac_implementation();
 
-    return conn->prf_space.tls.p_hash_hmac_impl->new(&conn->prf_space);
+    return conn->prf_space.tls.p_hash_hmac_impl->new (&conn->prf_space);
 }
 
 int s2n_prf_free(struct s2n_connection *conn)
 {
-    /* Ensure that p_hash_hmac_impl is set, as it may have been reset for prf_space on s2n_connection_wipe. 
+    /* Ensure that p_hash_hmac_impl is set, as it may have been reset for prf_space on s2n_connection_wipe.
      * When in FIPS mode, the EVP API's must be used for the p_hash HMAC.
      */
     conn->prf_space.tls.p_hash_hmac_impl = s2n_get_hmac_implementation();
@@ -346,8 +340,8 @@ int s2n_prf_free(struct s2n_connection *conn)
     return conn->prf_space.tls.p_hash_hmac_impl->free(&conn->prf_space);
 }
 
-static int s2n_prf(struct s2n_connection *conn, struct s2n_blob *secret, struct s2n_blob *label, struct s2n_blob *seed_a,
-                   struct s2n_blob *seed_b, struct s2n_blob *seed_c, struct s2n_blob *out)
+static int s2n_prf(struct s2n_connection *conn, struct s2n_blob *secret, struct s2n_blob *label,
+                   struct s2n_blob *seed_a, struct s2n_blob *seed_b, struct s2n_blob *seed_c, struct s2n_blob *out)
 {
     /* seed_a is always required, seed_b is optional, if seed_c is provided seed_b must also be provided */
     S2N_ERROR_IF(seed_a == NULL, S2N_ERR_PRF_INVALID_SEED);
@@ -365,17 +359,17 @@ static int s2n_prf(struct s2n_connection *conn, struct s2n_blob *secret, struct 
      */
     GUARD(s2n_blob_zero(out));
 
-    /* Ensure that p_hash_hmac_impl is set, as it may have been reset for prf_space on s2n_connection_wipe. 
+    /* Ensure that p_hash_hmac_impl is set, as it may have been reset for prf_space on s2n_connection_wipe.
      * When in FIPS mode, the EVP API's must be used for the p_hash HMAC.
      */
     conn->prf_space.tls.p_hash_hmac_impl = s2n_get_hmac_implementation();
 
     if (conn->actual_protocol_version == S2N_TLS12) {
-        return s2n_p_hash(&conn->prf_space, conn->secure.cipher_suite->prf_alg, secret, label, seed_a, seed_b,
-                          seed_c, out);
+        return s2n_p_hash(&conn->prf_space, conn->secure.cipher_suite->prf_alg, secret, label, seed_a, seed_b, seed_c,
+                          out);
     }
 
-    struct s2n_blob half_secret = {.data = secret->data,.size = (secret->size + 1) / 2 };
+    struct s2n_blob half_secret = {.data = secret->data, .size = (secret->size + 1) / 2};
 
     GUARD(s2n_p_hash(&conn->prf_space, S2N_HMAC_MD5, &half_secret, label, seed_a, seed_b, seed_c, out));
     half_secret.data += secret->size - half_secret.size;
@@ -405,19 +399,21 @@ int s2n_hybrid_prf_master_secret(struct s2n_connection *conn, struct s2n_blob *p
     uint8_t master_secret_label[] = "hybrid master secret";
     struct s2n_blob label = {.size = sizeof(master_secret_label) - 1, .data = master_secret_label};
 
-    return s2n_prf(conn, premaster_secret, &label, &client_random, &server_random, &conn->secure.client_key_exchange_message, &master_secret);
+    return s2n_prf(conn, premaster_secret, &label, &client_random, &server_random,
+                   &conn->secure.client_key_exchange_message, &master_secret);
 }
 
-static int s2n_sslv3_finished(struct s2n_connection *conn, uint8_t prefix[4], struct s2n_hash_state *md5, struct s2n_hash_state *sha1, uint8_t * out)
+static int s2n_sslv3_finished(struct s2n_connection *conn, uint8_t prefix[4], struct s2n_hash_state *md5,
+                              struct s2n_hash_state *sha1, uint8_t *out)
 {
-    uint8_t xorpad1[48] =
-        { 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36,
-        0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36
-    };
-    uint8_t xorpad2[48] =
-        { 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c,
-        0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c
-    };
+    uint8_t xorpad1[48] = {0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36,
+                           0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36,
+                           0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36,
+                           0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36};
+    uint8_t xorpad2[48] = {0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c,
+                           0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c,
+                           0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c,
+                           0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c, 0x5c};
     uint8_t *md5_digest = out;
     uint8_t *sha_digest = out + MD5_DIGEST_LENGTH;
 
@@ -450,22 +446,24 @@ static int s2n_sslv3_finished(struct s2n_connection *conn, uint8_t prefix[4], st
 
 static int s2n_sslv3_client_finished(struct s2n_connection *conn)
 {
-    uint8_t prefix[4] = { 0x43, 0x4c, 0x4e, 0x54 };
+    uint8_t prefix[4] = {0x43, 0x4c, 0x4e, 0x54};
 
     lte_check(MD5_DIGEST_LENGTH + SHA_DIGEST_LENGTH, sizeof(conn->handshake.client_finished));
     GUARD(s2n_hash_copy(&conn->handshake.prf_md5_hash_copy, &conn->handshake.md5));
     GUARD(s2n_hash_copy(&conn->handshake.prf_sha1_hash_copy, &conn->handshake.sha1));
-    return s2n_sslv3_finished(conn, prefix, &conn->handshake.prf_md5_hash_copy, &conn->handshake.prf_sha1_hash_copy, conn->handshake.client_finished);
+    return s2n_sslv3_finished(conn, prefix, &conn->handshake.prf_md5_hash_copy, &conn->handshake.prf_sha1_hash_copy,
+                              conn->handshake.client_finished);
 }
 
 static int s2n_sslv3_server_finished(struct s2n_connection *conn)
 {
-    uint8_t prefix[4] = { 0x53, 0x52, 0x56, 0x52 };
+    uint8_t prefix[4] = {0x53, 0x52, 0x56, 0x52};
 
     lte_check(MD5_DIGEST_LENGTH + SHA_DIGEST_LENGTH, sizeof(conn->handshake.server_finished));
     GUARD(s2n_hash_copy(&conn->handshake.prf_md5_hash_copy, &conn->handshake.md5));
     GUARD(s2n_hash_copy(&conn->handshake.prf_sha1_hash_copy, &conn->handshake.sha1));
-    return s2n_sslv3_finished(conn, prefix, &conn->handshake.prf_md5_hash_copy, &conn->handshake.prf_sha1_hash_copy, conn->handshake.server_finished);
+    return s2n_sslv3_finished(conn, prefix, &conn->handshake.prf_md5_hash_copy, &conn->handshake.prf_sha1_hash_copy,
+                              conn->handshake.server_finished);
 }
 
 int s2n_prf_client_finished(struct s2n_connection *conn)
@@ -490,18 +488,18 @@ int s2n_prf_client_finished(struct s2n_connection *conn)
     master_secret.size = sizeof(conn->secure.master_secret);
     if (conn->actual_protocol_version == S2N_TLS12) {
         switch (conn->secure.cipher_suite->prf_alg) {
-        case S2N_HMAC_SHA256:
-            GUARD(s2n_hash_copy(&conn->handshake.prf_tls12_hash_copy, &conn->handshake.sha256));
-            GUARD(s2n_hash_digest(&conn->handshake.prf_tls12_hash_copy, sha_digest, SHA256_DIGEST_LENGTH));
-            sha.size = SHA256_DIGEST_LENGTH;
-            break;
-        case S2N_HMAC_SHA384:
-            GUARD(s2n_hash_copy(&conn->handshake.prf_tls12_hash_copy, &conn->handshake.sha384));
-            GUARD(s2n_hash_digest(&conn->handshake.prf_tls12_hash_copy, sha_digest, SHA384_DIGEST_LENGTH));
-            sha.size = SHA384_DIGEST_LENGTH;
-            break;
-        default:
-            S2N_ERROR(S2N_ERR_PRF_INVALID_ALGORITHM);
+            case S2N_HMAC_SHA256:
+                GUARD(s2n_hash_copy(&conn->handshake.prf_tls12_hash_copy, &conn->handshake.sha256));
+                GUARD(s2n_hash_digest(&conn->handshake.prf_tls12_hash_copy, sha_digest, SHA256_DIGEST_LENGTH));
+                sha.size = SHA256_DIGEST_LENGTH;
+                break;
+            case S2N_HMAC_SHA384:
+                GUARD(s2n_hash_copy(&conn->handshake.prf_tls12_hash_copy, &conn->handshake.sha384));
+                GUARD(s2n_hash_digest(&conn->handshake.prf_tls12_hash_copy, sha_digest, SHA384_DIGEST_LENGTH));
+                sha.size = SHA384_DIGEST_LENGTH;
+                break;
+            default:
+                S2N_ERROR(S2N_ERR_PRF_INVALID_ALGORITHM);
         }
 
         sha.data = sha_digest;
@@ -543,18 +541,18 @@ int s2n_prf_server_finished(struct s2n_connection *conn)
     master_secret.size = sizeof(conn->secure.master_secret);
     if (conn->actual_protocol_version == S2N_TLS12) {
         switch (conn->secure.cipher_suite->prf_alg) {
-        case S2N_HMAC_SHA256:
-            GUARD(s2n_hash_copy(&conn->handshake.prf_tls12_hash_copy, &conn->handshake.sha256));
-            GUARD(s2n_hash_digest(&conn->handshake.prf_tls12_hash_copy, sha_digest, SHA256_DIGEST_LENGTH));
-            sha.size = SHA256_DIGEST_LENGTH;
-            break;
-        case S2N_HMAC_SHA384:
-            GUARD(s2n_hash_copy(&conn->handshake.prf_tls12_hash_copy, &conn->handshake.sha384));
-            GUARD(s2n_hash_digest(&conn->handshake.prf_tls12_hash_copy, sha_digest, SHA384_DIGEST_LENGTH));
-            sha.size = SHA384_DIGEST_LENGTH;
-            break;
-        default:
-            S2N_ERROR(S2N_ERR_PRF_INVALID_ALGORITHM);
+            case S2N_HMAC_SHA256:
+                GUARD(s2n_hash_copy(&conn->handshake.prf_tls12_hash_copy, &conn->handshake.sha256));
+                GUARD(s2n_hash_digest(&conn->handshake.prf_tls12_hash_copy, sha_digest, SHA256_DIGEST_LENGTH));
+                sha.size = SHA256_DIGEST_LENGTH;
+                break;
+            case S2N_HMAC_SHA384:
+                GUARD(s2n_hash_copy(&conn->handshake.prf_tls12_hash_copy, &conn->handshake.sha384));
+                GUARD(s2n_hash_digest(&conn->handshake.prf_tls12_hash_copy, sha_digest, SHA384_DIGEST_LENGTH));
+                sha.size = SHA384_DIGEST_LENGTH;
+                break;
+            default:
+                S2N_ERROR(S2N_ERR_PRF_INVALID_ALGORITHM);
         }
 
         sha.data = sha_digest;
@@ -608,9 +606,9 @@ static int s2n_prf_make_server_key(struct s2n_connection *conn, struct s2n_stuff
 
 int s2n_prf_key_expansion(struct s2n_connection *conn)
 {
-    struct s2n_blob client_random = {.data = conn->secure.client_random,.size = sizeof(conn->secure.client_random) };
-    struct s2n_blob server_random = {.data = conn->secure.server_random,.size = sizeof(conn->secure.server_random) };
-    struct s2n_blob master_secret = {.data = conn->secure.master_secret,.size = sizeof(conn->secure.master_secret) };
+    struct s2n_blob client_random = {.data = conn->secure.client_random, .size = sizeof(conn->secure.client_random)};
+    struct s2n_blob server_random = {.data = conn->secure.server_random, .size = sizeof(conn->secure.server_random)};
+    struct s2n_blob master_secret = {.data = conn->secure.master_secret, .size = sizeof(conn->secure.master_secret)};
     struct s2n_blob label, out;
     uint8_t key_expansion_label[] = "key expansion";
     uint8_t key_block[S2N_MAX_KEY_BLOCK_LEN];
@@ -639,13 +637,15 @@ int s2n_prf_key_expansion(struct s2n_connection *conn)
     uint8_t *client_mac_write_key = s2n_stuffer_raw_read(&key_material, mac_size);
     notnull_check(client_mac_write_key);
     GUARD(s2n_hmac_reset(&conn->secure.client_record_mac));
-    GUARD(s2n_hmac_init(&conn->secure.client_record_mac, conn->secure.cipher_suite->record_alg->hmac_alg, client_mac_write_key, mac_size));
+    GUARD(s2n_hmac_init(&conn->secure.client_record_mac, conn->secure.cipher_suite->record_alg->hmac_alg,
+                        client_mac_write_key, mac_size));
 
     /* Seed the server MAC */
     uint8_t *server_mac_write_key = s2n_stuffer_raw_read(&key_material, mac_size);
     notnull_check(server_mac_write_key);
     GUARD(s2n_hmac_reset(&conn->secure.server_record_mac));
-    GUARD(s2n_hmac_init(&conn->secure.server_record_mac, conn->secure.cipher_suite->record_alg->hmac_alg, server_mac_write_key, mac_size));
+    GUARD(s2n_hmac_init(&conn->secure.server_record_mac, conn->secure.cipher_suite->record_alg->hmac_alg,
+                        server_mac_write_key, mac_size));
 
     /* Make the client key */
     GUARD(s2n_prf_make_client_key(conn, &key_material));
@@ -653,12 +653,14 @@ int s2n_prf_key_expansion(struct s2n_connection *conn)
     /* Make the server key */
     GUARD(s2n_prf_make_server_key(conn, &key_material));
 
-    /* Composite CBC does MAC inside the cipher, pass it the MAC key. 
+    /* Composite CBC does MAC inside the cipher, pass it the MAC key.
      * Must happen after setting encryption/decryption keys.
      */
     if (conn->secure.cipher_suite->record_alg->cipher->type == S2N_COMPOSITE) {
-        GUARD(conn->secure.cipher_suite->record_alg->cipher->io.comp.set_mac_write_key(&conn->secure.server_key, server_mac_write_key, mac_size));
-        GUARD(conn->secure.cipher_suite->record_alg->cipher->io.comp.set_mac_write_key(&conn->secure.client_key, client_mac_write_key, mac_size));
+        GUARD(conn->secure.cipher_suite->record_alg->cipher->io.comp.set_mac_write_key(&conn->secure.server_key,
+                                                                                       server_mac_write_key, mac_size));
+        GUARD(conn->secure.cipher_suite->record_alg->cipher->io.comp.set_mac_write_key(&conn->secure.client_key,
+                                                                                       client_mac_write_key, mac_size));
     }
 
     /* TLS >= 1.1 has no implicit IVs for non AEAD ciphers */
@@ -668,22 +670,22 @@ int s2n_prf_key_expansion(struct s2n_connection *conn)
 
     uint32_t implicit_iv_size = 0;
     switch (conn->secure.cipher_suite->record_alg->cipher->type) {
-    case S2N_AEAD:
-        implicit_iv_size = conn->secure.cipher_suite->record_alg->cipher->io.aead.fixed_iv_size;
-        break;
-    case S2N_CBC:
-        implicit_iv_size = conn->secure.cipher_suite->record_alg->cipher->io.cbc.block_size;
-        break;
-    case S2N_COMPOSITE:
-        implicit_iv_size = conn->secure.cipher_suite->record_alg->cipher->io.comp.block_size;
-        break;
-    /* No-op for stream ciphers */
-    default:
-        break;
+        case S2N_AEAD:
+            implicit_iv_size = conn->secure.cipher_suite->record_alg->cipher->io.aead.fixed_iv_size;
+            break;
+        case S2N_CBC:
+            implicit_iv_size = conn->secure.cipher_suite->record_alg->cipher->io.cbc.block_size;
+            break;
+        case S2N_COMPOSITE:
+            implicit_iv_size = conn->secure.cipher_suite->record_alg->cipher->io.comp.block_size;
+            break;
+        /* No-op for stream ciphers */
+        default:
+            break;
     }
 
-    struct s2n_blob client_implicit_iv = {.data = conn->secure.client_implicit_iv,.size = implicit_iv_size };
-    struct s2n_blob server_implicit_iv = {.data = conn->secure.server_implicit_iv,.size = implicit_iv_size };
+    struct s2n_blob client_implicit_iv = {.data = conn->secure.client_implicit_iv, .size = implicit_iv_size};
+    struct s2n_blob server_implicit_iv = {.data = conn->secure.server_implicit_iv, .size = implicit_iv_size};
     GUARD(s2n_stuffer_read(&key_material, &client_implicit_iv));
     GUARD(s2n_stuffer_read(&key_material, &server_implicit_iv));
 

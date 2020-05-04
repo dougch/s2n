@@ -13,9 +13,9 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
 #include "tls/s2n_security_policies.h"
+
+#include "s2n_test.h"
 
 int main(int argc, char **argv)
 {
@@ -173,7 +173,8 @@ int main(int argc, char **argv)
 
         for (size_t i = 0; i < s2n_array_len(tls12_only_security_policy_strings); i++) {
             security_policy = NULL;
-            EXPECT_SUCCESS(s2n_find_security_policy_from_version(tls12_only_security_policy_strings[i], &security_policy));
+            EXPECT_SUCCESS(
+                s2n_find_security_policy_from_version(tls12_only_security_policy_strings[i], &security_policy));
             EXPECT_FALSE(s2n_security_policy_supports_tls13(security_policy));
         }
 

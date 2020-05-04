@@ -13,12 +13,12 @@
  * permissions and limitations under the License.
  */
 
-#include <sys/param.h>
-#include <stdint.h>
-
 #include "tls/extensions/s2n_client_ec_point_format.h"
-#include "tls/s2n_tls.h"
 
+#include <stdint.h>
+#include <sys/param.h>
+
+#include "tls/s2n_tls.h"
 #include "utils/s2n_safety.h"
 
 int s2n_recv_client_ec_point_formats(struct s2n_connection *conn, struct s2n_stuffer *extension)

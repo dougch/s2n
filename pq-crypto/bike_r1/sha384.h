@@ -20,8 +20,9 @@
 
 #pragma once
 
-#include "types.h"
 #include <stdlib.h>
+
+#include "types.h"
 
 #define NUM_OF_BLOCKS_IN_MB 4ULL
 

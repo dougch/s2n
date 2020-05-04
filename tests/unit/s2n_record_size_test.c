@@ -13,22 +13,19 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include <string.h>
-#include <stdio.h>
-
 #include <s2n.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "testlib/s2n_testlib.h"
-
-#include "tls/s2n_cipher_suites.h"
-#include "stuffer/s2n_stuffer.h"
 #include "crypto/s2n_cipher.h"
-#include "utils/s2n_random.h"
 #include "crypto/s2n_hmac.h"
-#include "tls/s2n_record.h"
+#include "s2n_test.h"
+#include "stuffer/s2n_stuffer.h"
+#include "testlib/s2n_testlib.h"
+#include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_prf.h"
+#include "tls/s2n_record.h"
+#include "utils/s2n_random.h"
 
 int main(int argc, char **argv)
 {
@@ -37,7 +34,7 @@ int main(int argc, char **argv)
     struct s2n_connection *conn;
     uint8_t mac_key[] = "sample mac key";
     uint8_t aes128_key[] = "123456789012345";
-    struct s2n_blob aes128 = {.data = aes128_key,.size = sizeof(aes128_key) };
+    struct s2n_blob aes128 = {.data = aes128_key, .size = sizeof(aes128_key)};
     uint8_t random_data[S2N_LARGE_RECORD_LENGTH + 1];
     struct s2n_blob r = {.data = random_data, .size = sizeof(random_data)};
 
@@ -52,8 +49,10 @@ int main(int argc, char **argv)
     conn->secure.cipher_suite->record_alg = &s2n_record_alg_aes128_sha;
     EXPECT_SUCCESS(conn->secure.cipher_suite->record_alg->cipher->init(&conn->secure.server_key));
     EXPECT_SUCCESS(conn->secure.cipher_suite->record_alg->cipher->init(&conn->secure.client_key));
-    EXPECT_SUCCESS(conn->secure.cipher_suite->record_alg->cipher->set_encryption_key(&conn->secure.server_key, &aes128));
-    EXPECT_SUCCESS(conn->secure.cipher_suite->record_alg->cipher->set_decryption_key(&conn->secure.client_key, &aes128));
+    EXPECT_SUCCESS(
+        conn->secure.cipher_suite->record_alg->cipher->set_encryption_key(&conn->secure.server_key, &aes128));
+    EXPECT_SUCCESS(
+        conn->secure.cipher_suite->record_alg->cipher->set_decryption_key(&conn->secure.client_key, &aes128));
     EXPECT_SUCCESS(s2n_hmac_init(&conn->secure.client_record_mac, S2N_HMAC_SHA1, mac_key, sizeof(mac_key)));
     EXPECT_SUCCESS(s2n_hmac_init(&conn->secure.server_record_mac, S2N_HMAC_SHA1, mac_key, sizeof(mac_key)));
     conn->actual_protocol_version = S2N_TLS11;
@@ -89,8 +88,8 @@ int main(int argc, char **argv)
     EXPECT_SUCCESS(conn->secure.cipher_suite->record_alg->cipher->destroy_key(&conn->secure.client_key));
     EXPECT_SUCCESS(s2n_connection_free(conn));
 
-    #define ONE_BLOCK 1024
-    #define ONE_HUNDRED_K 100000
+#define ONE_BLOCK     1024
+#define ONE_HUNDRED_K 100000
 
     /* Test s2n_record_max_write_payload_size() have proper checks in place */
     {
@@ -127,12 +126,11 @@ int main(int argc, char **argv)
 
         /* Test against different cipher suites */
         server_conn->actual_protocol_version = S2N_TLS13;
-        server_conn->server->cipher_suite =  &s2n_tls13_aes_128_gcm_sha256;
+        server_conn->server->cipher_suite = &s2n_tls13_aes_128_gcm_sha256;
         server_conn->max_outgoing_fragment_length = ONE_BLOCK;
         /* note that we are testing the current s2n_record_max_write_payload_size() behavior */
         EXPECT_SUCCESS(size = s2n_record_max_write_payload_size(server_conn));
-        EXPECT_EQUAL(size, ONE_BLOCK
-            - S2N_TLS_GCM_TAG_LEN /* S2N_TLS_GCM_TAG_LEN */
+        EXPECT_EQUAL(size, ONE_BLOCK - S2N_TLS_GCM_TAG_LEN /* S2N_TLS_GCM_TAG_LEN */
         );
 
         EXPECT_SUCCESS(s2n_connection_free(server_conn));
@@ -172,11 +170,12 @@ int main(int argc, char **argv)
 
         const uint16_t TLS13_RECORD_OVERHEAD = 22;
         EXPECT_SUCCESS(bytes_taken = s2n_record_write(server_conn, TLS_APPLICATION_DATA, &small_blob));
-        EXPECT_EQUAL(bytes_taken, ONE_BLOCK); /* we wrote the full blob size */
+        EXPECT_EQUAL(bytes_taken, ONE_BLOCK);                                         /* we wrote the full blob size */
         EXPECT_EQUAL(server_conn->wire_bytes_out, ONE_BLOCK + TLS13_RECORD_OVERHEAD); /* bytes on the wire */
 
         /* Check we get a friendly error if we use s2n_record_write again */
-        EXPECT_FAILURE_WITH_ERRNO(s2n_record_write(server_conn, TLS_APPLICATION_DATA, &small_blob), S2N_ERR_RECORD_STUFFER_NEEDS_DRAINING);
+        EXPECT_FAILURE_WITH_ERRNO(s2n_record_write(server_conn, TLS_APPLICATION_DATA, &small_blob),
+                                  S2N_ERR_RECORD_STUFFER_NEEDS_DRAINING);
         EXPECT_SUCCESS(s2n_stuffer_wipe(&server_conn->out));
         EXPECT_SUCCESS(s2n_record_write(server_conn, TLS_APPLICATION_DATA, &small_blob));
         EXPECT_SUCCESS(s2n_stuffer_wipe(&server_conn->out));
@@ -194,14 +193,17 @@ int main(int argc, char **argv)
         server_conn->wire_bytes_out = 0;
         EXPECT_SUCCESS(bytes_taken = s2n_record_write(server_conn, TLS_APPLICATION_DATA, &big_blob));
 
-        /* These values are subjected to change based on our implementation (which is currently not the true max frag len) */
+        /* These values are subjected to change based on our implementation (which is currently not the true max frag
+         * len) */
         const uint16_t CURRENT_MAX_FRAG_LEN = 16368;
         EXPECT_EQUAL(bytes_taken, CURRENT_MAX_FRAG_LEN); /* plaintext bytes taken */
-        EXPECT_EQUAL(server_conn->wire_bytes_out, CURRENT_MAX_FRAG_LEN + TLS13_RECORD_OVERHEAD); /* bytes sent on the wire */
+        EXPECT_EQUAL(server_conn->wire_bytes_out,
+                     CURRENT_MAX_FRAG_LEN + TLS13_RECORD_OVERHEAD); /* bytes sent on the wire */
 
         /* These are invariant regardless of s2n implementation */
         EXPECT_TRUE(bytes_taken <= S2N_TLS_MAXIMUM_FRAGMENT_LENGTH); /* Plaintext max size - 2^14 = 16384 */
-        EXPECT_TRUE(bytes_taken <= (S2N_TLS_MAXIMUM_FRAGMENT_LENGTH + 255)); /* Max record size for TLS 1.3 - 2^14 + 255 = 16639 */
+        EXPECT_TRUE(bytes_taken
+                    <= (S2N_TLS_MAXIMUM_FRAGMENT_LENGTH + 255)); /* Max record size for TLS 1.3 - 2^14 + 255 = 16639 */
         EXPECT_TRUE(server_conn->wire_bytes_out <= S2N_TLS_MAXIMUM_RECORD_LENGTH);
         EXPECT_TRUE(server_conn->wire_bytes_out <= S2N_TLS13_MAXIMUM_RECORD_LENGTH);
 
@@ -211,7 +213,8 @@ int main(int argc, char **argv)
         /* However, we bound the max fragment length based on the protocol specification */
         const uint16_t MAX_FORCED_OUTGOING_FRAGMENT_LENGTH = 16400;
 
-        server_conn->max_outgoing_fragment_length = MAX_FORCED_OUTGOING_FRAGMENT_LENGTH; /* Trigger fragment length bounding */
+        server_conn->max_outgoing_fragment_length =
+            MAX_FORCED_OUTGOING_FRAGMENT_LENGTH; /* Trigger fragment length bounding */
         EXPECT_SUCCESS(bytes_taken = s2n_record_write(server_conn, TLS_APPLICATION_DATA, &big_blob));
         EXPECT_EQUAL(bytes_taken, CURRENT_MAX_FRAG_LEN);
         EXPECT_SUCCESS(s2n_stuffer_wipe(&server_conn->out));

@@ -13,12 +13,12 @@
  * permissions and limitations under the License.
  */
 
-#include "tls/s2n_kem.h"
+#include "crypto/s2n_fips.h"
 #include "tests/testlib/s2n_nist_kats.h"
+#include "tls/s2n_kem.h"
 #include "utils/s2n_mem.h"
 #include "utils/s2n_random.h"
 #include "utils/s2n_safety.h"
-#include "crypto/s2n_fips.h"
 
 #define SEED_LENGTH 48
 uint8_t kat_entropy_buff[SEED_LENGTH] = {0};
@@ -94,7 +94,7 @@ int s2n_test_kem_with_kat(const struct s2n_kem *kem, const char *kat_file_name)
         eq_check(memcmp(pk_answer, pk, kem->public_key_length), 0);
         eq_check(memcmp(sk_answer, sk, kem->private_key_length), 0);
         eq_check(memcmp(ct_answer, ct, kem->ciphertext_length), 0);
-        eq_check(memcmp(ss_answer, server_shared_secret, kem->shared_secret_key_length ), 0);
+        eq_check(memcmp(ss_answer, server_shared_secret, kem->shared_secret_key_length), 0);
     }
     fclose(kat_file);
     free(ct);

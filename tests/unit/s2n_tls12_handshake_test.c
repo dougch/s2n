@@ -17,7 +17,6 @@
 
 #include "s2n_test.h"
 #include "testlib/s2n_testlib.h"
-
 #include "tls/s2n_connection.h"
 #include "tls/s2n_handshake.h"
 #include "utils/s2n_safety.h"
@@ -30,19 +29,20 @@ static message_type_t invalid_handshake[S2N_MAX_HANDSHAKE_LENGTH];
 static int expected_handler_called;
 static int unexpected_handler_called;
 
-static int s2n_test_handler(struct s2n_connection* conn)
+static int s2n_test_handler(struct s2n_connection *conn)
 {
     unexpected_handler_called = 1;
     return 0;
 }
 
-static int s2n_test_expected_handler(struct s2n_connection* conn)
+static int s2n_test_expected_handler(struct s2n_connection *conn)
 {
     expected_handler_called = 1;
     return 0;
 }
 
-static int s2n_setup_handler_to_expect(message_type_t expected, uint8_t direction) {
+static int s2n_setup_handler_to_expect(message_type_t expected, uint8_t direction)
+{
     for (int i = 0; i < sizeof(tls13_state_machine) / sizeof(struct s2n_handshake_action); i++) {
         tls13_state_machine[i].handler[0] = s2n_test_handler;
         tls13_state_machine[i].handler[1] = s2n_test_handler;
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     uint16_t valid_tls12_handshakes[S2N_HANDSHAKES_COUNT];
     int valid_tls12_handshakes_size = 0;
     for (int i = 0; i < S2N_HANDSHAKES_COUNT; i++) {
-        if( memcmp(handshakes, invalid_handshake, S2N_MAX_HANDSHAKE_LENGTH) != 0) {
+        if (memcmp(handshakes, invalid_handshake, S2N_MAX_HANDSHAKE_LENGTH) != 0) {
             valid_tls12_handshakes[valid_tls12_handshakes_size] = i;
             valid_tls12_handshakes_size++;
         }
@@ -242,10 +242,11 @@ int main(int argc, char **argv)
         conn->handshake.handshake_type = NEGOTIATED | FULL_HANDSHAKE;
         EXPECT_STRING_EQUAL("NEGOTIATED|FULL_HANDSHAKE", s2n_connection_get_handshake_type_name(conn));
 
-        const char* all_flags_handshake_type_name = "NEGOTIATED|FULL_HANDSHAKE|TLS12_PERFECT_FORWARD_SECRECY|"
-                "OCSP_STATUS|CLIENT_AUTH|WITH_SESSION_TICKET|NO_CLIENT_CERT";
-        conn->handshake.handshake_type = NEGOTIATED | FULL_HANDSHAKE | TLS12_PERFECT_FORWARD_SECRECY | \
-                OCSP_STATUS | CLIENT_AUTH | WITH_SESSION_TICKET | NO_CLIENT_CERT;
+        const char *all_flags_handshake_type_name =
+            "NEGOTIATED|FULL_HANDSHAKE|TLS12_PERFECT_FORWARD_SECRECY|"
+            "OCSP_STATUS|CLIENT_AUTH|WITH_SESSION_TICKET|NO_CLIENT_CERT";
+        conn->handshake.handshake_type = NEGOTIATED | FULL_HANDSHAKE | TLS12_PERFECT_FORWARD_SECRECY | OCSP_STATUS
+                                         | CLIENT_AUTH | WITH_SESSION_TICKET | NO_CLIENT_CERT;
         EXPECT_STRING_EQUAL(all_flags_handshake_type_name, s2n_connection_get_handshake_type_name(conn));
 
         const char *handshake_type_name;
@@ -270,19 +271,30 @@ int main(int argc, char **argv)
 
     /* Test: TLS 1.2 message types are all properly printed */
     {
-        uint32_t test_handshake_type = NEGOTIATED | FULL_HANDSHAKE | TLS12_PERFECT_FORWARD_SECRECY | \
-                OCSP_STATUS | CLIENT_AUTH | WITH_SESSION_TICKET;
-        const char* expected[] = { "CLIENT_HELLO",
-                "SERVER_HELLO", "SERVER_CERT", "SERVER_CERT_STATUS", "SERVER_KEY", "SERVER_CERT_REQ", "SERVER_HELLO_DONE",
-                "CLIENT_CERT", "CLIENT_KEY", "CLIENT_CERT_VERIFY", "CLIENT_CHANGE_CIPHER_SPEC", "CLIENT_FINISHED",
-                "SERVER_NEW_SESSION_TICKET", "SERVER_CHANGE_CIPHER_SPEC", "SERVER_FINISHED",
-                "APPLICATION_DATA" };
+        uint32_t test_handshake_type = NEGOTIATED | FULL_HANDSHAKE | TLS12_PERFECT_FORWARD_SECRECY | OCSP_STATUS
+                                       | CLIENT_AUTH | WITH_SESSION_TICKET;
+        const char *expected[] = {"CLIENT_HELLO",
+                                  "SERVER_HELLO",
+                                  "SERVER_CERT",
+                                  "SERVER_CERT_STATUS",
+                                  "SERVER_KEY",
+                                  "SERVER_CERT_REQ",
+                                  "SERVER_HELLO_DONE",
+                                  "CLIENT_CERT",
+                                  "CLIENT_KEY",
+                                  "CLIENT_CERT_VERIFY",
+                                  "CLIENT_CHANGE_CIPHER_SPEC",
+                                  "CLIENT_FINISHED",
+                                  "SERVER_NEW_SESSION_TICKET",
+                                  "SERVER_CHANGE_CIPHER_SPEC",
+                                  "SERVER_FINISHED",
+                                  "APPLICATION_DATA"};
 
         struct s2n_connection *conn = s2n_connection_new(S2N_SERVER);
 
         conn->handshake.handshake_type = test_handshake_type;
 
-        for (int i=0; i < sizeof(expected) / sizeof(char *); i++) {
+        for (int i = 0; i < sizeof(expected) / sizeof(char *); i++) {
             conn->handshake.message_number = i;
             EXPECT_STRING_EQUAL(expected[i], s2n_connection_get_last_message_name(conn));
         }

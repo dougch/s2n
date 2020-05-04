@@ -13,33 +13,29 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include "testlib/s2n_testlib.h"
-#include "tls/s2n_tls13.h"
-
-#include <unistd.h>
-#include <stdint.h>
-#include <fcntl.h>
 #include <errno.h>
-#include <stdlib.h>
-
+#include <fcntl.h>
 #include <s2n.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "crypto/s2n_fips.h"
-
-#include "tls/s2n_connection.h"
-#include "tls/s2n_handshake.h"
+#include "s2n_test.h"
+#include "testlib/s2n_testlib.h"
 #include "tls/s2n_cipher_preferences.h"
 #include "tls/s2n_cipher_suites.h"
+#include "tls/s2n_connection.h"
+#include "tls/s2n_handshake.h"
+#include "tls/s2n_tls13.h"
 #include "utils/s2n_safety.h"
 
 /* To get access to the static functions / variables we need to test */
 #include "tls/s2n_handshake_io.c"
 #include "tls/s2n_tls13_handshake.c"
 
-
-int s2n_test_client_auth_negotiation(struct s2n_config *server_config, struct s2n_config *client_config, struct s2n_cert_chain_and_key *ecdsa_cert, bool no_cert)
+int s2n_test_client_auth_negotiation(struct s2n_config *server_config, struct s2n_config *client_config,
+                                     struct s2n_cert_chain_and_key *ecdsa_cert, bool no_cert)
 {
     /* Set up client and server connections */
     struct s2n_connection *client_conn;
@@ -101,7 +97,7 @@ int s2n_test_client_auth_negotiation(struct s2n_config *server_config, struct s2
 }
 
 /* Test to verify the explicit ordering of client_auth handshake with and without a client
- * certificate. This includes some pre and post condition checks that pertain to client 
+ * certificate. This includes some pre and post condition checks that pertain to client
  * authentication between messages.
  */
 int s2n_test_client_auth_message_by_message(bool no_cert)
@@ -335,7 +331,7 @@ int main(int argc, char **argv)
 
         /* client_auth with no cert */
         EXPECT_SUCCESS(s2n_test_client_auth_negotiation(server_config, client_config, ecdsa_cert, 1));
-        
+
         /* client_auth with cert */
         EXPECT_SUCCESS(s2n_config_add_cert_chain_and_key_to_store(client_config, ecdsa_cert));
         EXPECT_SUCCESS(s2n_test_client_auth_negotiation(server_config, client_config, ecdsa_cert, 0));

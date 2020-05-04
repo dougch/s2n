@@ -14,12 +14,12 @@
  */
 #include "s2n_test.h"
 #include "testlib/s2n_testlib.h"
-#include "tls/s2n_tls.h"
-#include "tls/s2n_tls13.h"
 #include "tls/extensions/s2n_client_supported_groups.h"
 #include "tls/s2n_ecc_preferences.h"
+#include "tls/s2n_tls.h"
+#include "tls/s2n_tls13.h"
 
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
     struct s2n_connection *server_conn;
 
@@ -39,7 +39,8 @@ int main(int argc, char **argv)
         }
 
         EXPECT_FAILURE_WITH_ERRNO(s2n_choose_supported_group(server_conn, server_conn->secure.mutually_supported_groups,
-        &server_conn->secure.server_ecc_evp_params), S2N_ERR_ECDHE_UNSUPPORTED_CURVE);
+                                                             &server_conn->secure.server_ecc_evp_params),
+                                  S2N_ERR_ECDHE_UNSUPPORTED_CURVE);
 
         EXPECT_NULL(server_conn->secure.server_ecc_evp_params.negotiated_curve);
         EXPECT_SUCCESS(s2n_connection_free(server_conn));
@@ -57,11 +58,10 @@ int main(int argc, char **argv)
         server_conn->secure.mutually_supported_groups[1] = ecc_pref->ecc_curves[1];
 
         EXPECT_SUCCESS(s2n_choose_supported_group(server_conn, server_conn->secure.mutually_supported_groups,
-            &server_conn->secure.server_ecc_evp_params));
+                                                  &server_conn->secure.server_ecc_evp_params));
 
         EXPECT_EQUAL(server_conn->secure.server_ecc_evp_params.negotiated_curve, ecc_pref->ecc_curves[1]);
         EXPECT_SUCCESS(s2n_connection_free(server_conn));
-
     }
 
     {
@@ -78,14 +78,12 @@ int main(int argc, char **argv)
         }
 
         EXPECT_SUCCESS(s2n_choose_supported_group(server_conn, server_conn->secure.mutually_supported_groups,
-            &server_conn->secure.server_ecc_evp_params));
+                                                  &server_conn->secure.server_ecc_evp_params));
 
         EXPECT_EQUAL(server_conn->secure.server_ecc_evp_params.negotiated_curve, ecc_pref->ecc_curves[0]);
         EXPECT_SUCCESS(s2n_connection_free(server_conn));
-
     }
 
     END_TEST();
     return 0;
-
 }

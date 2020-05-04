@@ -13,15 +13,15 @@
  * permissions and limitations under the License.
  */
 
+#include "tls/s2n_config.h"
+
 #include <s2n.h>
 #include <stdlib.h>
-#include "s2n_test.h"
 
 #include "crypto/s2n_fips.h"
-
-#include "tls/s2n_config.h"
-#include "tls/s2n_ecc_preferences.h"
+#include "s2n_test.h"
 #include "tls/s2n_connection.h"
+#include "tls/s2n_ecc_preferences.h"
 #include "tls/s2n_security_policies.h"
 #include "tls/s2n_tls13.h"
 

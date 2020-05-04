@@ -13,24 +13,21 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include "testlib/s2n_testlib.h"
-
-#include <sys/wait.h>
-#include <unistd.h>
-#include <time.h>
-#include <stdint.h>
-
 #include <s2n.h>
+#include <stdint.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
 
+#include "s2n_test.h"
+#include "testlib/s2n_testlib.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_handshake.h"
 #include "tls/s2n_tls13.h"
 
 void mock_client(struct s2n_test_piped_io *piped_io)
 {
-    char buffer[0xffff] = { 0 };
+    char buffer[0xffff] = {0};
     struct s2n_connection *conn = NULL;
     struct s2n_config *config = NULL;
     s2n_blocked_status blocked;
@@ -83,7 +80,7 @@ void mock_client(struct s2n_test_piped_io *piped_io)
     }
 
     int shutdown_rc = -1;
-    while(shutdown_rc != 0) {
+    while (shutdown_rc != 0) {
         shutdown_rc = s2n_shutdown(conn, &blocked);
     }
 
@@ -134,8 +131,8 @@ int main(int argc, char **argv)
     EXPECT_NOT_NULL(conn = s2n_connection_new(S2N_SERVER));
 
     struct s2n_cert_chain_and_key *chain_and_key;
-    EXPECT_SUCCESS(s2n_test_cert_chain_and_key_new(&chain_and_key,
-                S2N_DEFAULT_TEST_CERT_CHAIN, S2N_DEFAULT_TEST_PRIVATE_KEY));
+    EXPECT_SUCCESS(
+        s2n_test_cert_chain_and_key_new(&chain_and_key, S2N_DEFAULT_TEST_CERT_CHAIN, S2N_DEFAULT_TEST_PRIVATE_KEY));
 
     EXPECT_NOT_NULL(config = s2n_config_new());
     EXPECT_SUCCESS(s2n_config_set_cipher_preferences(config, "default_tls13"));
@@ -152,7 +149,7 @@ int main(int argc, char **argv)
 
     char buffer[0xffff];
     for (int i = 1; i < 0xffff; i += 100) {
-        char * ptr = buffer;
+        char *ptr = buffer;
         int size = i;
 
         do {
@@ -161,7 +158,7 @@ int main(int argc, char **argv)
 
             size -= bytes_read;
             ptr += bytes_read;
-        } while(size);
+        } while (size);
 
         for (int j = 0; j < i; j++) {
             EXPECT_EQUAL(buffer[j], 33);
@@ -175,7 +172,7 @@ int main(int argc, char **argv)
     do {
         shutdown_rc = s2n_shutdown(conn, &blocked);
         EXPECT_TRUE(shutdown_rc == 0 || (errno == EAGAIN && blocked));
-    } while(shutdown_rc != 0);
+    } while (shutdown_rc != 0);
 
     EXPECT_SUCCESS(s2n_connection_free(conn));
     EXPECT_SUCCESS(s2n_config_free(config));
@@ -192,4 +189,3 @@ int main(int argc, char **argv)
     END_TEST();
     return 0;
 }
-

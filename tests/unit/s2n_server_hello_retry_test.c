@@ -13,13 +13,12 @@
  * permissions and limitations under the License.
  */
 
+#include "error/s2n_errno.h"
 #include "s2n_test.h"
-
 #include "testlib/s2n_testlib.h"
-
 #include "tls/extensions/s2n_key_share.h"
+#include "tls/extensions/s2n_server_key_share.h"
 #include "tls/extensions/s2n_server_supported_versions.h"
-
 #include "tls/s2n_cipher_preferences.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_ecc_preferences.h"
@@ -27,20 +26,16 @@
 #include "tls/s2n_tls13.h"
 #include "tls/s2n_tls13_handshake.h"
 
-#include "tls/extensions/s2n_server_key_share.h"
-
-#include "error/s2n_errno.h"
-
 const uint8_t SESSION_ID_SIZE = 1;
 const uint8_t COMPRESSION_METHOD_SIZE = 1;
 
 /* from RFC: https://tools.ietf.org/html/rfc8446#section-4.1.3*/
 const uint8_t hello_retry_request_random_test_buffer[S2N_TLS_RANDOM_DATA_LEN] = {
     0xCF, 0x21, 0xAD, 0x74, 0xE5, 0x9A, 0x61, 0x11, 0xBE, 0x1D, 0x8C, 0x02, 0x1E, 0x65, 0xB8, 0x91,
-    0xC2, 0xA2, 0x11, 0x16, 0x7A, 0xBB, 0x8C, 0x5E, 0x07, 0x9E, 0x09, 0xE2, 0xC8, 0xA8, 0x33, 0x9C
-};
+    0xC2, 0xA2, 0x11, 0x16, 0x7A, 0xBB, 0x8C, 0x5E, 0x07, 0x9E, 0x09, 0xE2, 0xC8, 0xA8, 0x33, 0x9C};
 
-struct client_hello_context {
+struct client_hello_context
+{
     int invocations;
 };
 
@@ -57,7 +52,6 @@ static int client_hello_detect_duplicate_calls(struct s2n_connection *conn, void
 
     return 0;
 }
-
 
 int main(int argc, char **argv)
 {
@@ -83,12 +77,8 @@ int main(int argc, char **argv)
 
         struct s2n_stuffer *server_stuffer = &server_conn->handshake.io;
 
-        uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN
-            + S2N_TLS_RANDOM_DATA_LEN
-            + SESSION_ID_SIZE
-            + server_conn->session_id_len
-            + S2N_TLS_CIPHER_SUITE_LEN
-            + COMPRESSION_METHOD_SIZE;
+        uint32_t total = S2N_TLS_PROTOCOL_VERSION_LEN + S2N_TLS_RANDOM_DATA_LEN + SESSION_ID_SIZE
+                         + server_conn->session_id_len + S2N_TLS_CIPHER_SUITE_LEN + COMPRESSION_METHOD_SIZE;
 
         server_conn->actual_protocol_version = S2N_TLS13;
         server_conn->secure.cipher_suite = &s2n_ecdhe_ecdsa_with_aes_128_gcm_sha256;
@@ -101,7 +91,7 @@ int main(int argc, char **argv)
         /* The client will need a key share extension to properly parse the hello */
         /* Total extension size + size of each extension */
         total += 2 + s2n_extensions_server_supported_versions_size(server_conn)
-                + s2n_extensions_server_key_share_send_size(server_conn);
+                 + s2n_extensions_server_key_share_send_size(server_conn);
 
         EXPECT_SUCCESS(s2n_server_hello_retry_send(server_conn));
         EXPECT_EQUAL(s2n_is_hello_retry_required(server_conn), 1);
@@ -233,7 +223,7 @@ int main(int argc, char **argv)
         EXPECT_NOT_NULL(server_conn = s2n_connection_new(S2N_SERVER));
         EXPECT_NOT_NULL(client_conn = s2n_connection_new(S2N_CLIENT));
 
-        struct s2n_stuffer* extension_stuffer = &server_conn->handshake.io;
+        struct s2n_stuffer *extension_stuffer = &server_conn->handshake.io;
 
         server_conn->secure.server_ecc_evp_params.negotiated_curve = s2n_all_supported_curves_list[0];
         server_conn->secure.client_ecc_evp_params[0].negotiated_curve = s2n_all_supported_curves_list[0];
@@ -243,13 +233,15 @@ int main(int argc, char **argv)
 
         S2N_STUFFER_READ_EXPECT_EQUAL(extension_stuffer, TLS_EXTENSION_KEY_SHARE, uint16);
         /* 4 = S2N_SIZE_OF_EXTENSION_TYPE + S2N_SIZE_OF_EXTENSION_DATA_SIZE */
-        S2N_STUFFER_READ_EXPECT_EQUAL(extension_stuffer, s2n_extensions_server_key_share_send_size(server_conn) - 4, uint16);
+        S2N_STUFFER_READ_EXPECT_EQUAL(extension_stuffer, s2n_extensions_server_key_share_send_size(server_conn) - 4,
+                                      uint16);
 
         client_conn->secure.client_ecc_evp_params[0].negotiated_curve = s2n_all_supported_curves_list[0];
         EXPECT_SUCCESS(s2n_ecc_evp_generate_ephemeral_key(&client_conn->secure.client_ecc_evp_params[0]));
 
         /* Setup the client to receive a HelloRetryRequest */
-        memcpy_check(client_conn->secure.server_random, hello_retry_request_random_test_buffer, S2N_TLS_RANDOM_DATA_LEN);
+        memcpy_check(client_conn->secure.server_random, hello_retry_request_random_test_buffer,
+                     S2N_TLS_RANDOM_DATA_LEN);
         client_conn->server_protocol_version = S2N_TLS13;
         EXPECT_SUCCESS(s2n_set_hello_retry_required(client_conn));
 
@@ -285,22 +277,22 @@ int main(int argc, char **argv)
          * generated from the transcript recreation.
          * https://tools.ietf.org/html/rfc8448#section-5 */
         S2N_BLOB_FROM_HEX(client_hello1,
-            "010000c00303cb34ecb1e78163"
-            "ba1c38c6dacb196a6dffa21a8d9912ec18a2ef6283"
-            "024dece7000006130113031302010000910000000b"
-            "0009000006736572766572ff01000100000a001400"
-            "12001d001700180019010001010102010301040023"
-            "0000003300260024001d002099381de560e4bd43d2"
-            "3d8e435a7dbafeb3c06e51c13cae4d5413691e529a"
-            "af2c002b0003020304000d0020001e040305030603"
-            "020308040805080604010501060102010402050206"
-            "020202002d00020101001c00024001");
+                          "010000c00303cb34ecb1e78163"
+                          "ba1c38c6dacb196a6dffa21a8d9912ec18a2ef6283"
+                          "024dece7000006130113031302010000910000000b"
+                          "0009000006736572766572ff01000100000a001400"
+                          "12001d001700180019010001010102010301040023"
+                          "0000003300260024001d002099381de560e4bd43d2"
+                          "3d8e435a7dbafeb3c06e51c13cae4d5413691e529a"
+                          "af2c002b0003020304000d0020001e040305030603"
+                          "020308040805080604010501060102010402050206"
+                          "020202002d00020101001c00024001");
 
         S2N_BLOB_FROM_HEX(client_hello1_expected_hash,
-            "4db255f30da09a407c841720be831a06a5aa9b3662a5f44267d37706b73c2b8c");
+                          "4db255f30da09a407c841720be831a06a5aa9b3662a5f44267d37706b73c2b8c");
 
         S2N_BLOB_FROM_HEX(synthetic_message_with_ch1_expected_hash,
-            "ff1135ed878322e29699da3e451d2f08bf11fc693038769978e75bb63304a225");
+                          "ff1135ed878322e29699da3e451d2f08bf11fc693038769978e75bb63304a225");
 
         EXPECT_SUCCESS(s2n_conn_update_handshake_hashes(conn, &client_hello1));
 
@@ -367,8 +359,9 @@ int main(int argc, char **argv)
 
         EXPECT_SUCCESS(s2n_connection_set_config(server_conn, server_config));
         EXPECT_SUCCESS(s2n_connection_set_config(client_conn, client_config));
-        struct client_hello_context client_hello_ctx = {.invocations = 0 };
-        EXPECT_SUCCESS(s2n_config_set_client_hello_cb(server_config, client_hello_detect_duplicate_calls, &client_hello_ctx));
+        struct client_hello_context client_hello_ctx = {.invocations = 0};
+        EXPECT_SUCCESS(
+            s2n_config_set_client_hello_cb(server_config, client_hello_detect_duplicate_calls, &client_hello_ctx));
 
         /* Send the first CH message */
         EXPECT_SUCCESS(s2n_client_hello_send(client_conn));
@@ -383,7 +376,7 @@ int main(int argc, char **argv)
         /* Before sending the second message, clear out the existing keys.
          * Otherwise we will leak memory in this test. */
         const struct s2n_ecc_preferences *ecc_pref = client_conn->config->ecc_preferences;
-        for (int i=0; i<ecc_pref->count; i++) {
+        for (int i = 0; i < ecc_pref->count; i++) {
             EXPECT_SUCCESS(s2n_ecc_evp_params_free(&client_conn->secure.client_ecc_evp_params[i]));
         }
 
@@ -402,7 +395,6 @@ int main(int argc, char **argv)
         EXPECT_SUCCESS(s2n_config_free(server_config));
         EXPECT_SUCCESS(s2n_cert_chain_and_key_free(tls13_chain_and_key));
     }
-
 
     EXPECT_SUCCESS(s2n_disable_tls13());
 
