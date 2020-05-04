@@ -34,6 +34,7 @@ __thread const char *s2n_debug_str;
 static const char *no_such_language = "Language is not supported for error translation";
 static const char *no_such_error = "Internal s2n error";
 
+/* clang-format off */
 /*
  * Define error entries with descriptions in this macro once
  * to generate code in next 2 following functions.
@@ -218,7 +219,9 @@ static const char *no_such_error = "Internal s2n error";
     ERR_ENTRY(S2N_ERR_UNSUPPORTED_EXTENSION, "Illegal use of a known, supported extension") \
     ERR_ENTRY(S2N_ERR_MISSING_EXTENSION, "Mandatory extension not received") \
     ERR_ENTRY(S2N_ERR_INVALID_SECURITY_POLICY, "Invalid security policy") \
-    
+
+/* clang-format on */
+
 #define ERR_STR_CASE(ERR, str) case ERR: return str;
 #define ERR_NAME_CASE(ERR, str) case ERR: return #ERR;
 
