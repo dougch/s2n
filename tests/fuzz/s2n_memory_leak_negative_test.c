@@ -15,16 +15,16 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <openssl/crypto.h>
+#include <openssl/err.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <openssl/crypto.h>
-#include <openssl/err.h>
-
 #include "api/s2n.h"
+#include "s2n_test.h"
 #include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_config.h"
@@ -33,7 +33,6 @@
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
 #include "utils/s2n_safety.h"
-#include "s2n_test.h"
 
 static char certificate_chain[] =
     "-----BEGIN CERTIFICATE-----\n"
@@ -133,82 +132,80 @@ static char dhparams[] =
 
 static int MAX_NEGOTIATION_ATTEMPTS = 10;
 
-int LLVMFuzzerInitialize(const uint8_t *buf, size_t len)
+int LLVMFuzzerInitialize( const uint8_t *buf, size_t len )
 {
 #ifdef S2N_TEST_IN_FIPS_MODE
     S2N_TEST_ENTER_FIPS_MODE();
 #endif
 
-    GUARD(s2n_init());
+    GUARD( s2n_init() );
     return 0;
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t *buf, size_t len)
+int LLVMFuzzerTestOneInput( const uint8_t *buf, size_t len )
 {
-    S2N_FUZZ_ENSURE_MIN_LEN(len, S2N_TLS_RECORD_HEADER_LENGTH);
+    S2N_FUZZ_ENSURE_MIN_LEN( len, S2N_TLS_RECORD_HEADER_LENGTH );
 
     /* Set up File Descriptors from client to server */
-    int client_to_server[2];
-    GUARD(pipe(client_to_server));
+    int client_to_server[ 2 ];
+    GUARD( pipe( client_to_server ) );
 
-    for (int i = 0; i < 2; i++) {
-        GUARD(fcntl(client_to_server[i], F_SETFL, fcntl(client_to_server[i], F_GETFL) | O_NONBLOCK));
+    for ( int i = 0; i < 2; i++ ) {
+        GUARD( fcntl( client_to_server[ i ], F_SETFL, fcntl( client_to_server[ i ], F_GETFL ) | O_NONBLOCK ) );
     }
 
     /* Set up Server Config */
     struct s2n_config *server_config;
-    notnull_check(server_config = s2n_config_new());
-    GUARD(s2n_config_add_cert_chain_and_key(server_config, certificate_chain, private_key));
-    GUARD(s2n_config_add_dhparams(server_config, dhparams));
+    notnull_check( server_config = s2n_config_new() );
+    GUARD( s2n_config_add_cert_chain_and_key( server_config, certificate_chain, private_key ) );
+    GUARD( s2n_config_add_dhparams( server_config, dhparams ) );
 
     /* Set up Server Connection */
     struct s2n_connection *server_conn;
-    notnull_check(server_conn = s2n_connection_new(S2N_SERVER));
-    GUARD(s2n_connection_set_read_fd(server_conn, client_to_server[0]));
-    GUARD(s2n_connection_set_config(server_conn, server_config));
-    GUARD(s2n_connection_set_blinding(server_conn, S2N_SELF_SERVICE_BLINDING));
+    notnull_check( server_conn = s2n_connection_new( S2N_SERVER ) );
+    GUARD( s2n_connection_set_read_fd( server_conn, client_to_server[ 0 ] ) );
+    GUARD( s2n_connection_set_config( server_conn, server_config ) );
+    GUARD( s2n_connection_set_blinding( server_conn, S2N_SELF_SERVICE_BLINDING ) );
     server_conn->delay = 0;
 
     /* Set Server write FD to -1, to skip writing data since server out data is never read. */
-    GUARD(s2n_connection_set_write_fd(server_conn, -1));
+    GUARD( s2n_connection_set_write_fd( server_conn, -1 ) );
 
     /* Set up Client Connection */
     struct s2n_config *client_config = s2n_config_new();
-    notnull_check(client_config);
-    s2n_config_disable_x509_verification(client_config);
+    notnull_check( client_config );
+    s2n_config_disable_x509_verification( client_config );
 
     struct s2n_connection *client_conn;
-    notnull_check(client_conn = s2n_connection_new(S2N_CLIENT));
-    GUARD(s2n_connection_set_config(client_conn, client_config));
-    GUARD(s2n_connection_set_write_fd(client_conn, client_to_server[1]));
+    notnull_check( client_conn = s2n_connection_new( S2N_CLIENT ) );
+    GUARD( s2n_connection_set_config( client_conn, client_config ) );
+    GUARD( s2n_connection_set_write_fd( client_conn, client_to_server[ 1 ] ) );
 
     /* Write data to client out file descriptor so that it is received by the server */
     struct s2n_stuffer *client_out = &client_conn->out;
-    GUARD(s2n_stuffer_write_bytes(client_out, buf, len));
+    GUARD( s2n_stuffer_write_bytes( client_out, buf, len ) );
     s2n_blocked_status client_blocked;
-    GUARD(s2n_flush(client_conn, &client_blocked));
-    eq_check(client_blocked, S2N_NOT_BLOCKED);
+    GUARD( s2n_flush( client_conn, &client_blocked ) );
+    eq_check( client_blocked, S2N_NOT_BLOCKED );
 
     /* Let Server receive data and attempt Negotiation */
-    int num_attempted_negotiations = 0;
+    int                num_attempted_negotiations = 0;
     s2n_blocked_status server_blocked;
     do {
-        s2n_negotiate(server_conn, &server_blocked);
+        s2n_negotiate( server_conn, &server_blocked );
         num_attempted_negotiations += 1;
-    } while(!server_blocked && num_attempted_negotiations < MAX_NEGOTIATION_ATTEMPTS);
+    } while ( !server_blocked && num_attempted_negotiations < MAX_NEGOTIATION_ATTEMPTS );
 
     /* Clean up */
-    GUARD(s2n_connection_wipe(server_conn));
-    GUARD(s2n_connection_wipe(client_conn));
+    GUARD( s2n_connection_wipe( server_conn ) );
+    GUARD( s2n_connection_wipe( client_conn ) );
 
-    for (int i = 0; i < 2; i++) {
-        GUARD(close(client_to_server[i]));
-    }
+    for ( int i = 0; i < 2; i++ ) { GUARD( close( client_to_server[ i ] ) ); }
 
-    GUARD(s2n_config_free(server_config));
-    GUARD(s2n_connection_free(server_conn));
-    GUARD(s2n_connection_free(client_conn));
-    GUARD(s2n_config_free(client_config));
+    GUARD( s2n_config_free( server_config ) );
+    GUARD( s2n_connection_free( server_conn ) );
+    GUARD( s2n_connection_free( client_conn ) );
+    GUARD( s2n_config_free( client_config ) );
 
     return 0;
 }

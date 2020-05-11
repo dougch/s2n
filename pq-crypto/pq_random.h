@@ -17,4 +17,4 @@
 
 #include "pq_utils.h"
 
-int get_random_bytes(OUT unsigned char *buffer, unsigned int num_bytes);
+int get_random_bytes( OUT unsigned char *buffer, unsigned int num_bytes );

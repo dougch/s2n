@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 #include "api/s2n.h"
+#include "s2n_test.h"
 #include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_config.h"
@@ -34,7 +35,6 @@
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
 #include "utils/s2n_safety.h"
-#include "s2n_test.h"
 
 static char certificate_chain[] =
     "-----BEGIN CERTIFICATE-----\n"
@@ -134,90 +134,85 @@ static char dhparams[] =
 
 static int MAX_NEGOTIATION_ATTEMPTS = 10;
 
-int buffer_read(void *io_context, uint8_t *buf, uint32_t len)
+int buffer_read( void *io_context, uint8_t *buf, uint32_t len )
 {
     struct s2n_stuffer *in_buf;
-    int n_read, n_avail;
+    int                 n_read, n_avail;
 
-    if (buf == NULL) {
-        return 0;
-    }
+    if ( buf == NULL ) { return 0; }
 
-    in_buf = (struct s2n_stuffer *) io_context;
-    if (in_buf == NULL) {
+    in_buf = ( struct s2n_stuffer * )io_context;
+    if ( in_buf == NULL ) {
         errno = EINVAL;
         return -1;
     }
 
     /* read the number of bytes requested or less if it isn't available */
-    n_avail = s2n_stuffer_data_available(in_buf);
-    n_read = (len < n_avail) ? len : n_avail;
+    n_avail = s2n_stuffer_data_available( in_buf );
+    n_read  = ( len < n_avail ) ? len : n_avail;
 
-    if (n_read == 0) {
+    if ( n_read == 0 ) {
         errno = EAGAIN;
         return -1;
     }
 
-    s2n_stuffer_read_bytes(in_buf, buf, n_read);
+    s2n_stuffer_read_bytes( in_buf, buf, n_read );
     return n_read;
 }
 
-int buffer_write(void *io_context, const uint8_t *buf, uint32_t len)
-{
-    return len;
-}
+int buffer_write( void *io_context, const uint8_t *buf, uint32_t len ) { return len; }
 
 static struct s2n_config *client_config;
 
 static void s2n_server_fuzz_atexit()
 {
-    s2n_config_free(client_config);
+    s2n_config_free( client_config );
     s2n_cleanup();
 }
 
-int LLVMFuzzerInitialize(const uint8_t *buf, size_t len)
+int LLVMFuzzerInitialize( const uint8_t *buf, size_t len )
 {
-    GUARD(s2n_init());
-    GUARD_STRICT(atexit(s2n_server_fuzz_atexit));
+    GUARD( s2n_init() );
+    GUARD_STRICT( atexit( s2n_server_fuzz_atexit ) );
 
     /* Set up Server Config */
-    notnull_check(client_config = s2n_config_new());
-    GUARD(s2n_config_add_cert_chain_and_key(client_config, certificate_chain, private_key));
-    GUARD(s2n_config_add_dhparams(client_config, dhparams));
+    notnull_check( client_config = s2n_config_new() );
+    GUARD( s2n_config_add_cert_chain_and_key( client_config, certificate_chain, private_key ) );
+    GUARD( s2n_config_add_dhparams( client_config, dhparams ) );
 
     return 0;
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t *buf, size_t len)
+int LLVMFuzzerTestOneInput( const uint8_t *buf, size_t len )
 {
-    S2N_FUZZ_ENSURE_MIN_LEN(len, S2N_TLS_RECORD_HEADER_LENGTH);
+    S2N_FUZZ_ENSURE_MIN_LEN( len, S2N_TLS_RECORD_HEADER_LENGTH );
 
-    struct s2n_stuffer in = {0};
-    GUARD(s2n_stuffer_alloc(&in, len));
-    GUARD(s2n_stuffer_write_bytes(&in, buf, len));
+    struct s2n_stuffer in = { 0 };
+    GUARD( s2n_stuffer_alloc( &in, len ) );
+    GUARD( s2n_stuffer_write_bytes( &in, buf, len ) );
 
     /* Set up Server Connection */
     struct s2n_connection *client_conn;
-    notnull_check(client_conn = s2n_connection_new(S2N_CLIENT));
-    GUARD(s2n_connection_set_recv_cb(client_conn, &buffer_read));
-    GUARD(s2n_connection_set_send_cb(client_conn, &buffer_write));
-    GUARD(s2n_connection_set_recv_ctx(client_conn, &in));
-    GUARD(s2n_connection_set_config(client_conn, client_config));
-    GUARD(s2n_connection_set_blinding(client_conn, S2N_SELF_SERVICE_BLINDING));
+    notnull_check( client_conn = s2n_connection_new( S2N_CLIENT ) );
+    GUARD( s2n_connection_set_recv_cb( client_conn, &buffer_read ) );
+    GUARD( s2n_connection_set_send_cb( client_conn, &buffer_write ) );
+    GUARD( s2n_connection_set_recv_ctx( client_conn, &in ) );
+    GUARD( s2n_connection_set_config( client_conn, client_config ) );
+    GUARD( s2n_connection_set_blinding( client_conn, S2N_SELF_SERVICE_BLINDING ) );
     client_conn->delay = 0;
 
     /* Let Server receive data and attempt Negotiation */
-    int num_attempted_negotiations = 0;
+    int                num_attempted_negotiations = 0;
     s2n_blocked_status client_blocked;
     do {
-        s2n_negotiate(client_conn, &client_blocked);
+        s2n_negotiate( client_conn, &client_blocked );
         num_attempted_negotiations += 1;
-    } while(!client_blocked && num_attempted_negotiations < MAX_NEGOTIATION_ATTEMPTS);
+    } while ( !client_blocked && num_attempted_negotiations < MAX_NEGOTIATION_ATTEMPTS );
 
     /* Clean up */
-    s2n_shutdown(client_conn, &client_blocked);
-    GUARD(s2n_connection_free(client_conn));
-    GUARD(s2n_stuffer_free(&in));
+    s2n_shutdown( client_conn, &client_blocked );
+    GUARD( s2n_connection_free( client_conn ) );
+    GUARD( s2n_stuffer_free( &in ) );
 
     return 0;
 }

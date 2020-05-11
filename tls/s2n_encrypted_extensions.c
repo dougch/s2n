@@ -14,16 +14,14 @@
  */
 
 #include "error/s2n_errno.h"
-#include "utils/s2n_safety.h"
 #include "stuffer/s2n_stuffer.h"
-
+#include "tls/extensions/s2n_server_alpn.h"
+#include "tls/extensions/s2n_server_max_fragment_length.h"
+#include "tls/extensions/s2n_server_sct_list.h"
+#include "tls/extensions/s2n_server_server_name.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls13.h"
-
-#include "tls/extensions/s2n_server_alpn.h"
-#include "tls/extensions/s2n_server_sct_list.h"
-#include "tls/extensions/s2n_server_max_fragment_length.h"
-#include "tls/extensions/s2n_server_server_name.h"
+#include "utils/s2n_safety.h"
 
 /**
   * Specified in https://tools.ietf.org/html/rfc8446#section-4.3.1
@@ -37,61 +35,59 @@
   * certificates.
   **/
 
-static int s2n_server_encrypted_extensions_parse(struct s2n_connection *conn, struct s2n_blob *extensions);
+static int s2n_server_encrypted_extensions_parse( struct s2n_connection *conn, struct s2n_blob *extensions );
 
-int s2n_encrypted_extensions_send_size(struct s2n_connection *conn)
+int s2n_encrypted_extensions_send_size( struct s2n_connection *conn )
 {
     /* Calculate size of encrypted extensions. */
     int total_size = 0;
 
-    total_size += s2n_server_extensions_server_name_send_size(conn);
-    total_size += s2n_server_extensions_max_fragment_length_send_size(conn);
-    total_size += s2n_server_extensions_alpn_send_size(conn);
+    total_size += s2n_server_extensions_server_name_send_size( conn );
+    total_size += s2n_server_extensions_max_fragment_length_send_size( conn );
+    total_size += s2n_server_extensions_alpn_send_size( conn );
 
     return total_size;
 }
 
-int s2n_encrypted_extensions_send(struct s2n_connection *conn)
+int s2n_encrypted_extensions_send( struct s2n_connection *conn )
 {
-    S2N_ERROR_IF(conn->actual_protocol_version != S2N_TLS13, S2N_ERR_BAD_MESSAGE);
+    S2N_ERROR_IF( conn->actual_protocol_version != S2N_TLS13, S2N_ERR_BAD_MESSAGE );
     struct s2n_stuffer *out = &conn->handshake.io;
 
-    const int total_size = s2n_encrypted_extensions_send_size(conn);
-    inclusive_range_check(0, total_size, 65535);
+    const int total_size = s2n_encrypted_extensions_send_size( conn );
+    inclusive_range_check( 0, total_size, 65535 );
 
     /* Write length of extensions */
-    GUARD(s2n_stuffer_write_uint16(out, total_size));
+    GUARD( s2n_stuffer_write_uint16( out, total_size ) );
 
-    if (total_size == 0) {
-        return 0;
-    }
+    if ( total_size == 0 ) { return 0; }
 
     /* Write the extensions to the out buffer. */
-    GUARD(s2n_server_extensions_server_name_send(conn, out));
-    GUARD(s2n_server_extensions_max_fragment_length_send(conn, out));
-    GUARD(s2n_server_extensions_alpn_send(conn, out));
+    GUARD( s2n_server_extensions_server_name_send( conn, out ) );
+    GUARD( s2n_server_extensions_max_fragment_length_send( conn, out ) );
+    GUARD( s2n_server_extensions_alpn_send( conn, out ) );
 
     return 0;
 }
 
-int s2n_encrypted_extensions_recv(struct s2n_connection *conn)
+int s2n_encrypted_extensions_recv( struct s2n_connection *conn )
 {
     struct s2n_stuffer *in = &conn->handshake.io;
-    uint16_t extensions_size;
+    uint16_t            extensions_size;
 
     /* Read encrypted extensions size */
-    S2N_ERROR_IF(2 > s2n_stuffer_data_available(in), S2N_ERR_BAD_MESSAGE);
-    GUARD(s2n_stuffer_read_uint16(in, &extensions_size));
-    S2N_ERROR_IF(extensions_size > s2n_stuffer_data_available(in), S2N_ERR_BAD_MESSAGE);
+    S2N_ERROR_IF( 2 > s2n_stuffer_data_available( in ), S2N_ERR_BAD_MESSAGE );
+    GUARD( s2n_stuffer_read_uint16( in, &extensions_size ) );
+    S2N_ERROR_IF( extensions_size > s2n_stuffer_data_available( in ), S2N_ERR_BAD_MESSAGE );
 
     /* Process extensions */
-    if (extensions_size > 0) {
-        struct s2n_blob extensions = {0};
-        extensions.size = extensions_size;
-        extensions.data = s2n_stuffer_raw_read(in, extensions.size);
-        notnull_check(extensions.data);
+    if ( extensions_size > 0 ) {
+        struct s2n_blob extensions = { 0 };
+        extensions.size            = extensions_size;
+        extensions.data            = s2n_stuffer_raw_read( in, extensions.size );
+        notnull_check( extensions.data );
 
-        GUARD(s2n_server_encrypted_extensions_parse(conn, &extensions));
+        GUARD( s2n_server_encrypted_extensions_parse( conn, &extensions ) );
     }
 
     return 0;
@@ -101,49 +97,49 @@ int s2n_encrypted_extensions_recv(struct s2n_connection *conn)
  * This will be updated with the following issue to consolidate the functions and remove
  * duplication: https://github.com/awslabs/s2n/issues/1189
  */
-int s2n_server_encrypted_extensions_parse(struct s2n_connection *conn, struct s2n_blob *extensions)
+int s2n_server_encrypted_extensions_parse( struct s2n_connection *conn, struct s2n_blob *extensions )
 {
-    struct s2n_stuffer in = {0};
+    struct s2n_stuffer in = { 0 };
 
-    GUARD(s2n_stuffer_init(&in, extensions));
-    GUARD(s2n_stuffer_write(&in, extensions));
+    GUARD( s2n_stuffer_init( &in, extensions ) );
+    GUARD( s2n_stuffer_write( &in, extensions ) );
 
-    while (s2n_stuffer_data_available(&in)) {
-        struct s2n_blob ext = {0};
-        uint16_t extension_type, extension_size;
-        struct s2n_stuffer extension = {0};
+    while ( s2n_stuffer_data_available( &in ) ) {
+        struct s2n_blob    ext = { 0 };
+        uint16_t           extension_type, extension_size;
+        struct s2n_stuffer extension = { 0 };
 
-        GUARD(s2n_stuffer_read_uint16(&in, &extension_type));
-        GUARD(s2n_stuffer_read_uint16(&in, &extension_size));
+        GUARD( s2n_stuffer_read_uint16( &in, &extension_type ) );
+        GUARD( s2n_stuffer_read_uint16( &in, &extension_size ) );
 
         ext.size = extension_size;
-        ext.data = s2n_stuffer_raw_read(&in, ext.size);
-        notnull_check(ext.data);
+        ext.data = s2n_stuffer_raw_read( &in, ext.size );
+        notnull_check( ext.data );
 
-        GUARD(s2n_stuffer_init(&extension, &ext));
-        GUARD(s2n_stuffer_write(&extension, &ext));
+        GUARD( s2n_stuffer_init( &extension, &ext ) );
+        GUARD( s2n_stuffer_write( &extension, &ext ) );
 
-        switch (extension_type) {
-        case TLS_EXTENSION_SERVER_NAME:
-            GUARD(s2n_recv_server_server_name(conn, &extension));
-            break;
-        case TLS_EXTENSION_ALPN:
-            GUARD(s2n_recv_server_alpn(conn, &extension));
-            break;
-        case TLS_EXTENSION_MAX_FRAG_LEN:
-            GUARD(s2n_recv_server_max_fragment_length(conn, &extension));
-            break;
-        /* Error on known extensions that are not supposed to appear in EE
+        switch ( extension_type ) {
+            case TLS_EXTENSION_SERVER_NAME:
+                GUARD( s2n_recv_server_server_name( conn, &extension ) );
+                break;
+            case TLS_EXTENSION_ALPN:
+                GUARD( s2n_recv_server_alpn( conn, &extension ) );
+                break;
+            case TLS_EXTENSION_MAX_FRAG_LEN:
+                GUARD( s2n_recv_server_max_fragment_length( conn, &extension ) );
+                break;
+            /* Error on known extensions that are not supposed to appear in EE
          * https://tools.ietf.org/html/rfc8446#page-37
          */
-        case TLS_EXTENSION_RENEGOTIATION_INFO:
-        case TLS_EXTENSION_STATUS_REQUEST:
-        case TLS_EXTENSION_SESSION_TICKET:
-        case TLS_EXTENSION_SUPPORTED_VERSIONS:
-        case TLS_EXTENSION_KEY_SHARE:
-        case TLS_EXTENSION_SCT_LIST:
-            S2N_ERROR(S2N_ERR_BAD_MESSAGE);
-            break;
+            case TLS_EXTENSION_RENEGOTIATION_INFO:
+            case TLS_EXTENSION_STATUS_REQUEST:
+            case TLS_EXTENSION_SESSION_TICKET:
+            case TLS_EXTENSION_SUPPORTED_VERSIONS:
+            case TLS_EXTENSION_KEY_SHARE:
+            case TLS_EXTENSION_SCT_LIST:
+                S2N_ERROR( S2N_ERR_BAD_MESSAGE );
+                break;
         }
     }
 

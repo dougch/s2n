@@ -13,158 +13,149 @@
  * permissions and limitations under the License.
  */
 
-#include <openssl/evp.h>
-#include <crypto/s2n_openssl_evp.h>
-#include <crypto/s2n_openssl_x509.h>
-
-#include "error/s2n_errno.h"
-#include "crypto/s2n_rsa_pss.h"
 #include "crypto/s2n_pkey.h"
 
+#include <crypto/s2n_openssl_evp.h>
+#include <crypto/s2n_openssl_x509.h>
+#include <openssl/evp.h>
+
+#include "crypto/s2n_rsa_pss.h"
+#include "error/s2n_errno.h"
 #include "utils/s2n_safety.h"
 
-int s2n_pkey_zero_init(struct s2n_pkey *pkey) 
+int s2n_pkey_zero_init( struct s2n_pkey *pkey )
 {
-    pkey->pkey = NULL;
-    pkey->size = NULL;
-    pkey->sign = NULL;
-    pkey->verify = NULL;
-    pkey->encrypt = NULL;
-    pkey->decrypt = NULL;
-    pkey->match = NULL;
-    pkey->free = NULL;
+    pkey->pkey      = NULL;
+    pkey->size      = NULL;
+    pkey->sign      = NULL;
+    pkey->verify    = NULL;
+    pkey->encrypt   = NULL;
+    pkey->decrypt   = NULL;
+    pkey->match     = NULL;
+    pkey->free      = NULL;
     pkey->check_key = NULL;
     return 0;
 }
 
-int s2n_pkey_setup_for_type(struct s2n_pkey *pkey, s2n_pkey_type pkey_type)
+int s2n_pkey_setup_for_type( struct s2n_pkey *pkey, s2n_pkey_type pkey_type )
 {
-    switch(pkey_type) {
+    switch ( pkey_type ) {
         case S2N_PKEY_TYPE_RSA:
-            return s2n_rsa_pkey_init(pkey);
+            return s2n_rsa_pkey_init( pkey );
         case S2N_PKEY_TYPE_ECDSA:
-            return s2n_ecdsa_pkey_init(pkey);
+            return s2n_ecdsa_pkey_init( pkey );
         case S2N_PKEY_TYPE_RSA_PSS:
-            return s2n_rsa_pss_pkey_init(pkey);
+            return s2n_rsa_pss_pkey_init( pkey );
         case S2N_PKEY_TYPE_SENTINEL:
         case S2N_PKEY_TYPE_UNKNOWN:
-            S2N_ERROR(S2N_ERR_CERT_TYPE_UNSUPPORTED);
+            S2N_ERROR( S2N_ERR_CERT_TYPE_UNSUPPORTED );
     }
-    S2N_ERROR(S2N_ERR_CERT_TYPE_UNSUPPORTED);
+    S2N_ERROR( S2N_ERR_CERT_TYPE_UNSUPPORTED );
 }
 
-int s2n_pkey_check_key_exists(const struct s2n_pkey *pkey)
+int s2n_pkey_check_key_exists( const struct s2n_pkey *pkey )
 {
-    notnull_check(pkey->pkey);
-    notnull_check(pkey->check_key);
+    notnull_check( pkey->pkey );
+    notnull_check( pkey->check_key );
 
-    return pkey->check_key(pkey);
+    return pkey->check_key( pkey );
 }
 
-int s2n_pkey_size(const struct s2n_pkey *pkey)
+int s2n_pkey_size( const struct s2n_pkey *pkey )
 {
-    notnull_check(pkey->size);
+    notnull_check( pkey->size );
 
-    return pkey->size(pkey);
+    return pkey->size( pkey );
 }
 
-int s2n_pkey_sign(const struct s2n_pkey *pkey, s2n_signature_algorithm sig_alg,
-        struct s2n_hash_state *digest, struct s2n_blob *signature)
+int s2n_pkey_sign( const struct s2n_pkey *pkey, s2n_signature_algorithm sig_alg, struct s2n_hash_state *digest,
+                   struct s2n_blob *signature )
 {
-    notnull_check(pkey->sign);
-    
-    return pkey->sign(pkey, sig_alg, digest, signature);
+    notnull_check( pkey->sign );
+
+    return pkey->sign( pkey, sig_alg, digest, signature );
 }
 
-int s2n_pkey_verify(const struct s2n_pkey *pkey, s2n_signature_algorithm sig_alg,
-        struct s2n_hash_state *digest, struct s2n_blob *signature)
+int s2n_pkey_verify( const struct s2n_pkey *pkey, s2n_signature_algorithm sig_alg, struct s2n_hash_state *digest,
+                     struct s2n_blob *signature )
 {
-    notnull_check(pkey);
-    notnull_check(pkey->verify);
+    notnull_check( pkey );
+    notnull_check( pkey->verify );
 
-    return pkey->verify(pkey, sig_alg, digest, signature);
+    return pkey->verify( pkey, sig_alg, digest, signature );
 }
 
-int s2n_pkey_encrypt(const struct s2n_pkey *pkey, struct s2n_blob *in, struct s2n_blob *out)
+int s2n_pkey_encrypt( const struct s2n_pkey *pkey, struct s2n_blob *in, struct s2n_blob *out )
 {
-    notnull_check(pkey->encrypt);
+    notnull_check( pkey->encrypt );
 
-    return pkey->encrypt(pkey, in, out);
+    return pkey->encrypt( pkey, in, out );
 }
 
-int s2n_pkey_decrypt(const struct s2n_pkey *pkey, struct s2n_blob *in, struct s2n_blob *out)
+int s2n_pkey_decrypt( const struct s2n_pkey *pkey, struct s2n_blob *in, struct s2n_blob *out )
 {
-    notnull_check(pkey->decrypt);
+    notnull_check( pkey->decrypt );
 
-    return pkey->decrypt(pkey, in, out);
+    return pkey->decrypt( pkey, in, out );
 }
 
-int s2n_pkey_match(const struct s2n_pkey *pub_key, const struct s2n_pkey *priv_key)
+int s2n_pkey_match( const struct s2n_pkey *pub_key, const struct s2n_pkey *priv_key )
 {
-    notnull_check(pub_key->match);
+    notnull_check( pub_key->match );
 
-    return pub_key->match(pub_key, priv_key);
+    return pub_key->match( pub_key, priv_key );
 }
 
-int s2n_pkey_free(struct s2n_pkey *key)
+int s2n_pkey_free( struct s2n_pkey *key )
 {
-    if (key != NULL && key->free != NULL) {
-        GUARD(key->free(key));
-    }
+    if ( key != NULL && key->free != NULL ) { GUARD( key->free( key ) ); }
 
-    if (key->pkey != NULL) {
-        EVP_PKEY_free(key->pkey);
+    if ( key->pkey != NULL ) {
+        EVP_PKEY_free( key->pkey );
         key->pkey = NULL;
     }
 
     return S2N_SUCCESS;
 }
 
-int s2n_asn1der_to_private_key(struct s2n_pkey *priv_key, struct s2n_blob *asn1der)
+int s2n_asn1der_to_private_key( struct s2n_pkey *priv_key, struct s2n_blob *asn1der )
 {
     uint8_t *key_to_parse = asn1der->data;
 
     /* Detect key type */
-    DEFER_CLEANUP(EVP_PKEY *evp_private_key = d2i_AutoPrivateKey(NULL, (const unsigned char **)(void *)&key_to_parse, asn1der->size),
-            EVP_PKEY_free_pointer);
-    S2N_ERROR_IF(evp_private_key == NULL, S2N_ERR_DECODE_PRIVATE_KEY);
-    
+    DEFER_CLEANUP( EVP_PKEY *evp_private_key =
+                       d2i_AutoPrivateKey( NULL, ( const unsigned char ** )( void * )&key_to_parse, asn1der->size ),
+                   EVP_PKEY_free_pointer );
+    S2N_ERROR_IF( evp_private_key == NULL, S2N_ERR_DECODE_PRIVATE_KEY );
+
     /* If key parsing is successful, d2i_AutoPrivateKey increments *key_to_parse to the byte following the parsed data */
     uint32_t parsed_len = key_to_parse - asn1der->data;
-    if (parsed_len != asn1der->size) {
-        S2N_ERROR(S2N_ERR_DECODE_PRIVATE_KEY);
-    }
+    if ( parsed_len != asn1der->size ) { S2N_ERROR( S2N_ERR_DECODE_PRIVATE_KEY ); }
 
     /* Initialize s2n_pkey according to key type */
-    int type = EVP_PKEY_base_id(evp_private_key);
-    
+    int type = EVP_PKEY_base_id( evp_private_key );
+
     int ret;
-    switch (type) {
-    case EVP_PKEY_RSA:
-        ret = s2n_rsa_pkey_init(priv_key);
-        if (ret != 0) {
+    switch ( type ) {
+        case EVP_PKEY_RSA:
+            ret = s2n_rsa_pkey_init( priv_key );
+            if ( ret != 0 ) { break; }
+            ret = s2n_evp_pkey_to_rsa_private_key( &priv_key->key.rsa_key, evp_private_key );
             break;
-        }
-        ret = s2n_evp_pkey_to_rsa_private_key(&priv_key->key.rsa_key, evp_private_key);
-        break;
-    case EVP_PKEY_RSA_PSS:
-        ret = s2n_rsa_pss_pkey_init(priv_key);
-        if (ret != 0) {
+        case EVP_PKEY_RSA_PSS:
+            ret = s2n_rsa_pss_pkey_init( priv_key );
+            if ( ret != 0 ) { break; }
+            ret = s2n_evp_pkey_to_rsa_pss_private_key( &priv_key->key.rsa_key, evp_private_key );
             break;
-        }
-        ret = s2n_evp_pkey_to_rsa_pss_private_key(&priv_key->key.rsa_key, evp_private_key);
-        break;
-    case EVP_PKEY_EC:
-        ret = s2n_ecdsa_pkey_init(priv_key);
-        if (ret != 0) {
+        case EVP_PKEY_EC:
+            ret = s2n_ecdsa_pkey_init( priv_key );
+            if ( ret != 0 ) { break; }
+            ret = s2n_evp_pkey_to_ecdsa_private_key( &priv_key->key.ecdsa_key, evp_private_key );
             break;
-        }
-        ret = s2n_evp_pkey_to_ecdsa_private_key(&priv_key->key.ecdsa_key, evp_private_key);
-        break;
-    default:
-        S2N_ERROR(S2N_ERR_DECODE_PRIVATE_KEY);
+        default:
+            S2N_ERROR( S2N_ERR_DECODE_PRIVATE_KEY );
     }
-    
+
     priv_key->pkey = evp_private_key;
     /* Reset to avoid DEFER_CLEANUP freeing our key */
     evp_private_key = NULL;
@@ -172,52 +163,47 @@ int s2n_asn1der_to_private_key(struct s2n_pkey *priv_key, struct s2n_blob *asn1d
     return ret;
 }
 
-int s2n_asn1der_to_public_key_and_type(struct s2n_pkey *pub_key, s2n_pkey_type *pkey_type_out, struct s2n_blob *asn1der)
+int s2n_asn1der_to_public_key_and_type( struct s2n_pkey *pub_key, s2n_pkey_type *pkey_type_out,
+                                        struct s2n_blob *asn1der )
 {
     uint8_t *cert_to_parse = asn1der->data;
-    DEFER_CLEANUP(X509 *cert = NULL, X509_free_pointer);
+    DEFER_CLEANUP( X509 *cert = NULL, X509_free_pointer );
 
-    cert = d2i_X509(NULL, (const unsigned char **)(void *)&cert_to_parse, asn1der->size);
-    S2N_ERROR_IF(cert == NULL, S2N_ERR_DECODE_CERTIFICATE);
+    cert = d2i_X509( NULL, ( const unsigned char ** )( void * )&cert_to_parse, asn1der->size );
+    S2N_ERROR_IF( cert == NULL, S2N_ERR_DECODE_CERTIFICATE );
 
     /* If cert parsing is successful, d2i_X509 increments *cert_to_parse to the byte following the parsed data */
     uint32_t parsed_len = cert_to_parse - asn1der->data;
-    S2N_ERROR_IF(parsed_len != asn1der->size, S2N_ERR_DECODE_CERTIFICATE);
+    S2N_ERROR_IF( parsed_len != asn1der->size, S2N_ERR_DECODE_CERTIFICATE );
 
-    DEFER_CLEANUP(EVP_PKEY *evp_public_key = X509_get_pubkey(cert), EVP_PKEY_free_pointer);
-    S2N_ERROR_IF(evp_public_key == NULL, S2N_ERR_DECODE_CERTIFICATE);
+    DEFER_CLEANUP( EVP_PKEY *evp_public_key = X509_get_pubkey( cert ), EVP_PKEY_free_pointer );
+    S2N_ERROR_IF( evp_public_key == NULL, S2N_ERR_DECODE_CERTIFICATE );
 
     /* Check for success in decoding certificate according to type */
-    int type = EVP_PKEY_base_id(evp_public_key);
+    int type = EVP_PKEY_base_id( evp_public_key );
 
     int ret;
-    switch (type) {
-    case EVP_PKEY_RSA:
-        ret = s2n_rsa_pkey_init(pub_key);
-        if (ret != 0) {
+    switch ( type ) {
+        case EVP_PKEY_RSA:
+            ret = s2n_rsa_pkey_init( pub_key );
+            if ( ret != 0 ) { break; }
+            ret            = s2n_evp_pkey_to_rsa_public_key( &pub_key->key.rsa_key, evp_public_key );
+            *pkey_type_out = S2N_PKEY_TYPE_RSA;
             break;
-        }
-        ret = s2n_evp_pkey_to_rsa_public_key(&pub_key->key.rsa_key, evp_public_key);
-        *pkey_type_out = S2N_PKEY_TYPE_RSA;
-        break;
-    case EVP_PKEY_RSA_PSS:
-        ret = s2n_rsa_pss_pkey_init(pub_key);
-        if (ret != 0) {
+        case EVP_PKEY_RSA_PSS:
+            ret = s2n_rsa_pss_pkey_init( pub_key );
+            if ( ret != 0 ) { break; }
+            ret            = s2n_evp_pkey_to_rsa_pss_public_key( &pub_key->key.rsa_key, evp_public_key );
+            *pkey_type_out = S2N_PKEY_TYPE_RSA_PSS;
             break;
-        }
-        ret = s2n_evp_pkey_to_rsa_pss_public_key(&pub_key->key.rsa_key, evp_public_key);
-        *pkey_type_out = S2N_PKEY_TYPE_RSA_PSS;
-        break;
-    case EVP_PKEY_EC:
-        ret = s2n_ecdsa_pkey_init(pub_key);
-        if (ret != 0) {
+        case EVP_PKEY_EC:
+            ret = s2n_ecdsa_pkey_init( pub_key );
+            if ( ret != 0 ) { break; }
+            ret            = s2n_evp_pkey_to_ecdsa_public_key( &pub_key->key.ecdsa_key, evp_public_key );
+            *pkey_type_out = S2N_PKEY_TYPE_ECDSA;
             break;
-        }
-        ret = s2n_evp_pkey_to_ecdsa_public_key(&pub_key->key.ecdsa_key, evp_public_key);
-        *pkey_type_out = S2N_PKEY_TYPE_ECDSA;
-        break;
-    default:
-        S2N_ERROR(S2N_ERR_DECODE_CERTIFICATE);
+        default:
+            S2N_ERROR( S2N_ERR_DECODE_CERTIFICATE );
     }
 
     pub_key->pkey = evp_public_key;
@@ -226,4 +212,3 @@ int s2n_asn1der_to_public_key_and_type(struct s2n_pkey *pub_key, s2n_pkey_type *
 
     return ret;
 }
-

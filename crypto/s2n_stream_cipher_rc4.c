@@ -17,78 +17,72 @@
 
 #include "crypto/s2n_cipher.h"
 #include "crypto/s2n_openssl.h"
-
-#include "utils/s2n_safety.h"
 #include "utils/s2n_blob.h"
+#include "utils/s2n_safety.h"
 
-static uint8_t s2n_stream_cipher_rc4_available()
-{
-    return (EVP_rc4() ? 1 : 0);
-}
+static uint8_t s2n_stream_cipher_rc4_available() { return ( EVP_rc4() ? 1 : 0 ); }
 
-static int s2n_stream_cipher_rc4_encrypt(struct s2n_session_key *key, struct s2n_blob *in, struct s2n_blob *out)
+static int s2n_stream_cipher_rc4_encrypt( struct s2n_session_key *key, struct s2n_blob *in, struct s2n_blob *out )
 {
-    gte_check(out->size, in->size);
+    gte_check( out->size, in->size );
 
     int len = out->size;
-    GUARD_OSSL(EVP_EncryptUpdate(key->evp_cipher_ctx, out->data, &len, in->data, in->size), S2N_ERR_ENCRYPT);
+    GUARD_OSSL( EVP_EncryptUpdate( key->evp_cipher_ctx, out->data, &len, in->data, in->size ), S2N_ERR_ENCRYPT );
 
-    S2N_ERROR_IF(len != in->size, S2N_ERR_ENCRYPT);
+    S2N_ERROR_IF( len != in->size, S2N_ERR_ENCRYPT );
 
     return 0;
 }
 
-static int s2n_stream_cipher_rc4_decrypt(struct s2n_session_key *key, struct s2n_blob *in, struct s2n_blob *out)
+static int s2n_stream_cipher_rc4_decrypt( struct s2n_session_key *key, struct s2n_blob *in, struct s2n_blob *out )
 {
-    gte_check(out->size, in->size);
+    gte_check( out->size, in->size );
 
     int len = out->size;
-    GUARD_OSSL(EVP_DecryptUpdate(key->evp_cipher_ctx, out->data, &len, in->data, in->size), S2N_ERR_ENCRYPT);
+    GUARD_OSSL( EVP_DecryptUpdate( key->evp_cipher_ctx, out->data, &len, in->data, in->size ), S2N_ERR_ENCRYPT );
 
-    S2N_ERROR_IF(len != in->size, S2N_ERR_ENCRYPT);
-
-    return 0;
-}
-
-static int s2n_stream_cipher_rc4_set_encryption_key(struct s2n_session_key *key, struct s2n_blob *in)
-{
-    eq_check(in->size, 16);
-    GUARD_OSSL(EVP_EncryptInit_ex(key->evp_cipher_ctx, EVP_rc4(), NULL, in->data, NULL), S2N_ERR_KEY_INIT);
+    S2N_ERROR_IF( len != in->size, S2N_ERR_ENCRYPT );
 
     return 0;
 }
 
-static int s2n_stream_cipher_rc4_set_decryption_key(struct s2n_session_key *key, struct s2n_blob *in)
+static int s2n_stream_cipher_rc4_set_encryption_key( struct s2n_session_key *key, struct s2n_blob *in )
 {
-    eq_check(in->size, 16);
-    GUARD_OSSL(EVP_DecryptInit_ex(key->evp_cipher_ctx, EVP_rc4(), NULL, in->data, NULL), S2N_ERR_KEY_INIT);
+    eq_check( in->size, 16 );
+    GUARD_OSSL( EVP_EncryptInit_ex( key->evp_cipher_ctx, EVP_rc4(), NULL, in->data, NULL ), S2N_ERR_KEY_INIT );
 
     return 0;
 }
 
-static int s2n_stream_cipher_rc4_init(struct s2n_session_key *key)
+static int s2n_stream_cipher_rc4_set_decryption_key( struct s2n_session_key *key, struct s2n_blob *in )
 {
-    s2n_evp_ctx_init(key->evp_cipher_ctx);
+    eq_check( in->size, 16 );
+    GUARD_OSSL( EVP_DecryptInit_ex( key->evp_cipher_ctx, EVP_rc4(), NULL, in->data, NULL ), S2N_ERR_KEY_INIT );
 
     return 0;
 }
 
-static int s2n_stream_cipher_rc4_destroy_key(struct s2n_session_key *key)
+static int s2n_stream_cipher_rc4_init( struct s2n_session_key *key )
 {
-    EVP_CIPHER_CTX_cleanup(key->evp_cipher_ctx);
+    s2n_evp_ctx_init( key->evp_cipher_ctx );
+
+    return 0;
+}
+
+static int s2n_stream_cipher_rc4_destroy_key( struct s2n_session_key *key )
+{
+    EVP_CIPHER_CTX_cleanup( key->evp_cipher_ctx );
 
     return 0;
 }
 
 struct s2n_cipher s2n_rc4 = {
-    .type = S2N_STREAM,
-    .key_material_size = 16,
-    .io.stream = {
-                  .decrypt = s2n_stream_cipher_rc4_decrypt,
-                  .encrypt = s2n_stream_cipher_rc4_encrypt},
-    .is_available = s2n_stream_cipher_rc4_available,
-    .init = s2n_stream_cipher_rc4_init,
+    .type               = S2N_STREAM,
+    .key_material_size  = 16,
+    .io.stream          = { .decrypt = s2n_stream_cipher_rc4_decrypt, .encrypt = s2n_stream_cipher_rc4_encrypt },
+    .is_available       = s2n_stream_cipher_rc4_available,
+    .init               = s2n_stream_cipher_rc4_init,
     .set_decryption_key = s2n_stream_cipher_rc4_set_decryption_key,
     .set_encryption_key = s2n_stream_cipher_rc4_set_encryption_key,
-    .destroy_key = s2n_stream_cipher_rc4_destroy_key,
+    .destroy_key        = s2n_stream_cipher_rc4_destroy_key,
 };

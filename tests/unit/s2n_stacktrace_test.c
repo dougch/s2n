@@ -13,39 +13,35 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include "utils/s2n_blob.h"
-
 #include <s2n.h>
 
-int raises_error()
-{
-  S2N_ERROR(S2N_ERR_INVALID_ARGUMENT);
-}
+#include "s2n_test.h"
+#include "utils/s2n_blob.h"
 
-int main(int argc, char **argv)
+int raises_error() { S2N_ERROR( S2N_ERR_INVALID_ARGUMENT ); }
+
+int main( int argc, char **argv )
 {
     BEGIN_TEST();
-    EXPECT_SUCCESS(s2n_stack_traces_enabled_set(true));
+    EXPECT_SUCCESS( s2n_stack_traces_enabled_set( true ) );
     struct s2n_stacktrace trace;
     /* If nothing has errored yet, we have no stacktrace */
-    EXPECT_SUCCESS(s2n_get_stacktrace(&trace));
-    EXPECT_NULL(trace.trace);
-    EXPECT_EQUAL(trace.trace_size, 0);
+    EXPECT_SUCCESS( s2n_get_stacktrace( &trace ) );
+    EXPECT_NULL( trace.trace );
+    EXPECT_EQUAL( trace.trace_size, 0 );
 
     /* Raise an error, and see that it generates a stacktrace */
-    EXPECT_FAILURE(raises_error());
-    EXPECT_SUCCESS(s2n_get_stacktrace(&trace));
-    EXPECT_NOT_NULL(trace.trace);
-    EXPECT_NOT_EQUAL(trace.trace_size, 0);
+    EXPECT_FAILURE( raises_error() );
+    EXPECT_SUCCESS( s2n_get_stacktrace( &trace ) );
+    EXPECT_NOT_NULL( trace.trace );
+    EXPECT_NOT_EQUAL( trace.trace_size, 0 );
 
     /* Test printing the stacktrace. */
-    FILE *stream = fopen("/dev/null","w");
-    EXPECT_SUCCESS(s2n_print_stacktrace(stream));
-    fclose(stream);
+    FILE *stream = fopen( "/dev/null", "w" );
+    EXPECT_SUCCESS( s2n_print_stacktrace( stream ) );
+    fclose( stream );
 
     /* Free the stacktrace to avoid memory leaks */
-    EXPECT_SUCCESS(s2n_free_stacktrace());
+    EXPECT_SUCCESS( s2n_free_stacktrace() );
     END_TEST();
 }

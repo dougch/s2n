@@ -2,7 +2,7 @@
 #define CT_VERIF_H
 
 #ifndef COMPILE
-#include <smack.h>
+#    include <smack.h>
 
 /*
 Security levels are the following.
@@ -23,32 +23,31 @@ We omit annotations for private since nothing needs to be generated
 */
 
 /* The abstract prototypes that form our annotation language */
-void public_in(smack_value_t);
-void public_out(smack_value_t);
-void declassified_out(smack_value_t);
-void public_invariant(smack_value_t);
-void benign(void);
+void public_in( smack_value_t );
+void public_out( smack_value_t );
+void declassified_out( smack_value_t );
+void public_invariant( smack_value_t );
+void benign( void );
 
-#define __disjoint_regions(addr1,len1,addr2,len2) \
-  assume(addr1 + len1 * sizeof(*addr1) < addr2 || \
-         addr2 + len2 * sizeof(*addr2) < addr1)
+#    define __disjoint_regions( addr1, len1, addr2, len2 ) \
+        assume( addr1 + len1 * sizeof( *addr1 ) < addr2 || addr2 + len2 * sizeof( *addr2 ) < addr1 )
 
 #else /* COMPILE */
 
-#undef __SMACK_value
+#    undef __SMACK_value
 
-#define __VERIFIER_assume(__a)
-#define __SMACK_value(__a)
-#define __SMACK_return_value(__a)
-#define __SMACK_values(__a,__b)
-#define __SMACK_return_values(__a)
+#    define __VERIFIER_assume( __a )
+#    define __SMACK_value( __a )
+#    define __SMACK_return_value( __a )
+#    define __SMACK_values( __a, __b )
+#    define __SMACK_return_values( __a )
 
-#define public_in(__a)
-#define public_out(__a)
-#define declassified_out(__a)
-#define public_invariant(__a)
+#    define public_in( __a )
+#    define public_out( __a )
+#    define declassified_out( __a )
+#    define public_invariant( __a )
 
-#define __disjoint_regions(addr1,len1,addr2,len2)
+#    define __disjoint_regions( addr1, len1, addr2, len2 )
 
 #endif /* COMPILE */
 #endif /* CT_VERIF_H */

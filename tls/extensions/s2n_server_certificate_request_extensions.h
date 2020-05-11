@@ -13,12 +13,11 @@
  * permissions and limitations under the License.
  */
 
-
 #pragma once
 
-#include "tls/s2n_connection.h"
 #include "stuffer/s2n_stuffer.h"
+#include "tls/s2n_connection.h"
 
-int s2n_server_certificate_request_extensions_recv(struct s2n_connection *conn, struct s2n_blob *extensions);
-int s2n_server_certificate_request_extensions_send(struct s2n_connection *conn, struct s2n_stuffer *out);
-int s2n_server_certificate_request_extensions_size(struct s2n_connection *conn);
+int s2n_server_certificate_request_extensions_recv( struct s2n_connection *conn, struct s2n_blob *extensions );
+int s2n_server_certificate_request_extensions_send( struct s2n_connection *conn, struct s2n_stuffer *out );
+int s2n_server_certificate_request_extensions_size( struct s2n_connection *conn );

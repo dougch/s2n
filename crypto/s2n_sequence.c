@@ -16,22 +16,19 @@
 #include "crypto/s2n_sequence.h"
 
 #include "error/s2n_errno.h"
-
 #include "utils/s2n_blob.h"
 
-int s2n_increment_sequence_number(struct s2n_blob *sequence_number)
+int s2n_increment_sequence_number( struct s2n_blob *sequence_number )
 {
-    for (int i = sequence_number->size - 1; i >= 0; i--) {
-        sequence_number->data[i] += 1;
-        if (sequence_number->data[i]) {
-            break;
-        }
+    for ( int i = sequence_number->size - 1; i >= 0; i-- ) {
+        sequence_number->data[ i ] += 1;
+        if ( sequence_number->data[ i ] ) { break; }
 
         /* RFC 5246 6.1: If a TLS implementation would need to wrap a sequence number, it must
          * renegotiate instead. We don't support renegotiation. Caller needs to create a new session.
          * This condition is very unlikely. It requires 2^64 - 1 records to be sent.
          */
-        S2N_ERROR_IF(i == 0, S2N_ERR_RECORD_LIMIT);
+        S2N_ERROR_IF( i == 0, S2N_ERR_RECORD_LIMIT );
 
         /* seq[i] wrapped, so let it carry */
     }

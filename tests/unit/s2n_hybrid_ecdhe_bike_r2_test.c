@@ -14,28 +14,30 @@
  *
  */
 
+#include "crypto/s2n_fips.h"
 #include "s2n_test.h"
 #include "tests/testlib/s2n_testlib.h"
-#include "tls/s2n_kem.h"
 #include "tls/s2n_cipher_suites.h"
-#include "crypto/s2n_fips.h"
+#include "tls/s2n_kem.h"
 
 #define RSP_FILE_NAME "kats/hybrid_ecdhe_bike_r2.kat"
 #define SERVER_KEY_MESSAGE_LENGTH 3279
 #define CLIENT_KEY_MESSAGE_LENGTH 3014
 
-int main(int argc, char **argv) {
+int main( int argc, char **argv )
+{
     BEGIN_TEST();
 
-#if !defined(S2N_NO_PQ)
+#if !defined( S2N_NO_PQ )
 
-    if (s2n_is_in_fips_mode()) {
+    if ( s2n_is_in_fips_mode() ) {
         /* There is no support for PQ KEMs while in FIPS mode */
         END_TEST();
     }
 
-    EXPECT_SUCCESS(s2n_test_hybrid_ecdhe_kem_with_kat(&s2n_bike1_l1_r2, &s2n_ecdhe_bike_rsa_with_aes_256_gcm_sha384,
-            "KMS-PQ-TLS-1-0-2020-02", RSP_FILE_NAME, SERVER_KEY_MESSAGE_LENGTH, CLIENT_KEY_MESSAGE_LENGTH));
+    EXPECT_SUCCESS( s2n_test_hybrid_ecdhe_kem_with_kat( &s2n_bike1_l1_r2, &s2n_ecdhe_bike_rsa_with_aes_256_gcm_sha384,
+                                                        "KMS-PQ-TLS-1-0-2020-02", RSP_FILE_NAME,
+                                                        SERVER_KEY_MESSAGE_LENGTH, CLIENT_KEY_MESSAGE_LENGTH ) );
 
 #endif
 

@@ -13,34 +13,33 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
 #include "crypto/s2n_fips.h"
 #include "pq-crypto/bike_r1/bike_r1_kem.h"
+#include "s2n_test.h"
 
-int main(int argc, char **argv)
+int main( int argc, char **argv )
 {
     BEGIN_TEST();
 
-#if !defined(S2N_NO_PQ)
+#if !defined( S2N_NO_PQ )
 
-    unsigned char publicKey[BIKE1_L1_R1_PUBLIC_KEY_BYTES];
-    unsigned char privateKey[BIKE1_L1_R1_SECRET_KEY_BYTES];
-    unsigned char clientSharedSecretPlaintext[BIKE1_L1_R1_SHARED_SECRET_BYTES];
-    unsigned char serverSharedSecretPlaintext[BIKE1_L1_R1_SHARED_SECRET_BYTES];
-    unsigned char encryptedSecret[BIKE1_L1_R1_CIPHERTEXT_BYTES];
+    unsigned char publicKey[ BIKE1_L1_R1_PUBLIC_KEY_BYTES ];
+    unsigned char privateKey[ BIKE1_L1_R1_SECRET_KEY_BYTES ];
+    unsigned char clientSharedSecretPlaintext[ BIKE1_L1_R1_SHARED_SECRET_BYTES ];
+    unsigned char serverSharedSecretPlaintext[ BIKE1_L1_R1_SHARED_SECRET_BYTES ];
+    unsigned char encryptedSecret[ BIKE1_L1_R1_CIPHERTEXT_BYTES ];
 
-    if (s2n_is_in_fips_mode()) {
+    if ( s2n_is_in_fips_mode() ) {
         /* There is no support for PQ KEMs while in FIPS mode */
         END_TEST();
     }
 
-    EXPECT_SUCCESS(BIKE1_L1_R1_crypto_kem_keypair(publicKey, privateKey));
-    EXPECT_SUCCESS(BIKE1_L1_R1_crypto_kem_enc(encryptedSecret, clientSharedSecretPlaintext, publicKey));
-    EXPECT_SUCCESS(BIKE1_L1_R1_crypto_kem_dec(serverSharedSecretPlaintext, encryptedSecret, privateKey));
-    EXPECT_BYTEARRAY_EQUAL(serverSharedSecretPlaintext, clientSharedSecretPlaintext, BIKE1_L1_R1_SHARED_SECRET_BYTES);
+    EXPECT_SUCCESS( BIKE1_L1_R1_crypto_kem_keypair( publicKey, privateKey ) );
+    EXPECT_SUCCESS( BIKE1_L1_R1_crypto_kem_enc( encryptedSecret, clientSharedSecretPlaintext, publicKey ) );
+    EXPECT_SUCCESS( BIKE1_L1_R1_crypto_kem_dec( serverSharedSecretPlaintext, encryptedSecret, privateKey ) );
+    EXPECT_BYTEARRAY_EQUAL( serverSharedSecretPlaintext, clientSharedSecretPlaintext, BIKE1_L1_R1_SHARED_SECRET_BYTES );
 
 #endif
 
     END_TEST();
 }
-

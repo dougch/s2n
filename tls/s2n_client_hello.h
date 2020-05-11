@@ -15,11 +15,10 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <s2n.h>
+#include <stdint.h>
 
 #include "stuffer/s2n_stuffer.h"
-
 #include "utils/s2n_array.h"
 
 struct s2n_client_hello {
@@ -29,23 +28,23 @@ struct s2n_client_hello {
      * the 'data' pointers in the below blobs
      * point to data in the raw_message stuffer
      */
-    struct s2n_blob cipher_suites;
-    struct s2n_blob extensions;
+    struct s2n_blob   cipher_suites;
+    struct s2n_blob   extensions;
     struct s2n_array *parsed_extensions;
 
-    unsigned int parsed:1;
+    unsigned int parsed : 1;
 };
 
-int s2n_client_hello_free(struct s2n_client_hello *client_hello);
-int s2n_client_hello_free_parsed_extensions(struct s2n_client_hello *client_hello);
+int s2n_client_hello_free( struct s2n_client_hello *client_hello );
+int s2n_client_hello_free_parsed_extensions( struct s2n_client_hello *client_hello );
 
-extern struct s2n_client_hello *s2n_connection_get_client_hello(struct s2n_connection *conn);
+extern struct s2n_client_hello *s2n_connection_get_client_hello( struct s2n_connection *conn );
 
-extern ssize_t s2n_client_hello_get_raw_message_length(struct s2n_client_hello *ch);
-extern ssize_t s2n_client_hello_get_raw_message(struct s2n_client_hello *ch, uint8_t *out, uint32_t max_length);
+extern ssize_t s2n_client_hello_get_raw_message_length( struct s2n_client_hello *ch );
+extern ssize_t s2n_client_hello_get_raw_message( struct s2n_client_hello *ch, uint8_t *out, uint32_t max_length );
 
-extern ssize_t s2n_client_hello_get_cipher_suites_length(struct s2n_client_hello *ch);
-extern ssize_t s2n_client_hello_get_cipher_suites(struct s2n_client_hello *ch, uint8_t *out, uint32_t max_length);
+extern ssize_t s2n_client_hello_get_cipher_suites_length( struct s2n_client_hello *ch );
+extern ssize_t s2n_client_hello_get_cipher_suites( struct s2n_client_hello *ch, uint8_t *out, uint32_t max_length );
 
-extern ssize_t s2n_client_hello_get_extensions_length(struct s2n_client_hello *ch);
-extern ssize_t s2n_client_hello_get_extensions(struct s2n_client_hello *ch, uint8_t *out, uint32_t max_length);
+extern ssize_t s2n_client_hello_get_extensions_length( struct s2n_client_hello *ch );
+extern ssize_t s2n_client_hello_get_extensions( struct s2n_client_hello *ch, uint8_t *out, uint32_t max_length );

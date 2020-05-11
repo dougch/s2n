@@ -13,7 +13,7 @@
  * permissions and limitations under the License.
  */
 
-int main(int argc, char **argv)
+int main( int argc, char **argv )
 {
     /* In CMakeLists.txt, we try_compile the PQ ASM code to determine if the
      * toolchain is compatible with the assembly instructions. Older versions

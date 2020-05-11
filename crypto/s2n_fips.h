@@ -15,5 +15,5 @@
 
 #pragma once
 
-extern int s2n_fips_init(void);
-extern int s2n_is_in_fips_mode(void);
+extern int s2n_fips_init( void );
+extern int s2n_is_in_fips_mode( void );

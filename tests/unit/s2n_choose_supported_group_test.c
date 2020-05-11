@@ -14,12 +14,12 @@
  */
 #include "s2n_test.h"
 #include "testlib/s2n_testlib.h"
-#include "tls/s2n_tls.h"
-#include "tls/s2n_tls13.h"
 #include "tls/extensions/s2n_client_supported_groups.h"
 #include "tls/s2n_security_policies.h"
+#include "tls/s2n_tls.h"
+#include "tls/s2n_tls13.h"
 
-int main(int argc, char **argv) 
+int main( int argc, char **argv )
 {
     struct s2n_connection *server_conn;
 
@@ -29,76 +29,75 @@ int main(int argc, char **argv)
      */
     {
         /* If the list of mutually supported groups is empty, chosen curve should be set to null */
-        EXPECT_NOT_NULL(server_conn = s2n_connection_new(S2N_SERVER));
-        EXPECT_NULL(server_conn->secure.server_ecc_evp_params.negotiated_curve);
-        EXPECT_NOT_NULL(server_conn->config);
+        EXPECT_NOT_NULL( server_conn = s2n_connection_new( S2N_SERVER ) );
+        EXPECT_NULL( server_conn->secure.server_ecc_evp_params.negotiated_curve );
+        EXPECT_NOT_NULL( server_conn->config );
 
         const struct s2n_security_policy *security_policy = NULL;
-        const struct s2n_ecc_preferences *ecc_pref = NULL;
-        EXPECT_SUCCESS(s2n_connection_get_security_policy(server_conn, &security_policy));
-        EXPECT_NOT_NULL(security_policy);
-        EXPECT_NOT_NULL(ecc_pref = security_policy->ecc_preferences);
+        const struct s2n_ecc_preferences *ecc_pref        = NULL;
+        EXPECT_SUCCESS( s2n_connection_get_security_policy( server_conn, &security_policy ) );
+        EXPECT_NOT_NULL( security_policy );
+        EXPECT_NOT_NULL( ecc_pref = security_policy->ecc_preferences );
 
-        for (int i = 0; i < ecc_pref->count; i++) {
-            EXPECT_NULL(server_conn->secure.mutually_supported_groups[i]);
+        for ( int i = 0; i < ecc_pref->count; i++ ) {
+            EXPECT_NULL( server_conn->secure.mutually_supported_groups[ i ] );
         }
 
-        EXPECT_FAILURE_WITH_ERRNO(s2n_choose_supported_group(server_conn, server_conn->secure.mutually_supported_groups,
-        &server_conn->secure.server_ecc_evp_params), S2N_ERR_ECDHE_UNSUPPORTED_CURVE);
+        EXPECT_FAILURE_WITH_ERRNO(
+            s2n_choose_supported_group( server_conn, server_conn->secure.mutually_supported_groups,
+                                        &server_conn->secure.server_ecc_evp_params ),
+            S2N_ERR_ECDHE_UNSUPPORTED_CURVE );
 
-        EXPECT_NULL(server_conn->secure.server_ecc_evp_params.negotiated_curve);
-        EXPECT_SUCCESS(s2n_connection_free(server_conn));
+        EXPECT_NULL( server_conn->secure.server_ecc_evp_params.negotiated_curve );
+        EXPECT_SUCCESS( s2n_connection_free( server_conn ) );
     }
 
     {
         /* If the list of mutually supported groups has one match, chosen curve should be set to that
          * match.
          */
-        EXPECT_NOT_NULL(server_conn = s2n_connection_new(S2N_SERVER));
+        EXPECT_NOT_NULL( server_conn = s2n_connection_new( S2N_SERVER ) );
 
         const struct s2n_security_policy *security_policy = NULL;
-        const struct s2n_ecc_preferences *ecc_pref = NULL;
-        EXPECT_SUCCESS(s2n_connection_get_security_policy(server_conn, &security_policy));
-        EXPECT_NOT_NULL(security_policy);
-        EXPECT_NOT_NULL(ecc_pref = security_policy->ecc_preferences);
+        const struct s2n_ecc_preferences *ecc_pref        = NULL;
+        EXPECT_SUCCESS( s2n_connection_get_security_policy( server_conn, &security_policy ) );
+        EXPECT_NOT_NULL( security_policy );
+        EXPECT_NOT_NULL( ecc_pref = security_policy->ecc_preferences );
 
-        EXPECT_NULL(server_conn->secure.server_ecc_evp_params.negotiated_curve);
-        server_conn->secure.mutually_supported_groups[1] = ecc_pref->ecc_curves[1];
+        EXPECT_NULL( server_conn->secure.server_ecc_evp_params.negotiated_curve );
+        server_conn->secure.mutually_supported_groups[ 1 ] = ecc_pref->ecc_curves[ 1 ];
 
-        EXPECT_SUCCESS(s2n_choose_supported_group(server_conn, server_conn->secure.mutually_supported_groups,
-            &server_conn->secure.server_ecc_evp_params));
+        EXPECT_SUCCESS( s2n_choose_supported_group( server_conn, server_conn->secure.mutually_supported_groups,
+                                                    &server_conn->secure.server_ecc_evp_params ) );
 
-        EXPECT_EQUAL(server_conn->secure.server_ecc_evp_params.negotiated_curve, ecc_pref->ecc_curves[1]);
-        EXPECT_SUCCESS(s2n_connection_free(server_conn));
-
+        EXPECT_EQUAL( server_conn->secure.server_ecc_evp_params.negotiated_curve, ecc_pref->ecc_curves[ 1 ] );
+        EXPECT_SUCCESS( s2n_connection_free( server_conn ) );
     }
 
     {
         /* If the list of mutually supported groups has several matches, chosen curve should be set to the first
          * match.
          */
-        EXPECT_NOT_NULL(server_conn = s2n_connection_new(S2N_SERVER));
-        EXPECT_NULL(server_conn->secure.server_ecc_evp_params.negotiated_curve);
+        EXPECT_NOT_NULL( server_conn = s2n_connection_new( S2N_SERVER ) );
+        EXPECT_NULL( server_conn->secure.server_ecc_evp_params.negotiated_curve );
 
         const struct s2n_security_policy *security_policy = NULL;
-        const struct s2n_ecc_preferences *ecc_pref = NULL;
-        EXPECT_SUCCESS(s2n_connection_get_security_policy(server_conn, &security_policy));
-        EXPECT_NOT_NULL(security_policy);
-        EXPECT_NOT_NULL(ecc_pref = security_policy->ecc_preferences);
+        const struct s2n_ecc_preferences *ecc_pref        = NULL;
+        EXPECT_SUCCESS( s2n_connection_get_security_policy( server_conn, &security_policy ) );
+        EXPECT_NOT_NULL( security_policy );
+        EXPECT_NOT_NULL( ecc_pref = security_policy->ecc_preferences );
 
-        for (int i = 0; i < ecc_pref->count; i++) {
-            server_conn->secure.mutually_supported_groups[i] = ecc_pref->ecc_curves[i];
+        for ( int i = 0; i < ecc_pref->count; i++ ) {
+            server_conn->secure.mutually_supported_groups[ i ] = ecc_pref->ecc_curves[ i ];
         }
 
-        EXPECT_SUCCESS(s2n_choose_supported_group(server_conn, server_conn->secure.mutually_supported_groups,
-            &server_conn->secure.server_ecc_evp_params));
+        EXPECT_SUCCESS( s2n_choose_supported_group( server_conn, server_conn->secure.mutually_supported_groups,
+                                                    &server_conn->secure.server_ecc_evp_params ) );
 
-        EXPECT_EQUAL(server_conn->secure.server_ecc_evp_params.negotiated_curve, ecc_pref->ecc_curves[0]);
-        EXPECT_SUCCESS(s2n_connection_free(server_conn));
-
+        EXPECT_EQUAL( server_conn->secure.server_ecc_evp_params.negotiated_curve, ecc_pref->ecc_curves[ 0 ] );
+        EXPECT_SUCCESS( s2n_connection_free( server_conn ) );
     }
 
     END_TEST();
     return 0;
-
 }

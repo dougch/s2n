@@ -13,33 +13,34 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-#include <stdlib.h>
 #include <s2n.h>
+#include <stdlib.h>
 
-int main(int argc, char **argv)
+#include "s2n_test.h"
+
+int main( int argc, char **argv )
 {
     struct s2n_connection *conn;
-    int ctx;
+    int                    ctx;
 
     struct s2n_connection *conn_null = NULL;
 
     BEGIN_TEST();
 
-    EXPECT_NOT_NULL(conn = s2n_connection_new(S2N_SERVER));
+    EXPECT_NOT_NULL( conn = s2n_connection_new( S2N_SERVER ) );
 
     /* Verify that we can set and get ctx */
-    EXPECT_SUCCESS(s2n_connection_set_ctx(conn, &ctx));
-    EXPECT_EQUAL(s2n_connection_get_ctx(conn), &ctx);
+    EXPECT_SUCCESS( s2n_connection_set_ctx( conn, &ctx ) );
+    EXPECT_EQUAL( s2n_connection_get_ctx( conn ), &ctx );
 
     /* Verify that conext is cleaned up after wipe */
-    EXPECT_SUCCESS(s2n_connection_wipe(conn));
-    EXPECT_EQUAL(s2n_connection_get_ctx(conn), NULL);
+    EXPECT_SUCCESS( s2n_connection_wipe( conn ) );
+    EXPECT_EQUAL( s2n_connection_get_ctx( conn ), NULL );
 
-    EXPECT_SUCCESS(s2n_connection_free(conn));
+    EXPECT_SUCCESS( s2n_connection_free( conn ) );
 
     /* Verify that we don't assume nonnull input and seg fault */
-    EXPECT_NULL(s2n_connection_get_cipher(conn_null));
+    EXPECT_NULL( s2n_connection_get_cipher( conn_null ) );
 
     END_TEST();
 }

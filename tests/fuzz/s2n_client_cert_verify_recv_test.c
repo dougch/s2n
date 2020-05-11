@@ -19,8 +19,8 @@
 #include <openssl/err.h>
 
 #include "api/s2n.h"
+#include "s2n_test.h"
 #include "stuffer/s2n_stuffer.h"
-#include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_config.h"
 #include "tls/s2n_connection.h"
@@ -29,7 +29,6 @@
 #include "tls/s2n_tls_parameters.h"
 #include "utils/s2n_random.h"
 #include "utils/s2n_safety.h"
-#include "s2n_test.h"
 
 static char certificate_chain[] =
     "-----BEGIN CERTIFICATE-----\n"
@@ -88,7 +87,6 @@ static char certificate_chain[] =
     "r9IyvfU=\n"
     "-----END CERTIFICATE-----\n";
 
-
 static char private_key[] =
     "-----BEGIN RSA PRIVATE KEY-----\n"
     "MIIEpAIBAAKCAQEA0cOgLmFwHkU9GLqbQnyY0QfxAycshl57/vE1dh9ViVoTC5PK\n"
@@ -118,66 +116,66 @@ static char private_key[] =
     "6sml30j/GHvnW5DOlpsdNKDlxoFX+hncXYIjyVTGRNdsSwa4VVm+Xw==\n"
     "-----END RSA PRIVATE KEY-----\n";
 
-static const uint8_t TLS_VERSIONS[] = {S2N_TLS10, S2N_TLS11, S2N_TLS12};
+static const uint8_t TLS_VERSIONS[] = { S2N_TLS10, S2N_TLS11, S2N_TLS12 };
 
 static struct s2n_config *server_config;
-static struct s2n_pkey public_key;
+static struct s2n_pkey    public_key;
 
 static void s2n_fuzz_atexit()
 {
-    s2n_pkey_free(&public_key);
-    s2n_config_free(server_config);
+    s2n_pkey_free( &public_key );
+    s2n_config_free( server_config );
     s2n_cleanup();
 }
 
-int LLVMFuzzerInitialize(const uint8_t *buf, size_t len)
+int LLVMFuzzerInitialize( const uint8_t *buf, size_t len )
 {
 #ifdef S2N_TEST_IN_FIPS_MODE
     S2N_TEST_ENTER_FIPS_MODE();
 #endif
 
-    GUARD(s2n_init());
-    GUARD_STRICT(atexit(s2n_fuzz_atexit));
+    GUARD( s2n_init() );
+    GUARD_STRICT( atexit( s2n_fuzz_atexit ) );
 
     /* Set up Server Config */
     server_config = s2n_config_new();
-    GUARD(s2n_config_add_cert_chain_and_key(server_config, certificate_chain, private_key));
+    GUARD( s2n_config_add_cert_chain_and_key( server_config, certificate_chain, private_key ) );
     s2n_pkey_type pkey_type;
-    S2N_ERROR_IF(s2n_config_get_num_default_certs(server_config) == 0, S2N_ERR_NUM_DEFAULT_CERTIFICATES);
-    struct s2n_cert_chain_and_key *cert = s2n_config_get_single_default_cert(server_config);
-    notnull_check(cert);
-    GUARD(s2n_asn1der_to_public_key_and_type(&public_key, &pkey_type, &cert->cert_chain->head->raw));
+    S2N_ERROR_IF( s2n_config_get_num_default_certs( server_config ) == 0, S2N_ERR_NUM_DEFAULT_CERTIFICATES );
+    struct s2n_cert_chain_and_key *cert = s2n_config_get_single_default_cert( server_config );
+    notnull_check( cert );
+    GUARD( s2n_asn1der_to_public_key_and_type( &public_key, &pkey_type, &cert->cert_chain->head->raw ) );
 
     return 0;
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t *buf, size_t len)
+int LLVMFuzzerTestOneInput( const uint8_t *buf, size_t len )
 {
     /* We need at least one byte of input to set parameters */
-    S2N_FUZZ_ENSURE_MIN_LEN(len, 1);
+    S2N_FUZZ_ENSURE_MIN_LEN( len, 1 );
 
     /* Setup */
-    struct s2n_connection *server_conn = s2n_connection_new(S2N_SERVER);
-    notnull_check(server_conn);
-    GUARD(s2n_stuffer_write_bytes(&server_conn->handshake.io, buf, len));
+    struct s2n_connection *server_conn = s2n_connection_new( S2N_SERVER );
+    notnull_check( server_conn );
+    GUARD( s2n_stuffer_write_bytes( &server_conn->handshake.io, buf, len ) );
     server_conn->secure.client_public_key.key.rsa_key.rsa = public_key.key.rsa_key.rsa;
 
     /* Pull a byte off the libfuzzer input and use it to set parameters */
     uint8_t randval = 0;
-    GUARD(s2n_stuffer_read_uint8(&server_conn->handshake.io, &randval));
-    server_conn->actual_protocol_version = TLS_VERSIONS[randval % s2n_array_len(TLS_VERSIONS)];
+    GUARD( s2n_stuffer_read_uint8( &server_conn->handshake.io, &randval ) );
+    server_conn->actual_protocol_version = TLS_VERSIONS[ randval % s2n_array_len( TLS_VERSIONS ) ];
 
     /* Run Test
      * Do not use GUARD macro here since the connection memory hasn't been freed.
      */
-    s2n_client_cert_verify_recv(server_conn);
+    s2n_client_cert_verify_recv( server_conn );
 
     /* Set the client_rsa_public_key so that it is not free'd during s2n_connection_free since it will be reused in
      * later fuzz tests  */
     server_conn->secure.client_public_key.key.rsa_key.rsa = NULL;
 
     /* Cleanup */
-    GUARD(s2n_connection_free(server_conn));
+    GUARD( s2n_connection_free( server_conn ) );
 
     return 0;
 }

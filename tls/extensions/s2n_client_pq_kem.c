@@ -13,52 +13,52 @@
  * permissions and limitations under the License.
  */
 
+#include "tls/extensions/s2n_client_pq_kem.h"
+
 #include <stdint.h>
 #include <sys/param.h>
 
-#include "tls/extensions/s2n_client_pq_kem.h"
 #include "tls/s2n_kem.h"
 #include "tls/s2n_security_policies.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_tls_parameters.h"
-
 #include "utils/s2n_safety.h"
 
-int s2n_extensions_client_pq_kem_send(struct s2n_connection *conn, struct s2n_stuffer *out, uint16_t pq_kem_list_size)
+int s2n_extensions_client_pq_kem_send( struct s2n_connection *conn, struct s2n_stuffer *out, uint16_t pq_kem_list_size )
 {
-    GUARD(s2n_stuffer_write_uint16(out, TLS_EXTENSION_PQ_KEM_PARAMETERS));
+    GUARD( s2n_stuffer_write_uint16( out, TLS_EXTENSION_PQ_KEM_PARAMETERS ) );
     /* Overall extension length */
-    GUARD(s2n_stuffer_write_uint16(out, 2 + pq_kem_list_size));
+    GUARD( s2n_stuffer_write_uint16( out, 2 + pq_kem_list_size ) );
     /* Length of parameters in bytes */
-    GUARD(s2n_stuffer_write_uint16(out, pq_kem_list_size));
+    GUARD( s2n_stuffer_write_uint16( out, pq_kem_list_size ) );
 
     const struct s2n_security_policy *security_policy = NULL;
-    GUARD(s2n_connection_get_security_policy(conn, &security_policy));
-    notnull_check(security_policy);
+    GUARD( s2n_connection_get_security_policy( conn, &security_policy ) );
+    notnull_check( security_policy );
     /* Each supported kem id is 2 bytes */
     const struct s2n_kem_preferences *kem_preferences = security_policy->kem_preferences;
-    notnull_check(kem_preferences);
-    for (int i = 0; i < kem_preferences->count; i++) {
-        GUARD(s2n_stuffer_write_uint16(out, kem_preferences->kems[i]->kem_extension_id));
+    notnull_check( kem_preferences );
+    for ( int i = 0; i < kem_preferences->count; i++ ) {
+        GUARD( s2n_stuffer_write_uint16( out, kem_preferences->kems[ i ]->kem_extension_id ) );
     }
 
     return 0;
 }
 
-int s2n_recv_pq_kem_extension(struct s2n_connection *conn, struct s2n_stuffer *extension)
+int s2n_recv_pq_kem_extension( struct s2n_connection *conn, struct s2n_stuffer *extension )
 {
-    uint16_t size_of_all;
+    uint16_t         size_of_all;
     struct s2n_blob *proposed_kems = &conn->secure.client_pq_kem_extension;
 
-    GUARD(s2n_stuffer_read_uint16(extension, &size_of_all));
-    if (size_of_all > s2n_stuffer_data_available(extension) || size_of_all % 2) {
+    GUARD( s2n_stuffer_read_uint16( extension, &size_of_all ) );
+    if ( size_of_all > s2n_stuffer_data_available( extension ) || size_of_all % 2 ) {
         /* Malformed length, ignore the extension */
         return 0;
     }
 
     proposed_kems->size = size_of_all;
-    proposed_kems->data = s2n_stuffer_raw_read(extension, proposed_kems->size);
-    notnull_check(proposed_kems->data);
+    proposed_kems->data = s2n_stuffer_raw_read( extension, proposed_kems->size );
+    notnull_check( proposed_kems->data );
 
     return 0;
 }

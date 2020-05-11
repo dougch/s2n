@@ -13,9 +13,7 @@
  * permissions and limitations under the License.
  */
 
-
 #include <errno.h>
-
 #include <s2n.h>
 
 #include "s2n_test.h"
@@ -23,42 +21,42 @@
 
 #define RANDOM_ERRNO 150
 
-int fake_recv(void *io_context, uint8_t *buf, uint32_t len)
+int fake_recv( void *io_context, uint8_t *buf, uint32_t len )
 {
     /* Pretend that we have no data available to read for alert lookup. */
     errno = EAGAIN;
     return -1;
 }
 
-int fake_send(void *io_context, const uint8_t *buf, uint32_t len)
+int fake_send( void *io_context, const uint8_t *buf, uint32_t len )
 {
     /* Fail the write with non-retriable error. */
     errno = ENOENT;
     return -1;
 }
 
-int main(int argc, char **argv)
+int main( int argc, char **argv )
 {
     struct s2n_connection *conn;
-    s2n_blocked_status blocked;
+    s2n_blocked_status     blocked;
 
     BEGIN_TEST();
 
     /* Non-retriable errnos in io are not overwritten by retriable errnos */
     {
-        EXPECT_NOT_NULL(conn = s2n_connection_new(S2N_CLIENT));
+        EXPECT_NOT_NULL( conn = s2n_connection_new( S2N_CLIENT ) );
 
         /* Set custom recv/send callbacks. */
-        EXPECT_SUCCESS(s2n_connection_set_recv_cb(conn, &fake_recv));
-        EXPECT_SUCCESS(s2n_connection_set_send_cb(conn, &fake_send));
+        EXPECT_SUCCESS( s2n_connection_set_recv_cb( conn, &fake_recv ) );
+        EXPECT_SUCCESS( s2n_connection_set_send_cb( conn, &fake_send ) );
 
         /* Perform the handshake and expect an error from write, instead of error from alert read. */
-        EXPECT_EQUAL(s2n_negotiate(conn, &blocked), -1);
-        EXPECT_EQUAL(errno, ENOENT);
-        EXPECT_EQUAL(s2n_errno, S2N_ERR_IO);
+        EXPECT_EQUAL( s2n_negotiate( conn, &blocked ), -1 );
+        EXPECT_EQUAL( errno, ENOENT );
+        EXPECT_EQUAL( s2n_errno, S2N_ERR_IO );
         s2n_errno = 0;
 
-        EXPECT_SUCCESS(s2n_connection_free(conn));
+        EXPECT_SUCCESS( s2n_connection_free( conn ) );
     }
 
     /* s2n_negotiate should not overwrite a non-retriable s2n_error with a retriable s2n_error.
@@ -66,7 +64,7 @@ int main(int argc, char **argv)
      * was called, and a non-retriable error occurred in an io function before errno was
      * reset for the system call. */
     {
-        EXPECT_NOT_NULL(conn = s2n_connection_new(S2N_CLIENT));
+        EXPECT_NOT_NULL( conn = s2n_connection_new( S2N_CLIENT ) );
 
         /* Set errno to a random value */
         errno = RANDOM_ERRNO;
@@ -76,12 +74,12 @@ int main(int argc, char **argv)
 
         /* Perform the handshake and expect an s2n_error */
         /* Do not use EXPECT_FAILURE here -- it resets s2n_errno */
-        EXPECT_EQUAL(s2n_negotiate(conn, &blocked), -1);
-        EXPECT_EQUAL(errno, 0);
-        EXPECT_EQUAL(s2n_errno, S2N_ERR_IO);
+        EXPECT_EQUAL( s2n_negotiate( conn, &blocked ), -1 );
+        EXPECT_EQUAL( errno, 0 );
+        EXPECT_EQUAL( s2n_errno, S2N_ERR_IO );
         s2n_errno = 0;
 
-        EXPECT_SUCCESS(s2n_connection_free(conn));
+        EXPECT_SUCCESS( s2n_connection_free( conn ) );
     }
 
     END_TEST();

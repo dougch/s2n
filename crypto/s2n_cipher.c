@@ -13,24 +13,24 @@
  * permissions and limitations under the License.
  */
 
-#include <openssl/evp.h>
-
 #include "crypto/s2n_cipher.h"
+
+#include <openssl/evp.h>
 
 #include "utils/s2n_safety.h"
 
-int s2n_session_key_alloc(struct s2n_session_key *key)
+int s2n_session_key_alloc( struct s2n_session_key *key )
 {
-    eq_check(key->evp_cipher_ctx, NULL);
-    notnull_check(key->evp_cipher_ctx = EVP_CIPHER_CTX_new());
+    eq_check( key->evp_cipher_ctx, NULL );
+    notnull_check( key->evp_cipher_ctx = EVP_CIPHER_CTX_new() );
 
     return 0;
 }
 
-int s2n_session_key_free(struct s2n_session_key *key)
+int s2n_session_key_free( struct s2n_session_key *key )
 {
-    notnull_check(key->evp_cipher_ctx);
-    EVP_CIPHER_CTX_free(key->evp_cipher_ctx);
+    notnull_check( key->evp_cipher_ctx );
+    EVP_CIPHER_CTX_free( key->evp_cipher_ctx );
     key->evp_cipher_ctx = NULL;
 
     return 0;

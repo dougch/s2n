@@ -24,17 +24,18 @@
 
 #define RSP_FILE "kats/bike_r2.kat"
 
-int main(int argc, char **argv, char **envp) {
+int main( int argc, char **argv, char **envp )
+{
     BEGIN_TEST();
 
-#if !defined(S2N_NO_PQ)
+#if !defined( S2N_NO_PQ )
 
-    if (s2n_is_in_fips_mode()) {
+    if ( s2n_is_in_fips_mode() ) {
         /* There is no support for PQ KEMs while in FIPS mode */
         END_TEST();
     }
 
-    EXPECT_SUCCESS(s2n_test_kem_with_kat(&s2n_bike1_l1_r2, RSP_FILE));
+    EXPECT_SUCCESS( s2n_test_kem_with_kat( &s2n_bike1_l1_r2, RSP_FILE ) );
 
 #endif
 

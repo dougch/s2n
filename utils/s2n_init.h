@@ -15,5 +15,5 @@
 
 #pragma once
 
-int s2n_init(void);
-int s2n_cleanup(void);
+int s2n_init( void );
+int s2n_cleanup( void );

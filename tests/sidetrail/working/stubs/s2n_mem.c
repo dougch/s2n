@@ -13,85 +13,83 @@
  * permissions and limitations under the License.
  */
 
+#include "utils/s2n_mem.h"
+
 #include <stdint.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include "error/s2n_errno.h"
-
 #include "utils/s2n_blob.h"
-#include "utils/s2n_mem.h"
 #include "utils/s2n_safety.h"
 
 static long page_size = 4096;
 
-int s2n_mem_init(void)
+int s2n_mem_init( void )
 {
-    GUARD(page_size = sysconf(_SC_PAGESIZE));
+    GUARD( page_size = sysconf( _SC_PAGESIZE ) );
 
     return 0;
 }
 
-int s2n_mem_cleanup(void)
+int s2n_mem_cleanup( void )
 {
     page_size = 4096;
     return 0;
 }
 
-int s2n_alloc(struct s2n_blob *b, uint32_t size)
+int s2n_alloc( struct s2n_blob *b, uint32_t size )
 {
-    b->data = NULL;
-    b->size = 0;
+    b->data      = NULL;
+    b->size      = 0;
     b->allocated = 0;
-    GUARD(s2n_realloc(b, size));
+    GUARD( s2n_realloc( b, size ) );
     return 0;
 }
 
 void *realloc( void *ptr, size_t new_size )
 {
-  /* just leave it undet for now */
-  void* ret = malloc(new_size);
-  return ret;
+    /* just leave it undet for now */
+    void *ret = malloc( new_size );
+    return ret;
 }
 
-int s2n_realloc(struct s2n_blob *b, uint32_t size)
+int s2n_realloc( struct s2n_blob *b, uint32_t size )
 {
     /* blob already has space for the request */
-    if (size < b->allocated) {
+    if ( size < b->allocated ) {
         b->size = size;
         return 0;
     }
 
-    void *data = realloc(b->data, size);
-    if (!data) {
-        S2N_ERROR(S2N_ERR_ALLOC);
-    }
+    void *data = realloc( b->data, size );
+    if ( !data ) { S2N_ERROR( S2N_ERR_ALLOC ); }
 
-    b->data = data;
-    b->size = size;
+    b->data      = data;
+    b->size      = size;
     b->allocated = size;
     return 0;
 }
 
-int s2n_free(struct s2n_blob *b)
+int s2n_free( struct s2n_blob *b )
 {
-    free(b->data);
-    b->data = NULL;
-    b->size = 0;
+    free( b->data );
+    b->data      = NULL;
+    b->size      = 0;
     b->allocated = 0;
 
     return 0;
 }
 
-int s2n_dup(struct s2n_blob *from, struct s2n_blob *to)
+int s2n_dup( struct s2n_blob *from, struct s2n_blob *to )
 {
-    eq_check(to->size, 0);
-    eq_check(to->data, NULL);
+    eq_check( to->size, 0 );
+    eq_check( to->data, NULL );
 
-    GUARD(s2n_alloc(to, from->size));
-    
-    memcpy_check(to->data, from->data, to->size);
+    GUARD( s2n_alloc( to, from->size ) );
+
+    memcpy_check( to->data, from->data, to->size );
 
     return 0;
 }
