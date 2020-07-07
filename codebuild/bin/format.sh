@@ -15,7 +15,7 @@
 set -e
 CLANG_NINE=$(which clang-format-9)
 CLANG_VER=${CLANG_NINE:-clang-format}
-for i in $(find . -not -path "./test-deps/*" -name '*.h' -or -name '*.c' -or -name '*.cpp'); do
+for i in $(find . -not -path "./test-deps/*" -not -path "./pq-crypto" -not -path "./error" -name '*.h' -or -name '*.c' -or -name '*.cpp'); do
         $CLANG_VER --verbose -i "$i" ;
 done
 
