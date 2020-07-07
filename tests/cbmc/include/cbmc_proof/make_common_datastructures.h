@@ -16,33 +16,34 @@
 #pragma once
 
 #include <cbmc_proof/proof_allocators.h>
+
 #include "api/s2n.h"
 #include "stuffer/s2n_stuffer.h"
 
 /*
  * Checks whether s2n_blob is bounded by max_size.
  */
-bool s2n_blob_is_bounded(const struct s2n_blob* blob, const size_t max_size);
+bool s2n_blob_is_bounded(const struct s2n_blob *blob, const size_t max_size);
 
 /*
  * Ensures s2n_blob has a proper allocated data member.
  */
-void ensure_s2n_blob_has_allocated_fields(struct s2n_blob* blob);
+void ensure_s2n_blob_has_allocated_fields(struct s2n_blob *blob);
 
 /*
  * Properly allocates s2n_blob for CBMC proofs.
  */
-struct s2n_blob* cbmc_allocate_s2n_blob();
+struct s2n_blob *cbmc_allocate_s2n_blob();
 
 /*
  * Ensures s2n_stuffer has a proper allocated blob member.
  */
-void ensure_s2n_stuffer_has_allocated_fields(struct s2n_stuffer* stuffer);
+void ensure_s2n_stuffer_has_allocated_fields(struct s2n_stuffer *stuffer);
 
 /*
  * Properly allocates s2n_stuffer for CBMC proofs.
  */
-struct s2n_stuffer* cbmc_allocate_s2n_stuffer();
+struct s2n_stuffer *cbmc_allocate_s2n_stuffer();
 
 /*
  * Ensures a valid const string is allocated,

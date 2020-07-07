@@ -13,26 +13,27 @@
  * permissions and limitations under the License.
  */
 
+#include "error/s2n_errno.h"
+
 #include <errno.h>
-#include <strings.h>
+#include <s2n.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "error/s2n_errno.h"
+#include <strings.h>
 
-#include <s2n.h>
 #include "utils/s2n_map.h"
 #include "utils/s2n_safety.h"
 
 #if S2N_HAVE_EXECINFO
-#   include <execinfo.h>
+#    include <execinfo.h>
 #endif
 
-__thread int s2n_errno;
+__thread int         s2n_errno;
 __thread const char *s2n_debug_str;
 
 static const char *no_such_language = "Language is not supported for error translation";
-static const char *no_such_error = "Internal s2n error";
+static const char *no_such_error    = "Internal s2n error";
 
 /*
  * Define error entries with descriptions in this macro once
@@ -233,22 +234,22 @@ static const char *no_such_error = "Internal s2n error";
     ERR_ENTRY(S2N_ERR_ASYNC_WRONG_CONNECTION, "Async private key operation can only be consumed by connection which initiated it") \
     ERR_ENTRY(S2N_ERR_ASYNC_APPLY_WHILE_INVOKING, "Async private key operation cannot consumed inside async pkey callback") \
     ERR_ENTRY(S2N_ERR_ASYNC_ALREADY_APPLIED, "Async operation was already applied to connection, cannot apply it again") \
-    ERR_ENTRY(S2N_ERR_INVALID_HELLO_RETRY, "Invalid hello retry request") \
+    ERR_ENTRY(S2N_ERR_INVALID_HELLO_RETRY, "Invalid hello retry request")
 
 /* clang-format on */
 
-#define ERR_STR_CASE(ERR, str) case ERR: return str;
-#define ERR_NAME_CASE(ERR, str) case ERR: return #ERR;
+#define ERR_STR_CASE(ERR, str) \
+    case ERR:                  \
+        return str;
+#define ERR_NAME_CASE(ERR, str) \
+    case ERR:                   \
+        return #ERR;
 
 const char *s2n_strerror(int error, const char *lang)
 {
-    if (lang == NULL) {
-        lang = "EN";
-    }
+    if (lang == NULL) { lang = "EN"; }
 
-    if (strcasecmp(lang, "EN")) {
-        return no_such_language;
-    }
+    if (strcasecmp(lang, "EN")) { return no_such_language; }
 
     s2n_error err = error;
     switch (err) {
@@ -265,7 +266,7 @@ const char *s2n_strerror(int error, const char *lang)
         case S2N_ERR_T_USAGE_END:
             break;
 
-        /* No default to make compiler fail on missing values */
+            /* No default to make compiler fail on missing values */
     }
 
     return no_such_error;
@@ -288,7 +289,7 @@ const char *s2n_strerror_name(int error)
         case S2N_ERR_T_USAGE_END:
             break;
 
-        /* No default to make compiler fail on missing values */
+            /* No default to make compiler fail on missing values */
     }
 
     return no_such_error;
@@ -296,35 +297,22 @@ const char *s2n_strerror_name(int error)
 
 const char *s2n_strerror_debug(int error, const char *lang)
 {
-    if (lang == NULL) {
-        lang = "EN";
-    }
+    if (lang == NULL) { lang = "EN"; }
 
-    if (strcasecmp(lang, "EN")) {
-        return no_such_language;
-    }
+    if (strcasecmp(lang, "EN")) { return no_such_language; }
 
     /* No error, just return the no error string */
-    if (error == S2N_ERR_OK) {
-        return s2n_strerror(error, lang);
-    }
+    if (error == S2N_ERR_OK) { return s2n_strerror(error, lang); }
 
     return s2n_debug_str;
 }
 
-int s2n_error_get_type(int error)
-{
-    return (error >> S2N_ERR_NUM_VALUE_BITS);
-}
-
+int s2n_error_get_type(int error) { return (error >> S2N_ERR_NUM_VALUE_BITS); }
 
 /* https://www.gnu.org/software/libc/manual/html_node/Backtraces.html */
 static bool s_s2n_stack_traces_enabled = false;
 
-bool s2n_stack_traces_enabled()
-{
-    return s_s2n_stack_traces_enabled;
-}
+bool s2n_stack_traces_enabled() { return s_s2n_stack_traces_enabled; }
 
 int s2n_stack_traces_enabled_set(bool newval)
 {
@@ -334,35 +322,34 @@ int s2n_stack_traces_enabled_set(bool newval)
 
 #ifdef S2N_HAVE_EXECINFO
 
-#define MAX_BACKTRACE_DEPTH 20
-__thread struct s2n_stacktrace tl_stacktrace = {0};
+#    define MAX_BACKTRACE_DEPTH 20
+__thread struct s2n_stacktrace tl_stacktrace = { 0 };
 
 int s2n_free_stacktrace(void)
 {
     if (tl_stacktrace.trace != NULL) {
         free(tl_stacktrace.trace);
-	struct s2n_stacktrace zero_stacktrace = {0};
-	tl_stacktrace = zero_stacktrace;
+        struct s2n_stacktrace zero_stacktrace = { 0 };
+        tl_stacktrace                         = zero_stacktrace;
     }
     return S2N_SUCCESS;
 }
 
 int s2n_calculate_stacktrace(void)
 {
-    if (!s_s2n_stack_traces_enabled) {
-        return S2N_SUCCESS;
-    }
+    if (!s_s2n_stack_traces_enabled) { return S2N_SUCCESS; }
 
     int old_errno = errno;
     GUARD(s2n_free_stacktrace());
-    void *array[MAX_BACKTRACE_DEPTH];
+    void *array[ MAX_BACKTRACE_DEPTH ];
     tl_stacktrace.trace_size = backtrace(array, MAX_BACKTRACE_DEPTH);
-    tl_stacktrace.trace = backtrace_symbols(array, tl_stacktrace.trace_size);
-    errno = old_errno;
+    tl_stacktrace.trace      = backtrace_symbols(array, tl_stacktrace.trace_size);
+    errno                    = old_errno;
     return S2N_SUCCESS;
 }
 
-int s2n_get_stacktrace(struct s2n_stacktrace *trace) {
+int s2n_get_stacktrace(struct s2n_stacktrace *trace)
+{
     *trace = tl_stacktrace;
     return S2N_SUCCESS;
 }
@@ -370,42 +357,28 @@ int s2n_get_stacktrace(struct s2n_stacktrace *trace) {
 int s2n_print_stacktrace(FILE *fptr)
 {
     if (!s_s2n_stack_traces_enabled) {
-      fprintf(fptr, "%s\n%s\n",
-	      "NOTE: Some details are omitted, run with S2N_PRINT_STACKTRACE=1 for a verbose backtrace.",
-	      "See https://github.com/awslabs/s2n/blob/master/docs/USAGE-GUIDE.md");
+        fprintf(fptr, "%s\n%s\n",
+                "NOTE: Some details are omitted, run with S2N_PRINT_STACKTRACE=1 for a verbose backtrace.",
+                "See https://github.com/awslabs/s2n/blob/master/docs/USAGE-GUIDE.md");
         return S2N_SUCCESS;
     }
 
     fprintf(fptr, "\nStacktrace is:\n");
-    for (int i = 0; i < tl_stacktrace.trace_size; ++i){
-        fprintf(fptr, "%s\n",  tl_stacktrace.trace[i]);
-    }
+    for (int i = 0; i < tl_stacktrace.trace_size; ++i) { fprintf(fptr, "%s\n", tl_stacktrace.trace[ i ]); }
     return S2N_SUCCESS;
 }
 
-#else /* !S2N_HAVE_EXECINFO */
-int s2n_free_stacktrace(void)
-{
-    S2N_ERROR(S2N_ERR_UNIMPLEMENTED);
-}
+#else  /* !S2N_HAVE_EXECINFO */
+int s2n_free_stacktrace(void) { S2N_ERROR(S2N_ERR_UNIMPLEMENTED); }
 
 int s2n_calculate_stacktrace(void)
 {
-    if (!s_s2n_stack_traces_enabled)
-    {
-        return S2N_SUCCESS;
-    }
+    if (!s_s2n_stack_traces_enabled) { return S2N_SUCCESS; }
 
     S2N_ERROR(S2N_ERR_UNIMPLEMENTED);
 }
 
-int s2n_get_stacktrace(struct s2n_stacktrace *trace)
-{
-    S2N_ERROR(S2N_ERR_UNIMPLEMENTED);
-}
+int s2n_get_stacktrace(struct s2n_stacktrace *trace) { S2N_ERROR(S2N_ERR_UNIMPLEMENTED); }
 
-int s2n_print_stacktrace(FILE *fptr)
-{
-    S2N_ERROR(S2N_ERR_UNIMPLEMENTED);
-}
+int s2n_print_stacktrace(FILE *fptr) { S2N_ERROR(S2N_ERR_UNIMPLEMENTED); }
 #endif /* S2N_HAVE_EXECINFO */

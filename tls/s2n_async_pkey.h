@@ -20,7 +20,8 @@
 #include "utils/s2n_result.h"
 
 typedef int (*s2n_async_pkey_sign_complete)(struct s2n_connection *conn, struct s2n_blob *signature);
-typedef int (*s2n_async_pkey_decrypt_complete)(struct s2n_connection *conn, bool rsa_failed, struct s2n_blob *decrypted);
+typedef int (*s2n_async_pkey_decrypt_complete)(struct s2n_connection *conn, bool rsa_failed,
+                                               struct s2n_blob *decrypted);
 
 struct s2n_async_pkey_op;
 
@@ -65,7 +66,7 @@ int s2n_async_pkey_op_perform(struct s2n_async_pkey_op *op, s2n_cert_private_key
 int s2n_async_pkey_op_apply(struct s2n_async_pkey_op *op, struct s2n_connection *conn);
 int s2n_async_pkey_op_free(struct s2n_async_pkey_op *op);
 
-S2N_RESULT s2n_async_pkey_decrypt(struct s2n_connection *conn, struct s2n_blob *encrypted, struct s2n_blob *init_decrypted,
-                           s2n_async_pkey_decrypt_complete on_complete);
-S2N_RESULT s2n_async_pkey_sign(struct s2n_connection *conn, s2n_signature_algorithm sig_alg, struct s2n_hash_state *digest,
-                        s2n_async_pkey_sign_complete on_complete);
+S2N_RESULT s2n_async_pkey_decrypt(struct s2n_connection *conn, struct s2n_blob *encrypted,
+                                  struct s2n_blob *init_decrypted, s2n_async_pkey_decrypt_complete on_complete);
+S2N_RESULT s2n_async_pkey_sign(struct s2n_connection *conn, s2n_signature_algorithm sig_alg,
+                               struct s2n_hash_state *digest, s2n_async_pkey_sign_complete on_complete);

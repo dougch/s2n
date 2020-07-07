@@ -1,13 +1,13 @@
 #ifndef POLYVEC_H
 #define POLYVEC_H
 
+#include <stdint.h>
+
 #include "params.h"
 #include "poly.h"
 
-#include <stdint.h>
-
 typedef struct {
-    poly vec[KYBER_K];
+    poly vec[ KYBER_K ];
 } polyvec;
 
 void PQCLEAN_KYBER512_CLEAN_polyvec_compress(uint8_t *r, polyvec *a);

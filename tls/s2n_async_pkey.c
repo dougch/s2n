@@ -115,11 +115,11 @@ static S2N_RESULT s2n_async_pkey_op_allocate(struct s2n_async_pkey_op **op)
     ENSURE(*op == NULL, S2N_ERR_SAFETY);
 
     /* allocate memory */
-    DEFER_CLEANUP(struct s2n_blob mem = {0}, s2n_free);
+    DEFER_CLEANUP(struct s2n_blob mem = { 0 }, s2n_free);
     GUARD_AS_RESULT(s2n_alloc(&mem, sizeof(struct s2n_async_pkey_op)));
     GUARD_AS_RESULT(s2n_blob_zero(&mem));
 
-    *op = (void *) mem.data;
+    *op = ( void * )mem.data;
     if (s2n_blob_init(&mem, NULL, 0) != S2N_SUCCESS) {
         *op = NULL;
         return S2N_RESULT_ERROR;
@@ -171,7 +171,7 @@ S2N_RESULT s2n_async_pkey_decrypt_async(struct s2n_connection *conn, struct s2n_
 
     /* Move op to tmp to avoid DEFER_CLEANUP freeing the op, as it will be owned by callback */
     struct s2n_async_pkey_op *tmp_op = op;
-    op = NULL;
+    op                               = NULL;
 
     ENSURE(conn->config->async_pkey_cb(conn, tmp_op) == S2N_SUCCESS, S2N_ERR_ASYNC_CALLBACK_FAILED);
 
@@ -241,7 +241,7 @@ S2N_RESULT s2n_async_pkey_sign_async(struct s2n_connection *conn, s2n_signature_
 
     /* Move op to tmp to avoid DEFER_CLEANUP freeing the op, as it will be owned by callback */
     struct s2n_async_pkey_op *tmp_op = op;
-    op = NULL;
+    op                               = NULL;
 
     ENSURE(conn->config->async_pkey_cb(conn, tmp_op) == S2N_SUCCESS, S2N_ERR_ASYNC_CALLBACK_FAILED);
 

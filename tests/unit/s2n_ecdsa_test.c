@@ -13,23 +13,18 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
+#include "crypto/s2n_ecdsa.h"
 
 #include <string.h>
 
-#include "testlib/s2n_testlib.h"
-
-#include "stuffer/s2n_stuffer.h"
-
-#include "tls/s2n_connection.h"
-#include "tls/s2n_config.h"
-
-#include "crypto/s2n_ecdsa.h"
 #include "crypto/s2n_ecc_evp.h"
 #include "crypto/s2n_fips.h"
-
+#include "s2n_test.h"
+#include "stuffer/s2n_stuffer.h"
+#include "testlib/s2n_testlib.h"
+#include "tls/s2n_config.h"
+#include "tls/s2n_connection.h"
 #include "utils/s2n_safety.h"
-
 
 static uint8_t unmatched_private_key[] =
     "-----BEGIN EC PRIVATE KEY-----\n"
@@ -48,35 +43,27 @@ static uint8_t unmatched_private_key[] =
 
 int main(int argc, char **argv)
 {
-    struct s2n_stuffer certificate_in = {0}, certificate_out = {0};
-    struct s2n_stuffer ecdsa_key_in = {0}, ecdsa_key_out = {0};
-    struct s2n_stuffer unmatched_ecdsa_key_in = {0}, unmatched_ecdsa_key_out = {0};
-    struct s2n_blob b = {0};
-    char *cert_chain_pem = NULL;
-    char *private_key_pem = NULL;
+    struct s2n_stuffer certificate_in = { 0 }, certificate_out = { 0 };
+    struct s2n_stuffer ecdsa_key_in = { 0 }, ecdsa_key_out = { 0 };
+    struct s2n_stuffer unmatched_ecdsa_key_in = { 0 }, unmatched_ecdsa_key_out = { 0 };
+    struct s2n_blob    b               = { 0 };
+    char *             cert_chain_pem  = NULL;
+    char *             private_key_pem = NULL;
 
-    const int supported_hash_algorithms[] = {
-        S2N_HASH_NONE,
-        S2N_HASH_MD5,
-        S2N_HASH_SHA1,
-        S2N_HASH_SHA224,
-        S2N_HASH_SHA256,
-        S2N_HASH_SHA384,
-        S2N_HASH_SHA512,
-        S2N_HASH_MD5_SHA1
-    };
+    const int supported_hash_algorithms[] = { S2N_HASH_NONE,   S2N_HASH_MD5,    S2N_HASH_SHA1,   S2N_HASH_SHA224,
+                                              S2N_HASH_SHA256, S2N_HASH_SHA384, S2N_HASH_SHA512, S2N_HASH_MD5_SHA1 };
 
     BEGIN_TEST();
 
     /* s2n_ecdsa_pkey_matches_curve */
     {
-        struct s2n_ecdsa_key *p256_key = NULL, *p384_key = NULL;
+        struct s2n_ecdsa_key *         p256_key = NULL, *p384_key = NULL;
         struct s2n_cert_chain_and_key *p256_chain = NULL, *p384_chain = NULL;
 
-        EXPECT_SUCCESS(s2n_test_cert_chain_and_key_new(&p256_chain,
-                S2N_ECDSA_P256_PKCS1_CERT_CHAIN, S2N_ECDSA_P256_PKCS1_KEY));
-        EXPECT_SUCCESS(s2n_test_cert_chain_and_key_new(&p384_chain,
-                S2N_ECDSA_P384_PKCS1_CERT_CHAIN, S2N_ECDSA_P384_PKCS1_KEY));
+        EXPECT_SUCCESS(
+            s2n_test_cert_chain_and_key_new(&p256_chain, S2N_ECDSA_P256_PKCS1_CERT_CHAIN, S2N_ECDSA_P256_PKCS1_KEY));
+        EXPECT_SUCCESS(
+            s2n_test_cert_chain_and_key_new(&p384_chain, S2N_ECDSA_P384_PKCS1_CERT_CHAIN, S2N_ECDSA_P384_PKCS1_KEY));
 
         p256_key = &p256_chain->private_key->key.ecdsa_key;
         p384_key = &p384_chain->private_key->key.ecdsa_key;
@@ -102,24 +89,24 @@ int main(int argc, char **argv)
     EXPECT_SUCCESS(s2n_read_test_pem(S2N_ECDSA_P384_PKCS1_CERT_CHAIN, cert_chain_pem, S2N_MAX_TEST_PEM_SIZE));
     EXPECT_SUCCESS(s2n_read_test_pem(S2N_ECDSA_P384_PKCS1_KEY, private_key_pem, S2N_MAX_TEST_PEM_SIZE));
 
-    EXPECT_SUCCESS(s2n_blob_init(&b, (uint8_t *) cert_chain_pem, strlen(cert_chain_pem) + 1));
+    EXPECT_SUCCESS(s2n_blob_init(&b, ( uint8_t * )cert_chain_pem, strlen(cert_chain_pem) + 1));
     EXPECT_SUCCESS(s2n_stuffer_write(&certificate_in, &b));
 
-    EXPECT_SUCCESS(s2n_blob_init(&b, (uint8_t *) private_key_pem, strlen(private_key_pem) + 1));
+    EXPECT_SUCCESS(s2n_blob_init(&b, ( uint8_t * )private_key_pem, strlen(private_key_pem) + 1));
     EXPECT_SUCCESS(s2n_stuffer_write(&ecdsa_key_in, &b));
 
-    EXPECT_SUCCESS(s2n_blob_init(&b, (uint8_t *) unmatched_private_key, sizeof(unmatched_private_key)));
+    EXPECT_SUCCESS(s2n_blob_init(&b, ( uint8_t * )unmatched_private_key, sizeof(unmatched_private_key)));
     EXPECT_SUCCESS(s2n_stuffer_write(&unmatched_ecdsa_key_in, &b));
 
     EXPECT_SUCCESS(s2n_stuffer_certificate_from_pem(&certificate_in, &certificate_out));
     EXPECT_SUCCESS(s2n_stuffer_private_key_from_pem(&ecdsa_key_in, &ecdsa_key_out));
     EXPECT_SUCCESS(s2n_stuffer_private_key_from_pem(&unmatched_ecdsa_key_in, &unmatched_ecdsa_key_out));
 
-    struct s2n_pkey pub_key = {0};
-    struct s2n_pkey priv_key = {0};
-    struct s2n_pkey unmatched_priv_key = {0};
-    s2n_pkey_type pkey_type = {0};
-    uint32_t available_size = 0;
+    struct s2n_pkey pub_key            = { 0 };
+    struct s2n_pkey priv_key           = { 0 };
+    struct s2n_pkey unmatched_priv_key = { 0 };
+    s2n_pkey_type   pkey_type          = { 0 };
+    uint32_t        available_size     = 0;
 
     available_size = s2n_stuffer_data_available(&certificate_out);
     EXPECT_SUCCESS(s2n_blob_init(&b, s2n_stuffer_raw_read(&certificate_out, available_size), available_size));
@@ -137,10 +124,10 @@ int main(int argc, char **argv)
     EXPECT_SUCCESS(s2n_pkey_match(&pub_key, &priv_key));
 
     /* Try signing and verification with ECDSA */
-    uint8_t inputpad[] = "Hello world!";
-    struct s2n_blob signature = {0}, bad_signature = {0};
-    struct s2n_hash_state hash_one = {0}, hash_two = {0};
-    uint32_t maximum_signature_length = s2n_pkey_size(&priv_key);
+    uint8_t               inputpad[] = "Hello world!";
+    struct s2n_blob       signature = { 0 }, bad_signature = { 0 };
+    struct s2n_hash_state hash_one = { 0 }, hash_two = { 0 };
+    uint32_t              maximum_signature_length = s2n_pkey_size(&priv_key);
 
     EXPECT_SUCCESS(s2n_alloc(&signature, maximum_signature_length));
 
@@ -148,7 +135,7 @@ int main(int argc, char **argv)
     EXPECT_SUCCESS(s2n_hash_new(&hash_two));
 
     for (int i = 0; i < s2n_array_len(supported_hash_algorithms); i++) {
-        int hash_alg = supported_hash_algorithms[i];
+        int hash_alg = supported_hash_algorithms[ i ];
 
         if (!s2n_hash_is_available(hash_alg)) {
             /* Skip hash algorithms that are not available. */

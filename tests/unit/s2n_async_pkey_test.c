@@ -13,21 +13,19 @@
  * permissions and limitations under the License.
  */
 
-#include "s2n_test.h"
-
-#include "testlib/s2n_testlib.h"
-
 #include <s2n.h>
 
 #include "error/s2n_errno.h"
+#include "s2n_test.h"
+#include "testlib/s2n_testlib.h"
+#include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_connection.h"
 #include "tls/s2n_security_policies.h"
-#include "tls/s2n_cipher_suites.h"
 #include "utils/s2n_safety.h"
 
 struct s2n_async_pkey_op *pkey_op = NULL;
 
-typedef int (async_handler)(struct s2n_connection *conn);
+typedef int(async_handler)(struct s2n_connection *conn);
 
 static int async_handler_fail(struct s2n_connection *conn)
 {
@@ -68,9 +66,7 @@ static int async_handler_free_pkey_op(struct s2n_connection *conn)
     static int function_entered = 0;
 
     /* Return failure on the second entrance into function so that we drop from try_handshake */
-    if (function_entered++ % 2 == 1) {
-        return S2N_FAILURE;
-    }
+    if (function_entered++ % 2 == 1) { return S2N_FAILURE; }
 
     /* Check that we have pkey_op */
     EXPECT_NOT_NULL(pkey_op);
@@ -100,9 +96,7 @@ static int try_handshake(struct s2n_connection *server_conn, struct s2n_connecti
             return S2N_FAILURE;
         }
 
-        if (server_blocked == S2N_BLOCKED_ON_APPLICATION_INPUT) {
-            GUARD(handler(server_conn));
-        }
+        if (server_blocked == S2N_BLOCKED_ON_APPLICATION_INPUT) { GUARD(handler(server_conn)); }
 
         EXPECT_NOT_EQUAL(++tries, 5);
     } while (client_blocked || server_blocked);
@@ -146,12 +140,12 @@ int main(int argc, char **argv)
 {
     BEGIN_TEST();
 
-    char dhparams_pem[S2N_MAX_TEST_PEM_SIZE];
+    char dhparams_pem[ S2N_MAX_TEST_PEM_SIZE ];
     EXPECT_SUCCESS(s2n_read_test_pem(S2N_DEFAULT_TEST_DHPARAMS, dhparams_pem, S2N_MAX_TEST_PEM_SIZE));
 
     struct s2n_cert_chain_and_key *chain_and_key;
-    EXPECT_SUCCESS(s2n_test_cert_chain_and_key_new(&chain_and_key,
-            S2N_DEFAULT_TEST_CERT_CHAIN, S2N_DEFAULT_TEST_PRIVATE_KEY));
+    EXPECT_SUCCESS(
+        s2n_test_cert_chain_and_key_new(&chain_and_key, S2N_DEFAULT_TEST_CERT_CHAIN, S2N_DEFAULT_TEST_PRIVATE_KEY));
 
     /* Run all tests for 2 cipher suites to test both sign and decrypt operations */
     struct s2n_cipher_suite *test_cipher_suites[] = {
@@ -159,23 +153,23 @@ int main(int argc, char **argv)
         &s2n_ecdhe_rsa_with_aes_128_gcm_sha256,
     };
 
-    for(int i=0; i < sizeof(test_cipher_suites)/sizeof(test_cipher_suites[0]); i++) {
+    for (int i = 0; i < sizeof(test_cipher_suites) / sizeof(test_cipher_suites[ 0 ]); i++) {
         struct s2n_cipher_preferences server_cipher_preferences = {
-            .count = 1,
-            .suites = &test_cipher_suites[i],
+            .count  = 1,
+            .suites = &test_cipher_suites[ i ],
         };
 
         struct s2n_security_policy server_security_policy = {
             .minimum_protocol_version = S2N_TLS12,
-            .cipher_preferences = &server_cipher_preferences,
-            .kem_preferences = &kem_preferences_null,
-            .signature_preferences = &s2n_signature_preferences_20200207,
-            .ecc_preferences = &s2n_ecc_preferences_20200310,
+            .cipher_preferences       = &server_cipher_preferences,
+            .kem_preferences          = &kem_preferences_null,
+            .signature_preferences    = &s2n_signature_preferences_20200207,
+            .ecc_preferences          = &s2n_ecc_preferences_20200310,
         };
 
-        EXPECT_TRUE(test_cipher_suites[i]->available);
+        EXPECT_TRUE(test_cipher_suites[ i ]->available);
 
-        TEST_DEBUG_PRINT("Testing %s\n", test_cipher_suites[i]->name);
+        TEST_DEBUG_PRINT("Testing %s\n", test_cipher_suites[ i ]->name);
 
         /*  Test: apply while invoking callback */
         {
@@ -206,8 +200,8 @@ int main(int argc, char **argv)
             EXPECT_SUCCESS(s2n_connection_set_io_pair(client_conn, &io_pair));
             EXPECT_SUCCESS(s2n_connection_set_io_pair(server_conn, &io_pair));
 
-            EXPECT_FAILURE_WITH_ERRNO(
-                    try_handshake(server_conn, client_conn, async_handler_fail), S2N_ERR_ASYNC_CALLBACK_FAILED);
+            EXPECT_FAILURE_WITH_ERRNO(try_handshake(server_conn, client_conn, async_handler_fail),
+                                      S2N_ERR_ASYNC_CALLBACK_FAILED);
 
             /* Free the data */
             EXPECT_SUCCESS(s2n_connection_free(server_conn));
@@ -285,8 +279,8 @@ int main(int argc, char **argv)
             EXPECT_SUCCESS(s2n_connection_set_io_pair(client_conn, &io_pair));
             EXPECT_SUCCESS(s2n_connection_set_io_pair(server_conn, &io_pair));
 
-            EXPECT_FAILURE_WITH_ERRNO(
-                    try_handshake(server_conn, client_conn, async_handler_free_pkey_op), S2N_ERR_ASYNC_BLOCKED);
+            EXPECT_FAILURE_WITH_ERRNO(try_handshake(server_conn, client_conn, async_handler_free_pkey_op),
+                                      S2N_ERR_ASYNC_BLOCKED);
 
             /* Free the data */
             EXPECT_SUCCESS(s2n_connection_free(server_conn));
@@ -302,4 +296,3 @@ int main(int argc, char **argv)
     END_TEST();
     return 0;
 }
-

@@ -19,16 +19,16 @@
 #include "tests/testlib/s2n_nist_kats.h"
 #include "tests/testlib/s2n_testlib.h"
 #include "tls/s2n_kem.h"
-#include "utils/s2n_safety.h"
-#include "utils/s2n_mem.h"
 #include "utils/s2n_blob.h"
+#include "utils/s2n_mem.h"
+#include "utils/s2n_safety.h"
 
 #define RSP_FILE_NAME "../unit/kats/bike_r2.kat"
 
 /* This fuzz test uses the first private key from tests/unit/kats/bike_r2.kat, the valid ciphertext generated with the
  * public key was copied to corpus/s2n_bike_r2_fuzz_test/valid_ciphertext */
 
-static struct s2n_kem_params server_kem_params = {.kem = &s2n_bike1_l1_r2};
+static struct s2n_kem_params server_kem_params = { .kem = &s2n_bike1_l1_r2 };
 
 int s2n_fuzz_init(int *argc, char **argv[])
 {
@@ -45,7 +45,7 @@ int s2n_fuzz_init(int *argc, char **argv[])
 
 int s2n_fuzz_test(const uint8_t *buf, size_t len)
 {
-    struct s2n_blob ciphertext = {0};
+    struct s2n_blob ciphertext = { 0 };
     GUARD(s2n_alloc(&ciphertext, len));
 
     /* Need to memcpy since blobs expect a non-const value and LLVMFuzzer does expect a const */
@@ -57,15 +57,10 @@ int s2n_fuzz_test(const uint8_t *buf, size_t len)
     GUARD(s2n_free(&ciphertext));
 
     /* The above s2n_kem_decapsulate could fail before ever allocating the server_shared_secret */
-    if (server_kem_params.shared_secret.allocated) {
-        GUARD(s2n_free(&(server_kem_params.shared_secret)));
-    }
+    if (server_kem_params.shared_secret.allocated) { GUARD(s2n_free(&(server_kem_params.shared_secret))); }
     return S2N_SUCCESS;
 }
 
-static void s2n_fuzz_cleanup()
-{
-    s2n_kem_free(&server_kem_params);
-}
+static void s2n_fuzz_cleanup() { s2n_kem_free(&server_kem_params); }
 
 S2N_FUZZ_TARGET(s2n_fuzz_init, s2n_fuzz_test, s2n_fuzz_cleanup)

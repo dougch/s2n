@@ -15,10 +15,8 @@
 
 #include "crypto/s2n_sequence.h"
 
-#include "tls/s2n_crypto.h"
-
 #include "error/s2n_errno.h"
-
+#include "tls/s2n_crypto.h"
 #include "utils/s2n_blob.h"
 
 #define SEQUENCE_NUMBER_POWER 8
@@ -26,10 +24,8 @@
 int s2n_increment_sequence_number(struct s2n_blob *sequence_number)
 {
     for (int i = sequence_number->size - 1; i >= 0; i--) {
-        sequence_number->data[i] += 1;
-        if (sequence_number->data[i]) {
-            break;
-        }
+        sequence_number->data[ i ] += 1;
+        if (sequence_number->data[ i ]) { break; }
 
         /* RFC 5246 6.1: If a TLS implementation would need to wrap a sequence number, it must
          * renegotiate instead. We don't support renegotiation. Caller needs to create a new session.
@@ -48,10 +44,10 @@ int s2n_sequence_number_to_uint64(struct s2n_blob *sequence_number, uint64_t *ou
     notnull_check(sequence_number);
 
     uint8_t shift = 0;
-    *output = 0;
+    *output       = 0;
 
     for (int i = sequence_number->size - 1; i >= 0; i--) {
-        *output += ((uint64_t) sequence_number->data[i]) << shift;
+        *output += (( uint64_t )sequence_number->data[ i ]) << shift;
         shift += SEQUENCE_NUMBER_POWER;
     }
     return S2N_SUCCESS;

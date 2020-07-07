@@ -14,13 +14,13 @@
  */
 
 #include "tls/extensions/s2n_client_key_share.h"
-#include "tls/extensions/s2n_key_share.h"
-#include "tls/s2n_security_policies.h"
 
 #include "error/s2n_errno.h"
 #include "stuffer/s2n_stuffer.h"
-#include "utils/s2n_safety.h"
+#include "tls/extensions/s2n_key_share.h"
+#include "tls/s2n_security_policies.h"
 #include "tls/s2n_tls13.h"
+#include "utils/s2n_safety.h"
 
 #define S2N_IS_KEY_SHARE_LIST_EMPTY(preferred_key_shares) (preferred_key_shares & 1)
 #define S2N_IS_KEY_SHARE_REQUESTED(preferred_key_shares, i) ((preferred_key_shares >> (i + 1)) & 1)
@@ -52,28 +52,26 @@ static int s2n_client_key_share_send(struct s2n_connection *conn, struct s2n_stu
 static int s2n_client_key_share_recv(struct s2n_connection *conn, struct s2n_stuffer *extension);
 
 const s2n_extension_type s2n_client_key_share_extension = {
-    .iana_value = TLS_EXTENSION_KEY_SHARE,
+    .iana_value  = TLS_EXTENSION_KEY_SHARE,
     .is_response = false,
-    .send = s2n_client_key_share_send,
-    .recv = s2n_client_key_share_recv,
+    .send        = s2n_client_key_share_send,
+    .recv        = s2n_client_key_share_recv,
     .should_send = s2n_extension_send_if_tls13_connection,
-    .if_missing = s2n_extension_noop_if_missing,
+    .if_missing  = s2n_extension_noop_if_missing,
 };
 
 static int s2n_generate_preferred_key_shares(struct s2n_connection *conn, struct s2n_stuffer *out)
 {
     notnull_check(conn);
-    uint8_t preferred_key_shares = conn->preferred_key_shares;
-    struct s2n_ecc_evp_params *ecc_evp_params = NULL;
+    uint8_t                    preferred_key_shares = conn->preferred_key_shares;
+    struct s2n_ecc_evp_params *ecc_evp_params       = NULL;
 
     const struct s2n_ecc_preferences *ecc_pref = NULL;
     GUARD(s2n_connection_get_ecc_preferences(conn, &ecc_pref));
     notnull_check(ecc_pref);
 
     /* If lsb is set, skip keyshare generation for all curve */
-    if (S2N_IS_KEY_SHARE_LIST_EMPTY(preferred_key_shares)) {
-        return S2N_SUCCESS;
-    }
+    if (S2N_IS_KEY_SHARE_LIST_EMPTY(preferred_key_shares)) { return S2N_SUCCESS; }
 
     if (!conn->preferred_key_shares) {
         /* Default behavior is to generate keyshares for all curves.
@@ -85,8 +83,8 @@ static int s2n_generate_preferred_key_shares(struct s2n_connection *conn, struct
     for (size_t i = 0; i < ecc_pref->count; i++) {
         /* If a bit in the bitmap (minus the lsb) is set, generate keyshare for the corresponding curve */
         if (S2N_IS_KEY_SHARE_REQUESTED(preferred_key_shares, i)) {
-            ecc_evp_params = &conn->secure.client_ecc_evp_params[i];
-            ecc_evp_params->negotiated_curve = ecc_pref->ecc_curves[i];
+            ecc_evp_params                   = &conn->secure.client_ecc_evp_params[ i ];
+            ecc_evp_params->negotiated_curve = ecc_pref->ecc_curves[ i ];
             GUARD(s2n_ecdhe_parameters_send(ecc_evp_params, out));
         }
     }
@@ -98,7 +96,7 @@ static int s2n_send_hrr_keyshare(struct s2n_connection *conn, struct s2n_stuffer
 {
     notnull_check(conn);
     const struct s2n_ecc_named_curve *server_negotiated_curve = NULL;
-    struct s2n_ecc_evp_params *ecc_evp_params = NULL;
+    struct s2n_ecc_evp_params *       ecc_evp_params          = NULL;
 
     const struct s2n_ecc_preferences *ecc_pref = NULL;
     GUARD(s2n_connection_get_ecc_preferences(conn, &ecc_pref));
@@ -110,17 +108,17 @@ static int s2n_send_hrr_keyshare(struct s2n_connection *conn, struct s2n_stuffer
     bool has_supported_curve = false;
 
     for (size_t i = 0; i < ecc_pref->count; i++) {
-        if (ecc_pref->ecc_curves[i]->iana_id == server_negotiated_curve->iana_id) {
+        if (ecc_pref->ecc_curves[ i ]->iana_id == server_negotiated_curve->iana_id) {
             has_supported_curve = true;
-            ecc_evp_params = &conn->secure.client_ecc_evp_params[i];
+            ecc_evp_params      = &conn->secure.client_ecc_evp_params[ i ];
             ENSURE_POSIX(ecc_evp_params->evp_pkey == NULL, S2N_ERR_INVALID_HELLO_RETRY);
             ecc_evp_params->negotiated_curve = server_negotiated_curve;
             /* Generate the keyshare for the server negotiated curve */
             GUARD(s2n_ecdhe_parameters_send(ecc_evp_params, out));
-        } else if (&conn->secure.client_ecc_evp_params[i] != NULL) {
+        } else if (&conn->secure.client_ecc_evp_params[ i ] != NULL) {
             /* Our original key shares weren't successful, so clear the old list of keyshares */
-            GUARD(s2n_ecc_evp_params_free(&conn->secure.client_ecc_evp_params[i]));
-            conn->secure.client_ecc_evp_params[i].negotiated_curve = NULL;
+            GUARD(s2n_ecc_evp_params_free(&conn->secure.client_ecc_evp_params[ i ]));
+            conn->secure.client_ecc_evp_params[ i ].negotiated_curve = NULL;
         }
     }
 
@@ -161,9 +159,7 @@ static int s2n_client_key_share_recv(struct s2n_connection *conn, struct s2n_stu
     notnull_check(conn);
     notnull_check(extension);
 
-    if (!s2n_is_tls13_enabled() || conn->actual_protocol_version < S2N_TLS13) {
-        return S2N_SUCCESS;
-    }
+    if (!s2n_is_tls13_enabled() || conn->actual_protocol_version < S2N_TLS13) { return S2N_SUCCESS; }
 
     const struct s2n_ecc_preferences *ecc_pref = NULL;
     GUARD(s2n_connection_get_ecc_preferences(conn, &ecc_pref));
@@ -174,9 +170,9 @@ static int s2n_client_key_share_recv(struct s2n_connection *conn, struct s2n_stu
     S2N_ERROR_IF(s2n_stuffer_data_available(extension) < key_shares_size, S2N_ERR_BAD_MESSAGE);
 
     const struct s2n_ecc_named_curve *supported_curve;
-    struct s2n_blob point_blob;
-    uint16_t named_group, share_size;
-    uint32_t supported_curve_index;
+    struct s2n_blob                   point_blob;
+    uint16_t                          named_group, share_size;
+    uint32_t                          supported_curve_index;
 
     /* Whether a match was found */
     uint8_t match = 0;
@@ -193,9 +189,9 @@ static int s2n_client_key_share_recv(struct s2n_connection *conn, struct s2n_stu
 
         supported_curve = NULL;
         for (size_t i = 0; i < ecc_pref->count; i++) {
-            if (named_group == ecc_pref->ecc_curves[i]->iana_id) {
+            if (named_group == ecc_pref->ecc_curves[ i ]->iana_id) {
                 supported_curve_index = i;
-                supported_curve = ecc_pref->ecc_curves[i];
+                supported_curve       = ecc_pref->ecc_curves[ i ];
                 break;
             }
         }
@@ -207,7 +203,7 @@ static int s2n_client_key_share_recv(struct s2n_connection *conn, struct s2n_stu
         }
 
         /* Ignore curves that we've already received material for */
-        if (conn->secure.client_ecc_evp_params[supported_curve_index].negotiated_curve) {
+        if (conn->secure.client_ecc_evp_params[ supported_curve_index ].negotiated_curve) {
             GUARD(s2n_stuffer_skip_read(extension, share_size));
             continue;
         }
@@ -220,11 +216,12 @@ static int s2n_client_key_share_recv(struct s2n_connection *conn, struct s2n_stu
 
         GUARD(s2n_ecc_evp_read_params_point(extension, share_size, &point_blob));
 
-        conn->secure.client_ecc_evp_params[supported_curve_index].negotiated_curve = supported_curve;
-        if (s2n_ecc_evp_parse_params_point(&point_blob, &conn->secure.client_ecc_evp_params[supported_curve_index]) < 0) {
+        conn->secure.client_ecc_evp_params[ supported_curve_index ].negotiated_curve = supported_curve;
+        if (s2n_ecc_evp_parse_params_point(&point_blob, &conn->secure.client_ecc_evp_params[ supported_curve_index ])
+            < 0) {
             /* Ignore curves with points we can't parse */
-            conn->secure.client_ecc_evp_params[supported_curve_index].negotiated_curve = NULL;
-            GUARD(s2n_ecc_evp_params_free(&conn->secure.client_ecc_evp_params[supported_curve_index]));
+            conn->secure.client_ecc_evp_params[ supported_curve_index ].negotiated_curve = NULL;
+            GUARD(s2n_ecc_evp_params_free(&conn->secure.client_ecc_evp_params[ supported_curve_index ]));
         } else {
             match = 1;
         }
@@ -232,9 +229,7 @@ static int s2n_client_key_share_recv(struct s2n_connection *conn, struct s2n_stu
 
     /* If there was no matching key share then we received an empty key share extension
      * or we didn't match a keyshare with a supported group. We should send a retry. */
-    if (match == 0) {
-        GUARD(s2n_set_hello_retry_required(conn));
-    }
+    if (match == 0) { GUARD(s2n_set_hello_retry_required(conn)); }
 
     return S2N_SUCCESS;
 }
@@ -249,13 +244,12 @@ uint32_t s2n_extensions_client_key_share_size(struct s2n_connection *conn)
     GUARD(s2n_connection_get_ecc_preferences(conn, &ecc_pref));
     notnull_check(ecc_pref);
 
-    uint32_t s2n_client_key_share_extension_size = S2N_SIZE_OF_EXTENSION_TYPE
-            + S2N_SIZE_OF_EXTENSION_DATA_SIZE
-            + S2N_SIZE_OF_CLIENT_SHARES_SIZE;
+    uint32_t s2n_client_key_share_extension_size =
+        S2N_SIZE_OF_EXTENSION_TYPE + S2N_SIZE_OF_EXTENSION_DATA_SIZE + S2N_SIZE_OF_CLIENT_SHARES_SIZE;
 
-    for (uint32_t i = 0; i < ecc_pref->count ; i++) {
+    for (uint32_t i = 0; i < ecc_pref->count; i++) {
         s2n_client_key_share_extension_size += S2N_SIZE_OF_KEY_SHARE_SIZE + S2N_SIZE_OF_NAMED_GROUP;
-        s2n_client_key_share_extension_size += ecc_pref->ecc_curves[i]->share_size; 
+        s2n_client_key_share_extension_size += ecc_pref->ecc_curves[ i ]->share_size;
     }
 
     return s2n_client_key_share_extension_size;

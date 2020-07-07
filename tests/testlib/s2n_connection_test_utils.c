@@ -13,37 +13,29 @@
  * permissions and limitations under the License.
  */
 
-#include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <sys/types.h>
+#include <stdio.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
+#include "testlib/s2n_testlib.h"
 #include "tls/s2n_connection.h"
 #include "utils/s2n_safety.h"
 #include "utils/s2n_socket.h"
-#include "testlib/s2n_testlib.h"
 
+int s2n_fd_set_blocking(int fd) { return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) & ~O_NONBLOCK); }
 
-int s2n_fd_set_blocking(int fd) {
-    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) & ~O_NONBLOCK);
-}
-
-int s2n_fd_set_non_blocking(int fd) {
-    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
-}
+int s2n_fd_set_non_blocking(int fd) { return fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK); }
 
 static int buffer_read(void *io_context, uint8_t *buf, uint32_t len)
 {
     struct s2n_stuffer *in_buf;
-    int n_read, n_avail;
+    int                 n_read, n_avail;
 
+    if (buf == NULL) { return 0; }
 
-    if (buf == NULL) {
-        return 0;
-    }
-
-    in_buf = (struct s2n_stuffer *) io_context;
+    in_buf = ( struct s2n_stuffer * )io_context;
     if (in_buf == NULL) {
         errno = EINVAL;
         return -1;
@@ -51,7 +43,7 @@ static int buffer_read(void *io_context, uint8_t *buf, uint32_t len)
 
     /* read the number of bytes requested or less if it isn't available */
     n_avail = s2n_stuffer_data_available(in_buf);
-    n_read = (len < n_avail) ? len : n_avail;
+    n_read  = (len < n_avail) ? len : n_avail;
 
     if (n_read == 0) {
         errno = EAGAIN;
@@ -66,11 +58,9 @@ static int buffer_write(void *io_context, const uint8_t *buf, uint32_t len)
 {
     struct s2n_stuffer *out;
 
-    if (buf == NULL) {
-        return 0;
-    }
+    if (buf == NULL) { return 0; }
 
-    out = (struct s2n_stuffer *) io_context;
+    out = ( struct s2n_stuffer * )io_context;
     if (out == NULL) {
         errno = EINVAL;
         return -1;
@@ -102,12 +92,12 @@ int s2n_io_pair_init(struct s2n_test_io_pair *io_pair)
 {
     signal(SIGPIPE, SIG_IGN);
 
-    int socket_pair[2];
+    int socket_pair[ 2 ];
 
     GUARD(socketpair(AF_UNIX, SOCK_STREAM, 0, socket_pair));
 
-    io_pair->client = socket_pair[0];
-    io_pair->server = socket_pair[1];
+    io_pair->client = socket_pair[ 0 ];
+    io_pair->server = socket_pair[ 1 ];
 
     return 0;
 }
@@ -152,7 +142,7 @@ int s2n_io_pair_close_one_end(struct s2n_test_io_pair *io_pair, int mode_to_clos
 {
     if (mode_to_close == S2N_CLIENT) {
         GUARD(close(io_pair->client));
-    } else if(mode_to_close == S2N_SERVER) {
+    } else if (mode_to_close == S2N_SERVER) {
         GUARD(close(io_pair->server));
     }
     return 0;
@@ -162,7 +152,7 @@ int s2n_io_pair_shutdown_one_end(struct s2n_test_io_pair *io_pair, int mode_to_c
 {
     if (mode_to_close == S2N_CLIENT) {
         GUARD(shutdown(io_pair->client, how));
-    } else if(mode_to_close == S2N_SERVER) {
+    } else if (mode_to_close == S2N_SERVER) {
         GUARD(shutdown(io_pair->server, how));
     }
     return 0;
@@ -173,39 +163,30 @@ void s2n_print_connection(struct s2n_connection *conn, const char *marker)
     int i;
 
     printf("marker: %s\n", marker);
-    printf("HEADER IN Stuffer (write: %d, read: %d, size: %d)\n", conn->header_in.write_cursor, conn->header_in.read_cursor, conn->header_in.blob.size);
+    printf("HEADER IN Stuffer (write: %d, read: %d, size: %d)\n", conn->header_in.write_cursor,
+           conn->header_in.read_cursor, conn->header_in.blob.size);
     for (i = 0; i < conn->header_in.blob.size; i++) {
-        printf("%02x", conn->header_in.blob.data[i]);
-        if ((i + 1) % 8 == 0) {
-            printf(" ");
-        }
-        if ((i + 1) % 40 == 0) {
-            printf("\n");
-        }
-    }
-    printf("\n");
- 
-    printf("IN Stuffer (write: %d, read: %d, size: %d)\n", conn->in.write_cursor, conn->in.read_cursor, conn->in.blob.size);
-    for (i = 0; i < conn->in.write_cursor; i++) {
-        printf("%02x", conn->in.blob.data[i]);
-        if ((i + 1) % 8 == 0) {
-            printf(" ");
-        }
-        if ((i + 1) % 40 == 0) {
-            printf("\n");
-        }
+        printf("%02x", conn->header_in.blob.data[ i ]);
+        if ((i + 1) % 8 == 0) { printf(" "); }
+        if ((i + 1) % 40 == 0) { printf("\n"); }
     }
     printf("\n");
 
-    printf("OUT Stuffer (write: %d, read: %d, size: %d)\n", conn->out.write_cursor, conn->out.read_cursor, conn->out.blob.size);
+    printf("IN Stuffer (write: %d, read: %d, size: %d)\n", conn->in.write_cursor, conn->in.read_cursor,
+           conn->in.blob.size);
+    for (i = 0; i < conn->in.write_cursor; i++) {
+        printf("%02x", conn->in.blob.data[ i ]);
+        if ((i + 1) % 8 == 0) { printf(" "); }
+        if ((i + 1) % 40 == 0) { printf("\n"); }
+    }
+    printf("\n");
+
+    printf("OUT Stuffer (write: %d, read: %d, size: %d)\n", conn->out.write_cursor, conn->out.read_cursor,
+           conn->out.blob.size);
     for (i = 0; i < conn->out.write_cursor; i++) {
-        printf("%02x", conn->out.blob.data[i]);
-        if ((i + 1) % 8 == 0) {
-            printf(" ");
-        }
-        if ((i + 1) % 40 == 0) {
-            printf("\n");
-        }
+        printf("%02x", conn->out.blob.data[ i ]);
+        if ((i + 1) % 8 == 0) { printf(" "); }
+        if ((i + 1) % 40 == 0) { printf("\n"); }
     }
     printf("\n");
 }

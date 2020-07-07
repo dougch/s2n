@@ -24,15 +24,15 @@ typedef struct {
 } s2n_result;
 
 /* used to signal a successful function return */
-#define S2N_RESULT_OK ((s2n_result) { S2N_SUCCESS });
+#define S2N_RESULT_OK ((s2n_result){ S2N_SUCCESS });
 
 /* used to signal an error while executing a function */
-#define S2N_RESULT_ERROR ((s2n_result) { S2N_FAILURE });
+#define S2N_RESULT_ERROR ((s2n_result){ S2N_FAILURE });
 
 #if defined(__clang__) || defined(__GNUC__)
-#define S2N_RESULT_MUST_USE __attribute__((warn_unused_result))
+#    define S2N_RESULT_MUST_USE __attribute__((warn_unused_result))
 #else
-#define S2N_RESULT_MUST_USE
+#    define S2N_RESULT_MUST_USE
 #endif
 
 /* returns true when the result is S2N_RESULT_OK */
@@ -45,4 +45,4 @@ S2N_RESULT_MUST_USE bool s2n_result_is_error(s2n_result result);
 #define S2N_RESULT S2N_RESULT_MUST_USE s2n_result
 
 /* converts the S2N_RESULT into posix error codes */
-#define S2N_RESULT_TO_POSIX( x ) (s2n_result_is_ok(x) ? S2N_SUCCESS : S2N_FAILURE)
+#define S2N_RESULT_TO_POSIX(x) (s2n_result_is_ok(x) ? S2N_SUCCESS : S2N_FAILURE)

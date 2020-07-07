@@ -28,8 +28,8 @@
 int main(int argc, char **argv)
 {
     BEGIN_TEST();
-    struct s2n_connection *conn = NULL;
-    struct s2n_config *config = NULL;
+    struct s2n_connection *conn   = NULL;
+    struct s2n_config *    config = NULL;
 
     /* Test error case for setting preferred keyshares prior to ecc_preferences being configured */
     {

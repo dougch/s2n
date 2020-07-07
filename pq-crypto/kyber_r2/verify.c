@@ -14,17 +14,16 @@
 *
 * Returns 0 if the byte arrays are equal, 1 otherwise
 **************************************************/
-uint8_t PQCLEAN_KYBER512_CLEAN_verify(const uint8_t *a, const uint8_t *b, size_t len) {
+uint8_t PQCLEAN_KYBER512_CLEAN_verify(const uint8_t *a, const uint8_t *b, size_t len)
+{
     uint64_t r;
-    size_t i;
+    size_t   i;
     r = 0;
 
-    for (i = 0; i < len; i++) {
-        r |= a[i] ^ b[i];
-    }
+    for (i = 0; i < len; i++) { r |= a[ i ] ^ b[ i ]; }
 
     r = (-r) >> 63;
-    return (uint8_t)r;
+    return ( uint8_t )r;
 }
 
 /*************************************************
@@ -40,11 +39,10 @@ uint8_t PQCLEAN_KYBER512_CLEAN_verify(const uint8_t *a, const uint8_t *b, size_t
 *              size_t len:             Amount of bytes to be copied
 *              uint8_t b:        Condition bit; has to be in {0,1}
 **************************************************/
-void PQCLEAN_KYBER512_CLEAN_cmov(uint8_t *r, const uint8_t *x, size_t len, uint8_t b) {
+void PQCLEAN_KYBER512_CLEAN_cmov(uint8_t *r, const uint8_t *x, size_t len, uint8_t b)
+{
     size_t i;
 
     b = -b;
-    for (i = 0; i < len; i++) {
-        r[i] ^= b & (x[i] ^ r[i]);
-    }
+    for (i = 0; i < len; i++) { r[ i ] ^= b & (x[ i ] ^ r[ i ]); }
 }

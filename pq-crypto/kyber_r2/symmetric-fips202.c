@@ -1,7 +1,7 @@
+#include <stdlib.h>
+
 #include "fips202_kyber_r2.h"
 #include "symmetric.h"
-
-#include <stdlib.h>
 /*************************************************
 * Name:        kyber_shake128_absorb
 *
@@ -12,15 +12,14 @@
 *              - uint8_t i                  additional byte of input
 *              - uint8_t j                  additional byte of input
 **************************************************/
-void PQCLEAN_KYBER512_CLEAN_kyber_shake128_absorb(keccak_state *s, const uint8_t *input, uint8_t x, uint8_t y) {
-    size_t i;
-    uint8_t extseed[KYBER_SYMBYTES + 2];
+void PQCLEAN_KYBER512_CLEAN_kyber_shake128_absorb(keccak_state *s, const uint8_t *input, uint8_t x, uint8_t y)
+{
+    size_t  i;
+    uint8_t extseed[ KYBER_SYMBYTES + 2 ];
 
-    for (i = 0; i < KYBER_SYMBYTES; i++) {
-        extseed[i] = input[i];
-    }
-    extseed[i++] = x;
-    extseed[i]   = y;
+    for (i = 0; i < KYBER_SYMBYTES; i++) { extseed[ i ] = input[ i ]; }
+    extseed[ i++ ] = x;
+    extseed[ i ]   = y;
     shake128_absorb(s, extseed, KYBER_SYMBYTES + 2);
 }
 
@@ -35,7 +34,8 @@ void PQCLEAN_KYBER512_CLEAN_kyber_shake128_absorb(keccak_state *s, const uint8_t
 *              - unsigned long long nblocks: number of blocks to be squeezed (written to output)
 *              - keccak_state *s:            pointer to in/output Keccak state
 **************************************************/
-void PQCLEAN_KYBER512_CLEAN_kyber_shake128_squeezeblocks(uint8_t *output, size_t nblocks, keccak_state *s) {
+void PQCLEAN_KYBER512_CLEAN_kyber_shake128_squeezeblocks(uint8_t *output, size_t nblocks, keccak_state *s)
+{
     shake128_squeezeblocks(output, nblocks, s);
 }
 
@@ -50,14 +50,13 @@ void PQCLEAN_KYBER512_CLEAN_kyber_shake128_squeezeblocks(uint8_t *output, size_t
 *              - const uint8_t * key:  pointer to the key (of length KYBER_SYMBYTES)
 *              - const uint8_t nonce:  single-byte nonce (public PRF input)
 **************************************************/
-void PQCLEAN_KYBER512_CLEAN_shake256_prf(uint8_t *output, size_t outlen, const uint8_t *key, uint8_t nonce) {
-    uint8_t extkey[KYBER_SYMBYTES + 1];
-    size_t i;
+void PQCLEAN_KYBER512_CLEAN_shake256_prf(uint8_t *output, size_t outlen, const uint8_t *key, uint8_t nonce)
+{
+    uint8_t extkey[ KYBER_SYMBYTES + 1 ];
+    size_t  i;
 
-    for (i = 0; i < KYBER_SYMBYTES; i++) {
-        extkey[i] = key[i];
-    }
-    extkey[i] = nonce;
+    for (i = 0; i < KYBER_SYMBYTES; i++) { extkey[ i ] = key[ i ]; }
+    extkey[ i ] = nonce;
 
     shake256_kyber(output, outlen, extkey, KYBER_SYMBYTES + 1);
 }

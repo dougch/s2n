@@ -25,5 +25,4 @@ int kyber_512_r2_crypto_kem_enc(OUT unsigned char *ct, OUT unsigned char *ss, IN
 // Return 0 for success and !0 for failures.
 int kyber_512_r2_crypto_kem_dec(OUT unsigned char *ss, IN const unsigned char *ct, IN const unsigned char *sk);
 
-#endif // KYBER_R2_KEM_H
-
+#endif  // KYBER_R2_KEM_H
