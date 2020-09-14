@@ -15,14 +15,18 @@
 set -eu
 
 BUILDSPEC_OMNIBUS=./spec/buildspec_omnibus.yml
+BUILDSPEC_OMNIBUS_CODECOMMIT=./spec/buildspec_omnibus_codecommit.yml
+
 BUILDSPEC_FUZZ=./spec/buildspec_fuzz_batch.yml
 BUILDSPEC_INTEG=./spec/buildspec_integ_batch.yml
 BUILDSPEC_GENERAL=./spec/buildspec_general_batch.yml
+CODECOMMIT_PREFIX="third-party-src"
 
 synth_subjobs () {
   yq -S -Y -r '{batch:{"build-list":[.batch."build-list"[]| select(.identifier|contains("Fuzz")) ]}}' $BUILDSPEC_OMNIBUS > $BUILDSPEC_FUZZ
   yq -S -Y -r '{batch:{"build-list":[.batch."build-list"[]| select(.identifier|contains("Integ")) ]}}' $BUILDSPEC_OMNIBUS > $BUILDSPEC_INTEG
   yq -S -Y -r '{batch:{"build-list":[.batch."build-list"[]| select(.identifier|contains("Fuzz")|not)|select(.identifier|contains("Integ")|not) ]}}' $BUILDSPEC_OMNIBUS > $BUILDSPEC_GENERAL
+  echo -e "Created:\n$BUILDSPEC_FUZZ\n$BUILDSPEC_INTEG\n$BUILDSPEC_GENERAL\n"
 }
 
 
@@ -31,10 +35,15 @@ check_buildspec () {
     INTEG=$(yq -r '.batch."build-list"|length' $BUILDSPEC_INTEG)
     FUZZ=$(yq -r '.batch."build-list"|length' $BUILDSPEC_FUZZ)
     GENERAL=$(yq -r '.batch."build-list"|length' $BUILDSPEC_GENERAL)
-    echo -e "Checking newly created buildspec files\n$OMNIBUS = $INTEG + $FUZZ + $GENERAL"
+    echo -e "Checking the math on newly created buildspec files\n$OMNIBUS = $INTEG + $FUZZ + $GENERAL"
     if (($OMNIBUS != $INTEG+$FUZZ+$GENERAL)); then
       echo "Counts do not match!"
     fi
+}
+
+codecommit_pathfix(){
+  sed 's/buildspec: /buildspec: '$CODECOMMIT_PREFIX'\//' "$BUILDSPEC_OMNIBUS" > "$BUILDSPEC_OMNIBUS_CODECOMMIT"
+  echo -e "Created:\n $BUILDSPEC_OMNIBUS_CODECOMMIT"
 }
 
 PREREQS="jq yq"
@@ -45,4 +54,6 @@ for i in $PREREQS; do
 done
 synth_subjobs
 check_buildspec
+codecommit_pathfix
+yamllint "$BUILDSPEC_OMNIBUS" "$BUILDSPEC_OMNIBUS_CODECOMMIT"
 echo "Note the buildspec_*_batch.yml files that were just created should only be used in-line with CodeBuild and not be commited to the repository."

@@ -1,4 +1,5 @@
 ---
+# yamllint disable rule:line-length
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"). You may not use
@@ -12,7 +13,6 @@
 # implied. See the License for the specific language governing permissions and
 # limitations under the License.
 version: 0.2
-
 # Doc for batch https://docs.aws.amazon.com/codebuild/latest/userguide/batch-build-buildspec.html#build-spec.batch.build-list
 batch:
   build-list:
@@ -118,7 +118,7 @@ batch:
           SAW: true
           GCC_VERSION: NONE
 
-    - identifier: sawHMACPlus
+    - identifier: s2nSawHMACPlus
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
@@ -221,17 +221,6 @@ batch:
           FUZZ_COVERAGE: true
           CODECOV_IO_UPLOAD: true
 
-    - identifier: s2nFuzzerOpenSSL102
-      buildspec: codebuild/spec/buildspec_ubuntu_fuzz_artifacts.yml
-      env:
-        privileged-mode: true
-        compute-type: BUILD_GENERAL1_LARGE
-        variables:
-          S2N_LIBCRYPTO: openssl-1.0.2
-          LATEST_CLANG: true
-          TESTS: fuzz
-          FUZZ_TIMEOUT_SEC: 60
-
     - identifier: s2nFuzzerOpenSSL102FIPS
       buildspec: codebuild/spec/buildspec_ubuntu_fuzz_artifacts.yml
       env:
@@ -242,4 +231,3 @@ batch:
           LATEST_CLANG: true
           TESTS: fuzz
           FUZZ_TIMEOUT_SEC: 60
-
