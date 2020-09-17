@@ -13,7 +13,7 @@
 # permissions and limitations under the License.
 #
 
-set -e
+set -exu
 
 usage() {
     echo "Usage: runFuzzTest.sh TEST_NAME FUZZ_TIMEOUT_SEC"
@@ -28,6 +28,14 @@ TEST_NAME=$1
 FUZZ_TIMEOUT_SEC=$2
 MIN_TEST_PER_SEC="1000"
 MIN_FEATURES_COVERED="100"
+CORPUS_DIR="/efscorpus/corpus"
+S2N_TEST_IN_FIPS_MODE=${S2N_TEST_IN_FIPS_MODE:-}
+AFL_FUZZ=${AFL_FUZZ:-}
+
+# If something goes wrong with EFS, fall back to git copy.
+if [[ ! -d "$CORPUS_DIR" ]]; then
+    CORPUS_DIR="./corpus"
+fi
 
 if [[ $TEST_NAME == *_negative_test ]];
 then
@@ -47,6 +55,7 @@ GLOBAL_OVERRIDES="${PWD}/LD_PRELOAD/global_overrides.so"
 
 FUZZCOV_SOURCES="${S2N_ROOT}/api ${S2N_ROOT}/bin ${S2N_ROOT}/crypto ${S2N_ROOT}/error ${S2N_ROOT}/pq-crypto ${S2N_ROOT}/stuffer ${S2N_ROOT}/tls ${S2N_ROOT}/utils"
 
+
 if [ -e $TEST_SPECIFIC_OVERRIDES ];
 then
     export LD_PRELOAD="$TEST_SPECIFIC_OVERRIDES $GLOBAL_OVERRIDES"
@@ -65,23 +74,23 @@ then
     fi
 fi
 
-if [ ! -d "./corpus/${TEST_NAME}" ];
+if [ ! -d "${CORPUS_DIR}/${TEST_NAME}" ];
 then
-  printf "\033[33;1mWARNING!\033[0m ./corpus/${TEST_NAME} directory does not exist, feature coverage may be below minimum.\n\n"
+  printf "\033[33;1mWARNING!\033[0m ${CORPUS_DIR}/${TEST_NAME} directory does not exist, feature coverage may be below minimum.\n\n"
 fi
 
 # Make directory if it doesn't exist
-mkdir -p "./corpus/${TEST_NAME}"
+mkdir -p "${CORPUS_DIR}/${TEST_NAME}"
 
 ACTUAL_TEST_FAILURE=0
 
 # Copy existing Corpus to a temp directory so that new inputs from fuzz tests runs will add new inputs to the temp directory. 
 # This allows us to minimize new inputs before merging to the original corpus directory.
 TEMP_CORPUS_DIR="$(mktemp -d)"
-cp -r ./corpus/${TEST_NAME}/. "${TEMP_CORPUS_DIR}"
+rsync -aq "${CORPUS_DIR}/${TEST_NAME}" "${TEMP_CORPUS_DIR}/"
 
 # Run AFL instead of libfuzzer if AFL_FUZZ is set. Not compatible with fuzz coverage.
-if [[ ! -z "$AFL_FUZZ" && "$FUZZ_COVERAGE" != "true" ]]; then
+if [[ "$AFL_FUZZ" == "true" && "$FUZZ_COVERAGE" != "true" ]]; then
     printf "Running %-s %-40s for %5d sec... " "${FIPS_TEST_MSG}" ${TEST_NAME} ${FUZZ_TIMEOUT_SEC}
     mkdir -p results/${TEST_NAME}
     timeout ${FUZZ_TIMEOUT_SEC} afl-fuzz -i corpus/${TEST_NAME} -o results/${TEST_NAME} -m none ./${TEST_NAME}
@@ -111,6 +120,8 @@ else
     ./${TEST_NAME} ${LIBFUZZER_ARGS} ${TEMP_CORPUS_DIR} > ${TEST_NAME}_output.txt 2>&1 || ACTUAL_TEST_FAILURE=1
 fi
 
+printf "Backing up updated corpus files"
+rsync -aq "$TEMP_CORPUS_DIR/" "$CORPUS_DIR/"
 
 TEST_COUNT=`grep -o "stat::number_of_executed_units: [0-9]*" ${TEST_NAME}_output.txt | awk '{test_count += $2} END {print test_count}'`
 TESTS_PER_SEC=`echo $(($TEST_COUNT / $FUZZ_TIMEOUT_SEC))`
@@ -169,9 +180,9 @@ then
         printf "\n"
         rm -f leak-* crash-*
     else
-        # TEMP_CORPUS_DIR may contain many new inputs that only covers a small set of new branches. 
+        # TEMP_CORPUS_DIR may contain many new inputs that only covers a small set of new branches.
         # Instead of copying all new inputs to the corpus directory,  only copy back minimum number of new inputs that reach new branches.
-        ./${TEST_NAME} -merge=1 "./corpus/${TEST_NAME}" "${TEMP_CORPUS_DIR}" > ${TEST_NAME}_results.txt 2>&1
+        ./${TEST_NAME} -merge=1 "${CORPUS_DIR}/${TEST_NAME}" "${TEMP_CORPUS_DIR}" > ${TEST_NAME}_results.txt 2>&1
 
         # Print number of new files and branches found in new Inputs (if any)
         RESULTS=`grep -Eo "[0-9]+ new files .*$" ${TEST_NAME}_results.txt | tail -1`
