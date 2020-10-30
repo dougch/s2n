@@ -38,7 +38,7 @@ else
     EXPECTED_TEST_FAILURE=0
 fi
 
-ASAN_OPTIONS+="symbolize=1"
+ASAN_OPTIONS+="symbolize=1 detect_leaks=1"
 LSAN_OPTIONS+="log_threads=1"
 UBSAN_OPTIONS+="print_stacktrace=1"
 NUM_CPU_THREADS=`nproc`
