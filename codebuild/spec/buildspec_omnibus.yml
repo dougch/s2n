@@ -15,7 +15,11 @@ version: 0.2
 
 # Doc for batch https://docs.aws.amazon.com/codebuild/latest/userguide/batch-build-buildspec.html#build-spec.batch.build-list
 batch:
-  build-list:
+  # CodeCommit checkouts started throttling us at 35 concurrent jobs.
+  # Moving to build-graph see https://t.corp.amazon.com/P40562757
+  # Because this file is divided up to create the other batch jobs, dependencies MUST NOT cross test boundaries, 
+  # e.g. a Fuzz test depending on an Integration test will break.
+  build-graph:
     # Consolidated Integration v1 tests
     - identifier: s2nIntegrationBoringLibre
       buildspec: codebuild/spec/buildspec_ubuntu_integ_boringlibre.yml
