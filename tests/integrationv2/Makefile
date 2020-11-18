@@ -12,7 +12,6 @@
 # express or implied. See the License for the specific language governing
 # permissions and limitations under the License.
 #
-.DEFAULT_GOAL: all
 
 # If the libcrypto that s2n was built with is not specified, assume latest(1.1.1).
 # Required to determine the cipher suites to use in integration tests.
@@ -26,10 +25,6 @@ ifeq ($(S2N_CORKED_IO),true)
 	HANDSHAKE_TEST_PARAMS:=--use_corked_io $(HANDSHAKE_TEST_PARAMS)
 endif
 
-TESTS:=${shell find . -name test\*.py -printf '%f '|sed 's/.py//g' }
-
-.PHONY : all
-all: ${TESTS}
 
 define run_tox
 	( \
@@ -42,5 +37,33 @@ define run_tox
 	)
 endef
 
-$(TESTS):
+test_key_update:
 	$(call run_tox,$@.py)
+test_client_authentication:
+	$(call run_tox,$@.py)
+test_dynamic_record_sizes:
+	$(call run_tox,$@.py)
+test_happy_path:
+	$(call run_tox,$@.py)
+test_session_resumption:
+	$(call run_tox,$@.py)
+test_sni_match:
+	$(call run_tox,$@.py)
+test_well_known_endpoints:
+	$(call run_tox,$@.py)
+test_fragmentation:
+	$(call run_tox,$@.py)
+test_hello_retry_requests:
+	$(call run_tox,$@.py)
+test_pq_handshake:
+	$(call run_tox,$@.py)
+test_signature_algorithms:
+	$(call run_tox,$@.py)
+test_version_negotiation:
+	$(call run_tox,$@.py)
+test_single:
+	$(call run_tox,$(TOX_TEST_NAME))
+
+.PHONY : test_client_authentication test_dynamic_record_sizes test_key_update test_happy_path test_session_resumption test_sni_match test_well_known_endpoints test_fragmentation test_hello_retry_requests test_pq_handshake test_signature_algorithms test_version_negotiation
+all: test_client_authentication test_dynamic_record_sizes test_key_update test_happy_path test_session_resumption test_sni_match test_well_known_endpoints test_fragmentation test_hello_retry_requests test_pq_handshake test_signature_algorithms test_version_negotiation
+
