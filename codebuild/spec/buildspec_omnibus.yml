@@ -16,9 +16,9 @@ version: 0.2
 # Doc for batch https://docs.aws.amazon.com/codebuild/latest/userguide/batch-build-buildspec.html#build-spec.batch.build-list
 batch:
   # CodeCommit checkouts started throttling us at 35 concurrent jobs.
-  # Moving to build-graph see https://t.corp.amazon.com/P40562757
-  # Because this file is divided up to create the other batch jobs, dependencies MUST NOT cross test boundaries, 
-  # e.g. a Fuzz test depending on an Integration test will break.
+  # Moving to build-graph to respect dependency limits; see https://t.corp.amazon.com/P40562757
+  # Because this file is divided up to create the other batch jobs, dependencies MUST NOT cross test boundaries,
+  # e.g. a Fuzz tests depending on an Integration test will break.
   build-graph:
     # Consolidated Integration v1 tests
     - identifier: s2nIntegrationBoringLibre
@@ -26,30 +26,38 @@ batch:
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
 
     - identifier: s2nIntegrationAwsLc
       buildspec: codebuild/spec/buildspec_ubuntu_integ_awslc.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
 
     - identifier: s2nIntegrationOpenSSL111PlusCoverage
       buildspec: codebuild/spec/buildspec_ubuntu_integ_openssl111.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
 
+    # Integ wave2
     - identifier: s2nIntegrationOpenSSL102Plus
       buildspec: codebuild/spec/buildspec_ubuntu_integ_openssl102.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
+      depend-on: [s2nIntegrationOpenSSL111PlusCoverage]
 
     - identifier: s2nIntegrationOpenSSL102AsanValgrind
       buildspec: codebuild/spec/buildspec_ubuntu_integ_openssl102_asanvalgrind.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
+      depend-on: [s2nIntegrationOpenSSL111PlusCoverage]
 
     # Integration V2 tests
     - identifier: s2nIntegrationV2ClientAuthentication
@@ -57,148 +65,184 @@ batch:
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_client_authentication
+      depend-on: [s2nIntegrationOpenSSL111PlusCoverage]
 
+    #Integ wave3
     - identifier: s2nIntegrationV2DynamicRecordSizes
       buildspec: codebuild/spec/buildspec_ubuntu_integrationv2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_dynamic_record_sizes
+      depend-on: [s2nIntegrationV2ClientAuthentication]
 
     - identifier: s2nIntegrationV2KeyUpdate
       buildspec: codebuild/spec/buildspec_ubuntu_integrationv2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_key_update
+      depend-on: [s2nIntegrationV2ClientAuthentication]
 
     - identifier: s2nIntegrationV2HappyPath
       buildspec: codebuild/spec/buildspec_ubuntu_integrationv2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_happy_path
+      depend-on: [s2nIntegrationV2ClientAuthentication]
 
+    #Integ wave4
     - identifier: s2nIntegrationV2SessionResumption
       buildspec: codebuild/spec/buildspec_ubuntu_integrationv2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_session_resumption
+      depend-on: [s2nIntegrationV2HappyPath]
 
     - identifier: s2nIntegrationV2SniMatch
       buildspec: codebuild/spec/buildspec_ubuntu_integrationv2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_sni_match
+      depend-on: [s2nIntegrationV2HappyPath]
 
     - identifier: s2nIntegrationV2Fragmentation
       buildspec: codebuild/spec/buildspec_ubuntu_integrationv2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_fragmentation
+      depend-on: [s2nIntegrationV2CompatibilityWithOqsOpenssl]
 
     - identifier: s2nIntegrationV2HelloRetryRequests
       buildspec: codebuild/spec/buildspec_ubuntu_integrationv2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_hello_retry_requests
+      depend-on: [s2nIntegrationV2CompatibilityWithOqsOpenssl]
 
     - identifier: s2nIntegrationV2PqHandshake
       buildspec: codebuild/spec/buildspec_ubuntu_integrationv2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_pq_handshake
+      depend-on: [s2nIntegrationV2CompatibilityWithOqsOpenssl]
 
+    # Integ wave6
     - identifier: s2nIntegrationV2SignatureAlgorithms
       buildspec: codebuild/spec/buildspec_ubuntu_integrationv2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_signature_algorithms
+      depend-on: [s2nIntegrationV2PqHandshake]
 
     - identifier: s2nIntegrationV2VersionNegotiation
       buildspec: codebuild/spec/buildspec_ubuntu_integrationv2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_version_negotiation
+      depend-on: [s2nIntegrationV2PqHandshake]
 
     - identifier: s2nIntegrationV2WellKnownEndpoints
       buildspec: codebuild/spec/buildspec_ubuntu_integrationv2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_well_known_endpoints
+      depend-on: [s2nIntegrationV2PqHandshake]
 
-    # Individual Integration tests
+    # Individual Integration tests - wave7
     - identifier: s2nIntegrationBoringSSLGcc9
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           S2N_LIBCRYPTO: boringssl
           BUILD_S2N: true
           TESTS: integration
           GCC_VERSION: 9
+      depend-on: [s2nIntegrationV2WellKnownEndpoints]
 
     - identifier: s2nIntegrationOpenSSL111Gcc6SoftCrypto
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           S2N_LIBCRYPTO: openssl-1.1.1
           BUILD_S2N: true
           TESTS: integration
           GCC_VERSION: 6
           OPENSSL_ia32cap: "~0x200000200000000"
+      depend-on: [s2nIntegrationV2WellKnownEndpoints]
 
     - identifier: s2nIntegrationOpenSSL111Gcc9
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           S2N_LIBCRYPTO: openssl-1.1.1
           BUILD_S2N: true
           TESTS: integration
           GCC_VERSION: 9
+      depend-on: [s2nIntegrationV2WellKnownEndpoints]
 
     - identifier: s2nIntegrationLibreSSLGcc9
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           S2N_LIBCRYPTO: libressl
           BUILD_S2N: true
           TESTS: integration
           GCC_VERSION: 9
+      depend-on: [s2nIntegrationV2WellKnownEndpoints]
 
     - identifier: s2nIntegrationOpenSSL111Gcc6Coverage
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           S2N_LIBCRYPTO: openssl-1.1.1
           BUILD_S2N: true
@@ -206,24 +250,27 @@ batch:
           GCC_VERSION: 6
           S2N_COVERAGE: true
           CODECOV_IO_UPLOAD: true
+      depend-on: [s2nIntegrationV2WellKnownEndpoints]
 
-    # Saw
+    # Saw - general - wave1
     - identifier: s2nSawBike
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_2XLARGE
+        image: aws/codebuild/standard:4.0
         variables:
           S2N_LIBCRYPTO: openssl-1.0.2
           TESTS: sawBIKE
           SAW: true
           GCC_VERSION: NONE
 
-    - identifier: sawHMACPlus
+    - identifier: s2nSawHMACPlus
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           TESTS: sawHMACPlus
           SAW: true
@@ -234,12 +281,13 @@ batch:
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           TESTS: tls
           SAW: true
           GCC_VERSION: NONE
 
-    # Other
+    # Other - general wave2
     - identifier: s2nSidetrail
       buildspec: codebuild/spec/buildspec_sidetrail.yml
       env:
@@ -248,46 +296,53 @@ batch:
         image: 024603541914.dkr.ecr.us-west-2.amazonaws.com/linux-docker-images:sidetrail
         variables:
           TESTS: sidetrail
-
+      depend-on: [s2nSawTls]
 
     - identifier: s2nValgrindOpenSSL102Gcc6Fips
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           TESTS: valgrind
           GCC_VERSION: 6
           S2N_LIBCRYPTO: openssl-1.0.2-fips
           BUILD_S2N: true
+      depend-on: [s2nSawTls]
 
     - identifier: s2nValgrindOpenSSL111Gcc9
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           TESTS: valgrind
           GCC_VERSION: 9
           S2N_LIBCRYPTO: openssl-1.1.1
           BUILD_S2N: true
+      depend-on: [s2nSawTls]
 
     - identifier: s2nValgrindOpenssl102
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           TESTS: valgrind
           GCC_VERSION: '6'
           S2N_LIBCRYPTO: 'openssl-1.0.2'
           BUILD_S2N: 'true'
+      depend-on: [s2nSawTls]
 
     - identifier: s2nAsanOpenSSL111Coverage
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_SMALL
+        image: aws/codebuild/standard:4.0
         variables:
           TESTS: asan
           GCC_VERSION: '6'
@@ -296,24 +351,28 @@ batch:
           S2N_COVERAGE: 'true'
           CODECOV_IO_UPLOAD: 'true'
           CODECOV_TOKEN: 'e460b7c1-6019-4a50-b65d-555c4a8fbc22'
+      depend-on: [s2nSawTls]
 
     - identifier: s2nAsanOpenssl102
       buildspec: codebuild/spec/buildspec_ubuntu.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_SMALL
+        image: aws/codebuild/standard:4.0
         variables:
           TESTS: asan
           GCC_VERSION: '6'
           S2N_LIBCRYPTO: 'openssl-1.0.2'
           BUILD_S2N: 'true'
+      depend-on: [s2nSawTls]
 
-    # Fuzz tests
+    # Fuzz tests - wave1
     - identifier: s2nFuzzerOpenSSL111Coverage
       buildspec: codebuild/spec/buildspec_ubuntu_fuzz_artifacts.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           S2N_LIBCRYPTO: openssl-1.1.1
           LATEST_CLANG: true
@@ -327,6 +386,7 @@ batch:
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           S2N_LIBCRYPTO: openssl-1.0.2
           LATEST_CLANG: true
@@ -338,6 +398,7 @@ batch:
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
         variables:
           S2N_LIBCRYPTO: openssl-1.0.2-fips
           LATEST_CLANG: true
