@@ -36,6 +36,7 @@ find_library(LibCrypto_SHARED_LIBRARY
     ${CMAKE_INSTALL_PREFIX}/lib64
     ${CMAKE_INSTALL_PREFIX}/lib
     /usr/local/opt/openssl/lib
+    /usr/lib64
     )
 find_library(LibCrypto_STATIC_LIBRARY
     NAMES libcrypto.a
@@ -51,6 +52,7 @@ find_library(LibCrypto_STATIC_LIBRARY
     ${CMAKE_INSTALL_PREFIX}/lib64
     ${CMAKE_INSTALL_PREFIX}/lib
     /usr/local/opt/openssl/lib
+    /usr/lib64
     )
 
 if (BUILD_SHARED_LIBS)
