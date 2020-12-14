@@ -15,8 +15,6 @@
 #
 
 set -eu
-source codebuild/bin/s2n_setup_env.sh
-source codebuild/bin/jobs.sh
 
 usage() {
     echo "install_gnutls.sh build_dir install_dir os_name"
@@ -31,6 +29,8 @@ GNUTLS_BUILD_DIR=$1
 GNUTLS_INSTALL_DIR=$2
 GNUTLS_VER=3.5.5
 NETTLE_VER=3.3
+source codebuild/bin/s2n_setup_env.sh
+source codebuild/bin/jobs.sh
 
 build_nettle(){
     # Build GnuTLS dependency nettle from source.
@@ -73,10 +73,13 @@ case "$DISTRO" in
     ;;
   "amazon linux")
     echo "Packages are the only way to get nettle/gnutls on aarch64- and are OLDER versions."
-    # TODO: rebuild nettle, gnutls packages with newer versions
-    sudo yum install -y gmp-devel nettle-devel nettle gnutls gnutls-devel
-    ln -s /usr/lib64/libgnutls* $GNUTLS_INSTALL_DIR
-    ln -s /usr/lib64/.libgnutls* $GNUTLS_INSTALL_DIR
+    # TODO: rebuild nettle, gnutls packages with newer versions or flip to nix
+    sudo yum install -y gmp-devel nettle-devel nettle gnutls gnutls-utils gnutls-devel
+    mkdir $GNUTLS_INSTALL_DIR || true
+    ln -fs /usr/lib64/libgnutls* $GNUTLS_INSTALL_DIR
+    ln -fs /usr/lib64/.libgnutls* $GNUTLS_INSTALL_DIR
+    ln -fs $(which gnutls-serv) $GNUTLS_INSTALL_DIR
+    ln -fs $(which gnutls-cli) $GNUTLS_INSTALL_DIR
     exit 0
     ;;
 "darwin" )

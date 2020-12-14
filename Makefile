@@ -174,6 +174,7 @@ clean:
 	$(MAKE) -C lib decruft
 	$(MAKE) -C coverage clean
 
+#TODO: Remove before PR
 veryclean:
 	@rm -rf ./build
 build:

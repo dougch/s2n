@@ -7,14 +7,6 @@ env:
 
 batch:
   build-graph:
-    - identifier: s2nSidetrail
-      buildspec: codebuild/spec/buildspec_sidetrail.yml
-      env:
-        privileged-mode: true
-        compute-type: BUILD_GENERAL1_2XLARGE
-        image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-        variables:
-          TESTS: sidetrail
     - identifier: s2nValgrindOpenSSL102Gcc6Fips
       buildspec: codebuild/spec/buildspec_amazonlinux2.yml
       env:
@@ -179,7 +171,7 @@ batch:
           TESTS: integrationv2
           INTEGV2_TEST: test_well_known_endpoints
     - identifier: s2nIntegrationBoringSSLGcc9
-      buildspec: codebuild/spec/buildspec_ubuntu.yml
+      buildspec: codebuild/spec/buildspec_amazonlinux2.yml
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
