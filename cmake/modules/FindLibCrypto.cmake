@@ -20,7 +20,7 @@ find_path(LibCrypto_INCLUDE_DIR
     HINTS
         ${CMAKE_PREFIX_PATH}/include 
         ${CMAKE_INSTALL_PREFIX}/include
-	/usr/local/opt/openssl/include
+        /usr/local/opt/openssl/include
     )
 find_library(LibCrypto_SHARED_LIBRARY
     NAMES libcrypto.so libcrypto.dylib

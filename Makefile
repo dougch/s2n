@@ -173,19 +173,3 @@ clean:
 	$(MAKE) -C bin decruft
 	$(MAKE) -C lib decruft
 	$(MAKE) -C coverage clean
-
-#TODO: Remove before PR
-veryclean:
-	@rm -rf ./build
-build:
-	@mkdir build
-
-.PHONY: withninja
-withninja: build
-	{ set -e; \
-	cd build; \
-	cmake -GNinja -DS2N_NO_PQ=1 -DCMAKE_EXE_LINKER_FLAGS="-lcrypto -lz" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug .. ;\
-	ninja -v -d stats;\
-	ninja test ;\
-	}
-
