@@ -16,32 +16,40 @@
 # Shim code to get local docker/ec2 instances bootstraped like a CodeBuild instance.
 # Not actually used by CodeBuild.
 
-set -ex
+set -eu
+source ./codebuild/bin/s2n_setup_env.sh
 
-sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-sudo add-apt-repository ppa:longsleep/golang-backports -y
-sudo apt-get update -o Acquire::CompressionTypes::Order::=gz
+dev9ppa() {
+    echo "We need a test PPA for gcc-9, cmake,psmis on Ubuntu18"
+    add-apt-repository ppa:ubuntu-toolchain-r/test -y
+    add-apt-repository ppa:longsleep/golang-backports -y
+    apt-get update -o Acquire::CompressionTypes::Order::=gz
+    apt-get update -y
+}
 
-DEPENDENCIES="unzip make indent kwstyle libssl-dev tcpdump valgrind lcov m4 nettle-dev nettle-bin pkg-config gcc g++ zlibc zlib1g-dev python3-pip python3-testresources llvm curl git tox cmake libtool ninja-build golang-go quilt"
+prlimit() {
+    # If prlimit is not on our current PATH, download and compile prlimit manually. s2n needs prlimit to memlock pages
+    if ! type prlimit > /dev/null && [[ ! -d "$PRLIMIT_INSTALL_DIR" ]]; then
+        mkdir -p "$PRLIMIT_INSTALL_DIR";
+        codebuild/bin/install_prlimit.sh "$(mktemp -d)" "$PRLIMIT_INSTALL_DIR";
+    fi
+    }
 
+# Main
+if [[ ${DISTRO} != "ubuntu" ]]; then
+    echo "Target ubuntu; running on $DISTRO: Nothing to do."
+    exit 0
+fi
+
+DEPENDENCIES="unzip make psmisc sudo indent iproute2 kwstyle net-tools libssl-dev tcpdump valgrind lcov m4 nettle-dev nettle-bin pkg-config gcc g++ zlibc zlib1g-dev python3-pip python3-testresources llvm curl git tox cmake libtool ninja-build golang-go quilt gcc g++"
 
 if [[ -n "$GCC_VERSION" ]] && [[ "$GCC_VERSION" != "NONE" ]]; then
     DEPENDENCIES+=" gcc-$GCC_VERSION g++-$GCC_VERSION";
 fi
-
-sudo apt-get -y install --no-install-recommends ${DEPENDENCIES}
-
-# If prlimit is not on our current PATH, download and compile prlimit manually. s2n needs prlimit to memlock pages
-if ! type prlimit > /dev/null && [[ ! -d "$PRLIMIT_INSTALL_DIR" ]]; then
-    mkdir -p "$PRLIMIT_INSTALL_DIR";
-    sudo codebuild/bin/install_prlimit.sh "$(mktemp -d)" "$PRLIMIT_INSTALL_DIR";
+if [[ $(LATEST_CLANG) != "true" ]]; then
+    DEPENDENCIES+=" clang-3.9 llvm-3.9";
 fi
 
-if [[ "$TESTS" == "ctverif" || "$TESTS" == "ALL" ]] && [[ ! -d "$CTVERIF_INSTALL_DIR" ]]; then
-    mkdir -p "$CTVERIF_INSTALL_DIR" && codebuild/bin/install_ctverif.sh "$CTVERIF_INSTALL_DIR" > /dev/null ; fi
-
-if [[ "$TESTS" == "sidetrail" || "$TESTS" == "ALL" ]] ; then
-    codebuild/bin/install_sidetrail_dependencies.sh ; fi
-
-if [[ "$TESTS" == "sidetrail" || "$TESTS" == "ALL" ]] && [[ ! -d "$SIDETRAIL_INSTALL_DIR" ]]; then
-    mkdir -p "$SIDETRAIL_INSTALL_DIR" && codebuild/bin/install_sidetrail.sh "$SIDETRAIL_INSTALL_DIR" > /dev/null ; fi
+dev9ppa
+prlimit
+apt-get -y install --no-install-recommends ${DEPENDENCIES}
