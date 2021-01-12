@@ -54,5 +54,5 @@ symlink_all_the_things() {
 base_packages
 mono
 yum groupinstall -y "Development tools"
-yum install -y clang cmake3 iproute net-tools nettle-devel nettle openssl11-libs openssl11-devel which sudo psmisc python3-pip  tcpdump unzip zlib-devel libtool ninja-build valgrind  wget which
+yum install -y clang cmake3 iproute net-tools nettle-devel nettle openssl11-static openssl11-libs openssl11-devel which sudo psmisc python3-pip  tcpdump unzip zlib zlib-devel libtool ninja-build valgrind  wget which
 symlink_all_the_things

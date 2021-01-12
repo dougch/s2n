@@ -179,13 +179,13 @@ veryclean:
 build:
 	@mkdir build
 
-#Linker problems on AL2? try
-#cmake -GNinja -DS2N_NO_PQ=1 -DCMAKE_EXE_LINKER_FLAGS="-lcrypto -lz" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug .. ;\
+# Linker problems on AL2? try this
+# (comments online suggest this is an upstream issue with openssl/zlib)
 .PHONY: withninja
 withninja: build
 	{ set -e; \
 	cd build; \
-	cmake -GNinja -DS2N_NO_PQ=1 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug .. ;\
+	cmake -GNinja -DS2N_NO_PQ=1 -DCMAKE_EXE_LINKER_FLAGS="-lcrypto -lz" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug .. ;\
 	ninja -v -d stats;\
 	ninja test ;\
 	}
