@@ -30,7 +30,7 @@ INSTALL_DIR=$2
 PLATFORM=$3
 
 cd "$BUILD_DIR"
-wget https://www.openssl.org/source/old/0.9.x/openssl-0.9.8zh.tar.gz
+curl --retry 3 -L https://www.openssl.org/source/old/0.9.x/openssl-0.9.8zh.tar.gz --output openssl-0.9.8zh.tar.gz
 tar xzvf openssl-0.9.8zh.tar.gz
 cd openssl-0.9.8zh
 
