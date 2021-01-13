@@ -13,7 +13,7 @@
 # permissions and limitations under the License.
 #
 
-set -ex
+set -e
 
 # Upload Code Coverage Information to CodeCov.io
 if [[ "$CODECOV_IO_UPLOAD" == "true" ]]; then

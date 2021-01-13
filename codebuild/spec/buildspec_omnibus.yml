@@ -12,6 +12,10 @@
 # implied. See the License for the specific language governing permissions and
 # limitations under the License.
 version: 0.2
+env:
+  variables:
+    # CODEBUILD_ is a reserved namespace.
+    CB_BIN_DIR: "./codebuild/bin"
 
 # Doc for batch https://docs.aws.amazon.com/codebuild/latest/userguide/batch-build-buildspec.html#build-spec.batch.build-list
 batch:
@@ -21,38 +25,115 @@ batch:
   # e.g. a Fuzz tests depending on an Integration test will break.
   build-graph:
     # Consolidated Integration v1 tests
-    - identifier: s2nIntegrationBoringLibre
+    - identifier: s2nIntegrationLibre
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
         image: aws/codebuild/standard:4.0
+        variables:
+         TESTS: integration
+         BUILD_S2N: true
+         S2N_LIBCRYPTO: libressl
 
-    - identifier: s2nIntegrationAwsLc
+    - identifier: s2nIntegrationAwsLcGcc4
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
         image: aws/codebuild/standard:4.0
+        variables:
+          S2N_LIBCRYPTO: awslc
+          TESTS: integration
+          BUILD_S2N: true
+          GCC_VERSION: 4.8
 
-    - identifier: s2nIntegrationOpenSSL111PlusCoverage
+    - identifier: s2nIntegrationAwsLcGcc6
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
         image: aws/codebuild/standard:4.0
+        variables:
+          S2N_LIBCRYPTO: awslc
+          TESTS: integration
+          BUILD_S2N: true
+          GCC_VERSION: 6
+
+    - identifier: s2nIntegrationAwsLcGcc9
+      env:
+        privileged-mode: true
+        compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
+        variables:
+          S2N_LIBCRYPTO: awslc
+          TESTS: integration
+          BUILD_S2N: true
+          GCC_VERSION: 9
+
+    - identifier: s2nIntegrationOpenSSL111Gcc4
+      env:
+        privileged-mode: true
+        compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
+        var:
+          TESTS: integration
+          S2N_LIBCRYPTO: openssl-1.1.1
+          GCC_VERSION: 4.8
+
+    - identifier: s2nIntegrationOpenSSL111Gcc6Corked
+      env:
+        privileged-mode: true
+        compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
+        variables:
+          TESTS: integration
+          S2N_LIBCRYPTO: openssl-1.1.1
+          GCC_VERSION: 6
+          CORKED_IO: true
+
 
     # Integ wave2
-    - identifier: s2nIntegrationOpenSSL102Plus
+    - identifier: s2nIntegrationOpenSSL102
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
         image: aws/codebuild/standard:4.0
-      depend-on: [s2nIntegrationOpenSSL111PlusCoverage]
+        variables:
+          TESTS: integration
+          S2N_LIBCRYPTO: openssl-1.0.2
+      depend-on: [s2nIntegrationLibre]
 
-    - identifier: s2nIntegrationOpenSSL102AsanValgrind
+    - identifier: s2nIntegrationOpenSSL102Fips
       env:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
         image: aws/codebuild/standard:4.0
-      depend-on: [s2nIntegrationOpenSSL111PlusCoverage]
+        variables:
+          TESTS: integration
+          S2N_LIBCRYPTO: openssl-1.0.2-fips
+      depend-on: [s2nIntegrationLibre]
+
+    - identifier: s2nIntegrationOpenSSL102Asan
+      env:
+        privileged-mode: true
+        compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
+        variables:
+          TESTS: asan
+          S2N_LIBCRYPTO: openssl-1.0.2
+          BUILD_S2N: true
+          GCC_VERSION: 6
+      depend-on: [s2nIntegrationLibre]
+
+    - identifier: s2nIntegrationOpenSSL102Valgrind
+      env:
+        privileged-mode: true
+        compute-type: BUILD_GENERAL1_LARGE
+        image: aws/codebuild/standard:4.0
+        variables:
+          TESTS: valgrind
+          S2N_LIBCRYPTO: openssl-1.0.2
+          BUILD_S2N: true
+          GCC_VERSION: 6
+      depend-on: [s2nIntegrationLibre]
 
     # Integration V2 tests
     - identifier: s2nIntegrationV2ClientAuthentication
@@ -62,7 +143,7 @@ batch:
         image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_client_authentication
-      depend-on: [s2nIntegrationOpenSSL111PlusCoverage]
+      depend-on: [s2nIntegrationLibre]
 
     #Integ wave3
     - identifier: s2nIntegrationV2DynamicRecordSizes
@@ -585,11 +666,15 @@ phases:
         if [ -d "third-party-src" ]; then
           cd third-party-src;
         fi
-      - ./codebuild/bin/install_al2_dependencies.sh
-      - ./codebuild/bin/install_ubuntu_dependencies.sh
-      - ./codebuild/bin/install_default_dependencies.sh
+      - $CB_BIN_DIR/install_al2_dependencies.sh
+      - $CB_BIN_DIR/install_ubuntu_dependencies.sh
+      - $CB_BIN_DIR/install_default_dependencies.sh
   build:
     commands:
       - printenv
       - $CB_BIN_DIR/s2n_codebuild.sh
-
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Uploading CodeCov.io artifacts
+      - $CB_BIN_DIR/s2n_after_codebuild.sh

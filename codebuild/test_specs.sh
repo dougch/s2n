@@ -33,7 +33,7 @@ look_for_dups() {
                       yq '.batch.buildgraph[]|.identifier'|sort|uniq -c| gawk 'BEGIN {count=0;} $1>1{count++};END{print count}')
 	if [[ ${SPEC_COUNT} -ne 0 ]]; then
 		echo "Omnibus: Duplicate identifiers found in the spec"
-		ERRORS++
+		let "ERRORS++"
 	else
 		echo "Omnibus: identifiers are all uniq"
 	fi
