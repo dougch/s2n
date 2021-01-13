@@ -27,8 +27,9 @@ ensure_installed() {
     fi
 }
 
+# Check for duplicate identifiers in the omnibus spec.
 look_for_dups() {
-	SPEC_COUNT=$( sed 's/build-graph/buildgraph/g' ./spec/buildspec_omnibus.yml| \
+	SPEC_COUNT=$( sed 's/build-graph/buildgraph/g' $1| \
                       yq '.batch.buildgraph[]|.identifier'|sort|uniq -c| gawk 'BEGIN {count=0;} $1>1{count++};END{print count}')
 	if [[ ${SPEC_COUNT} -ne 0 ]]; then
 		echo "Omnibus: Duplicate identifiers found in the spec"
@@ -38,7 +39,19 @@ look_for_dups() {
 	fi
 }
 
+# Forthe build-graph jobs to work, the dependencies defined must exist.
+check_deps() {
+	DEPSLIST=$(yq -r '.batch."build-graph"[]|select(."depend-on"!=null)| ."depend-on"[0] ' $1|sort|uniq)
+	echo "Checking build-graph dependencies..."
+	for i in $DEPSLIST; do
+		echo "looking for: $i"
+		test $(yq -r '.batch."build-graph"[]|select(.identifier == "'$i'")|.identifier' $1)
+	done
+	echo "All dependencies found."
+}
+
 ensure_installed jq
 ensure_installed yq
 ensure_installed gawk
-look_for_dups
+look_for_dups ./spec/buildspec_omnibus.yml
+check_deps ./spec/buildspec_omnibus.yml

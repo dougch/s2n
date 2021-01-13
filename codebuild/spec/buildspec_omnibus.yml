@@ -118,7 +118,7 @@ batch:
         image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_fragmentation
-      depend-on: [s2nIntegrationV2CompatibilityWithOqsOpenssl]
+      depend-on: [s2nIntegrationV2HappyPath]
 
     - identifier: s2nIntegrationV2HelloRetryRequests
       env:
@@ -127,7 +127,7 @@ batch:
         image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_hello_retry_requests
-      depend-on: [s2nIntegrationV2CompatibilityWithOqsOpenssl]
+      depend-on: [s2nIntegrationV2HappyPath]
 
     - identifier: s2nIntegrationV2PqHandshake
       env:
@@ -136,7 +136,7 @@ batch:
         image: aws/codebuild/standard:4.0
         variables:
           INTEGV2_TEST: test_pq_handshake
-      depend-on: [s2nIntegrationV2CompatibilityWithOqsOpenssl]
+      depend-on: [s2nIntegrationV2HappyPath]
 
     # Integ wave6
     - identifier: s2nIntegrationV2SignatureAlgorithms
