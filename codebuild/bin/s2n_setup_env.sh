@@ -149,3 +149,16 @@ echo "TESTS=$TESTS"
 echo "PATH=$PATH"
 echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
 
+export CURL_OPTIONS="-L --max-time 5 --retry 5 --retry-delay 5"
+safecurl() {
+  # Be defensive about leaky environment variables.
+  set -e
+  unset LD_LIBRARY_PATH
+  unset DYLD_LIBRARY_PATH
+  #--max-time 10     (how long each retry will wait)
+  #--retry 5         (it will retry 5 times)
+  #--retry-delay 5   (an exponential backoff algorithm)
+  #--retry-max-time  (total time before it's considered failed)
+  curl -L --max-time 5 --retry 5 --retry-delay 5 $*
+  set +e
+}

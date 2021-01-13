@@ -14,6 +14,7 @@
 #
 
 set -e
+source codebuild/bin/s2n_setup_env.sh
 
 usage() {
     echo "install_libressl.sh build_dir install_dir"
@@ -30,7 +31,7 @@ source codebuild/bin/jobs.sh
 
 cd "$BUILD_DIR"
 # Originally from: https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-2.6.4.tar.gz
-curl https://s3-us-west-2.amazonaws.com/s2n-public-test-dependencies/2017-12-29_libressl-2.6.4.tar.gz > libressl-2.6.4.tar.gz
+safecurl https://s3-us-west-2.amazonaws.com/s2n-public-test-dependencies/2017-12-29_libressl-2.6.4.tar.gz > libressl-2.6.4.tar.gz
 tar -xzvf libressl-2.6.4.tar.gz
 cd libressl-2.6.4
 ./configure --prefix="$INSTALL_DIR"

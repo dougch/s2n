@@ -13,7 +13,8 @@
 # permissions and limitations under the License.
 #
 
-set -ex
+set -eu
+source codebuild/bin/s2n_setup_env.sh
 pushd "$(pwd)"
 
 usage() {
@@ -28,14 +29,10 @@ fi
 BUILD_DIR=$1
 INSTALL_DIR=$2
 PLATFORM=$3
-
-printenv
-ldd $(which curl)
-unset DYLD_LIBRARY_PATH
 unset LD_LIBRARY_PATH
-
+echo "$LD_LIBRARY_PATH"
 cd "$BUILD_DIR"
-curl --retry 3 -L https://www.openssl.org/source/old/0.9.x/openssl-0.9.8zh.tar.gz --output openssl-0.9.8zh.tar.gz
+curl ${CURL_OPTIONS} https://www.openssl.org/source/old/0.9.x/openssl-0.9.8zh.tar.gz --output openssl-0.9.8zh.tar.gz
 tar xzvf openssl-0.9.8zh.tar.gz
 cd openssl-0.9.8zh
 

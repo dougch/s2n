@@ -13,7 +13,8 @@
 # permissions and limitations under the License.
 #
 
-set -ex
+set -e
+source codebuild/bin/s2n_setup_env.sh
 pushd "$(pwd)"
 
 usage() {
@@ -32,7 +33,7 @@ source codebuild/bin/jobs.sh
 RELEASE=1_1_1g
 
 cd "$BUILD_DIR"
-curl --retry 3 -L https://github.com/openssl/openssl/archive/OpenSSL_${RELEASE}.zip --output OpenSSL_${RELEASE}.zip
+safecurl https://github.com/openssl/openssl/archive/OpenSSL_${RELEASE}.zip --output OpenSSL_${RELEASE}.zip
 unzip OpenSSL_${RELEASE}.zip
 cd openssl-OpenSSL_${RELEASE}
 

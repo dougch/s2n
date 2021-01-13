@@ -13,7 +13,8 @@
 # permissions and limitations under the License.
 #
 
-set -ex
+set -e
+source codebuild/bin/s2n_setup_env.sh
 pushd "$(pwd)"
 
 usage() {
@@ -48,7 +49,7 @@ fi
 # There is no 'latest' download URL for the FIPS object modules
 cd "$BUILD_DIR"
 # Originally from: http://www.openssl.org/source/openssl-fips-2.0.13.tar.gz
-curl --retry 3 https://s3-us-west-2.amazonaws.com/s2n-public-test-dependencies/2017-08-31_openssl-fips-2.0.13.tar.gz --output openssl-fips-2.0.13.tar.gz
+safecurl https://s3-us-west-2.amazonaws.com/s2n-public-test-dependencies/2017-08-31_openssl-fips-2.0.13.tar.gz --output openssl-fips-2.0.13.tar.gz
 gunzip -c openssl-fips-2.0.13.tar.gz | tar xf -
 rm openssl-fips-2.0.13.tar.gz
 cd openssl-fips-2.0.13
