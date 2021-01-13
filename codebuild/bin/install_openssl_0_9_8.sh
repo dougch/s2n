@@ -29,6 +29,11 @@ BUILD_DIR=$1
 INSTALL_DIR=$2
 PLATFORM=$3
 
+printenv
+ldd $(which curl)
+unset DYLD_LIBRARY_PATH
+unset LD_LIBRARY_PATH
+
 cd "$BUILD_DIR"
 curl --retry 3 -L https://www.openssl.org/source/old/0.9.x/openssl-0.9.8zh.tar.gz --output openssl-0.9.8zh.tar.gz
 tar xzvf openssl-0.9.8zh.tar.gz
