@@ -192,3 +192,36 @@ ninjatest: withninja
 	unset LD_LIBRARY_PATH; \
 	ninja -C build test ;\
 	}
+
+build/openssl: build
+	{ set -e;\
+	cd build;\
+	git clone --depth 1 https://github.com/openssl/openssl -b OpenSSL_1_1_1j;\
+	}
+
+build/openssl/libcrypto.so.1.1: build/openssl
+	{ set -e;\
+	cd build/openssl;\
+	./config -fPIC no-md2 no-rc5 no-rfc3779 no-sctp no-ssl-trace no-zlib no-hw no-mdc2 no-seed no-idea enable-ec_nistp_64_gcc_128 no-camellia \
+         no-bf no-ripemd no-dsa no-ssl2 no-ssl3 no-capieng \
+         -DSSL_FORBID_ENULL -DOPENSSL_NO_DTLS1 -DOPENSSL_NO_HEARTBEATS --prefix=$$(readlink -m ..) ;\
+	make ;\
+	}
+
+openssl_pull_symbols: build/openssl/libcrypto.so.1.1
+	{ set -e ;\
+	cd build/openssl;\
+	nm libcrypto.so.1.1 |awk '/ [T|t] /{print $$3" s2n_"$$3}'|sort|uniq > openssl-symbols ;\
+	objcopy --redefine-syms openssl-symbols libcrypto.so.1.1; \
+	make install_runtime_libs; \
+	rm ../lib/libssl*;\
+	}
+
+# - dump symbol list from .a before rename
+#   - rename symbols
+#   - --redefine-syms <filename>
+#   - (optionaly) combine libcrypto.a libs2n.a
+#   - testing: harness that does openssl1.0.2 + s2n
+#     hidden api? openssl_get_version from s2n?
+#       assert that harness <> s2n ssl version
+#
