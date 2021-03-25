@@ -1,0 +1,12 @@
+prefix="@CMAKE_INSTALL_PREFIX@"
+exec_prefix="${prefix}"
+libdir="${prefix}/@CMAKE_INSTALL_LIBDIR@"
+includedir="${prefix}/include"
+
+Name: s2n-tls
+Description: C99 implementation of the TLS/SSL protocols
+URL: https://github.com/aws/s2n-tls
+Version: @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@
+Cflags: -I"${includedir}"
+Libs: -L"${libdir}" -ls2n
+Libs.private: -L"${libdir}" -ls2n @PKGCONF_LIBS_PRIV@

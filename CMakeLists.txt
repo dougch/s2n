@@ -1,5 +1,7 @@
 cmake_minimum_required (VERSION 3.0)
-project (s2n C)
+project (s2n 
+	LANGUAGES C 
+	VERSION "1.0.1")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -350,6 +352,12 @@ configure_file("cmake/${PROJECT_NAME}-config.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
         @ONLY)
 
+configure_file(
+       ${PROJECT_SOURCE_DIR}/cmake/s2n.pc.in
+       ${PROJECT_BINARY_DIR}/s2n.pc
+       @ONLY
+   )
+
 if (BUILD_SHARED_LIBS)
    set (TARGET_DIR "shared")
 else()
@@ -364,6 +372,9 @@ install(EXPORT "${PROJECT_NAME}-targets"
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}/cmake/"
         COMPONENT Development)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 
 install(FILES "cmake/modules/FindLibCrypto.cmake"
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}/cmake/modules/"
