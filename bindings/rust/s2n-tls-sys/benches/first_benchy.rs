@@ -3,7 +3,7 @@ use s2n_tls_sys::*;
 pub use libc::c_int as s2n_status_code;
 
 
-pub fn criterion_bench_s2n(c: &mut Criterion) {
+pub fn criterion_s2n_stuffer(c: &mut Criterion) {
 
     #[inline]
     fn bench_stuffer_write(input_string: String) {
@@ -16,6 +16,11 @@ pub fn criterion_bench_s2n(c: &mut Criterion) {
 
 }
 
+mod perf;
 
-criterion_group!(benches, criterion_bench_s2n);
+criterion_group!{
+    name = benches;
+    config = Criterion::default().with_profiler(perf::FlamegraphProfiler::new(100));
+    targets = criterion_s2n_stuffer
+}
 criterion_main!(benches);
