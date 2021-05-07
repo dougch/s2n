@@ -14,3 +14,15 @@ Generating rust bindings can be accomplished by running the `generate.sh` script
 ```
 $ ./bindings/rust/generate.sh
 ```
+
+### Benchmarks
+
+After generating the bindings
+
+```
+cd bindings/rust/s2n-tls-sys
+#Regular criterion run
+cargo bench
+# pperf Flamegraph - Linux only
+cargo bench --bench flamegraph -- --profile-time=5
+```
