@@ -6,6 +6,9 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 ARGS="$@"
 
+if [[ -d s2n-tls-sys/lib ]]; then
+  rm -rf s2n-tls-sys/lib
+fi
 mkdir -p s2n-tls-sys/lib
 
 # we copy the C sources into the `lib` directory so they get published in the
@@ -18,11 +21,17 @@ cp -r \
   ../../stuffer \
   ../../tls \
   ../../utils \
-  ../../tests/testlib \
-  ../../tests/unit/s2n_tls13_handshake_test.c \
   s2n-tls-sys/lib/
 
+# Grab 2 specific files to see if bindgen will build it
+mkdir -p s2n-tls-sys/lib/testlib s2n-tls-sys/lib/tests
+cp ../../tests/testlib/s2n_testlib.h s2n-tls-sys/lib/testlib
+cp ../../tests/testlib/s2n_stuffer_hex.c s2n-tls-sys/lib/testlib
+cp ../../tests/unit/s2n_tls13_handshake_test.* s2n-tls-sys/lib/tests
+
 cp ../../tests/s2n_test.h s2n-tls-sys/lib/
+
+
 
 # generate the bindings modules from the copied sources
 cd generate && cargo run -- ../s2n-tls-sys $ARGS && cd ..

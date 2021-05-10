@@ -140,7 +140,7 @@ static int s2n_test_secret_handler(void* context, struct s2n_connection *conn,
     return S2N_SUCCESS;
 }
 
-int main(int argc, char **argv)
+int s2n_tls13_handshake_test(int argc, char **argv)
 {
     BEGIN_TEST();
     EXPECT_SUCCESS(s2n_enable_tls13());
