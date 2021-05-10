@@ -16,7 +16,7 @@
 #include "s2n_testlib.h"
 #include "utils/s2n_safety.h"
 #include "tls/s2n_kem.h"
-#include "tests/testlib/s2n_nist_kats.h"
+#include "testlib/s2n_nist_kats.h"
 #include "pq-crypto/s2n_pq.h"
 
 int s2n_kem_recv_ciphertext_fuzz_test_init(const char *kat_file_path, struct s2n_kem_params *kem_params) {

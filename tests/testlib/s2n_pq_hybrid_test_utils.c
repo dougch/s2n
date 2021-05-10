@@ -14,7 +14,7 @@
  */
 
 #include "tls/s2n_kem.h"
-#include "tests/testlib/s2n_nist_kats.h"
+#include "testlib/s2n_nist_kats.h"
 #include "utils/s2n_mem.h"
 #include "utils/s2n_random.h"
 #include "utils/s2n_safety.h"
@@ -22,7 +22,7 @@
 #include "crypto/s2n_openssl.h"
 #include "pq-crypto/s2n_pq.h"
 #include "stuffer/s2n_stuffer.h"
-#include "tests/testlib/s2n_testlib.h"
+#include "testlib/s2n_testlib.h"
 #include "tls/s2n_kex.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_cipher_suites.h"

@@ -18,7 +18,11 @@ cp -r \
   ../../stuffer \
   ../../tls \
   ../../utils \
+  ../../tests/testlib \
+  ../../tests/unit \
   s2n-tls-sys/lib/
+
+cp ../../tests/s2n_test.h s2n-tls-sys/lib/
 
 # generate the bindings modules from the copied sources
 cd generate && cargo run -- ../s2n-tls-sys $ARGS && cd ..

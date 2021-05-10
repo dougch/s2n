@@ -16,7 +16,7 @@
 #include <sys/param.h>
 
 #include "tls/s2n_kem.h"
-#include "tests/testlib/s2n_nist_kats.h"
+#include "testlib/s2n_nist_kats.h"
 #include "utils/s2n_mem.h"
 #include "utils/s2n_safety.h"
 #include "pq-crypto/s2n_pq.h"
