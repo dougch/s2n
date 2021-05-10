@@ -25,7 +25,7 @@
 #include "stuffer/s2n_stuffer.h"
 #include "tls/s2n_prf.h"
 #include "utils/s2n_safety.h"
-#include "tests/testlib/s2n_nist_kats.h"
+#include "testlib/s2n_nist_kats.h"
 
 #define KAT_FILE_NAME "kats/hybrid_prf.kat"
 

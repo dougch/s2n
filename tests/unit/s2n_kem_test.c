@@ -12,7 +12,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-#include "tests/s2n_test.h"
+#include "s2n_test.h"
 
 #include "tls/s2n_cipher_preferences.h"
 #include "tls/s2n_kem.h"

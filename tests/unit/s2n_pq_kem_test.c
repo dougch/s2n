@@ -16,7 +16,7 @@
 #include "s2n_test.h"
 #include "tls/s2n_kem.h"
 #include "pq-crypto/s2n_pq.h"
-#include "tests/testlib/s2n_testlib.h"
+#include "testlib/s2n_testlib.h"
 #include "utils/s2n_safety.h"
 
 struct s2n_kem_test_vector {

@@ -488,7 +488,7 @@ int main(int argc, char **argv)
             EXPECT_SUCCESS(s2n_stuffer_growable_alloc(&test_stuffer, 0));
             EXPECT_SUCCESS(s2n_stuffer_write_bytes(&test_stuffer, psk_identity.blob.data, psk_identity.blob.size));
             test_stuffer.blob.size = s2n_stuffer_data_available(&psk_identity);
-            
+
             struct s2n_offered_psk client_psk = { .identity = test_stuffer.blob, .wire_index = wire_index };
 
             EXPECT_SUCCESS(s2n_offered_psk_list_choose_psk(&identity_list, &client_psk));

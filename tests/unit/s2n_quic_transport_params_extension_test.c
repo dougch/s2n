@@ -14,7 +14,7 @@
  */
 
 #include "s2n_test.h"
-#include "tests/testlib/s2n_testlib.h"
+#include "testlib/s2n_testlib.h"
 
 #include "tls/extensions/s2n_quic_transport_params.h"
 

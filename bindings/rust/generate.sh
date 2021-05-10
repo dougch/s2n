@@ -19,7 +19,7 @@ cp -r \
   ../../tls \
   ../../utils \
   ../../tests/testlib \
-  ../../tests/unit \
+  ../../tests/unit/s2n_tls13_handshake_test.c \
   s2n-tls-sys/lib/
 
 cp ../../tests/s2n_test.h s2n-tls-sys/lib/

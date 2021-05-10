@@ -13,7 +13,7 @@
  * permissions and limitations under the License.
  */
 
-#include "tests/s2n_test.h"
+#include "s2n_test.h"
 
 #include "tls/s2n_cipher_suites.h"
 #include "tls/s2n_client_key_exchange.h"

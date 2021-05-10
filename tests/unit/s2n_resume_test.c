@@ -14,7 +14,7 @@
  */
 
 #include "s2n_test.h"
-#include "tests/testlib/s2n_testlib.h"
+#include "testlib/s2n_testlib.h"
 #include "tls/s2n_tls.h"
 #include "tls/s2n_resume.h"
 /* To test static function */
@@ -320,10 +320,10 @@ int main(int argc, char **argv)
         uint8_t master_secret[S2N_TLS_SECRET_LEN] = { 0 };
         EXPECT_SUCCESS(s2n_stuffer_read_bytes(&output, master_secret, S2N_TLS_SECRET_LEN));
         EXPECT_BYTEARRAY_EQUAL(test_master_secret.data, master_secret, S2N_TLS_SECRET_LEN);
-        
+
         EXPECT_SUCCESS(s2n_connection_free(conn));
     }
-    
+
     /* s2n_tls13_serialize_resumption_state */
     {
         /* Safety checks */
@@ -1023,7 +1023,7 @@ int main(int argc, char **argv)
     {
         /* Session ticket keys. Taken from test vectors in https://tools.ietf.org/html/rfc5869 */
         uint8_t ticket_key_name[16] = "2016.07.26.15\0";
-        S2N_BLOB_FROM_HEX(ticket_key, 
+        S2N_BLOB_FROM_HEX(ticket_key,
         "077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2b3e5");
 
         /* Check encrypted data can be decrypted correctly for TLS12 */
@@ -1252,7 +1252,7 @@ int main(int argc, char **argv)
             conn->tickets_to_send = UINT16_MAX;
 
             EXPECT_FAILURE_WITH_ERRNO(s2n_connection_add_new_tickets_to_send(conn, new_num_tickets), S2N_ERR_INTEGER_OVERFLOW);
-            
+
             EXPECT_SUCCESS(s2n_connection_free(conn));
         }
 

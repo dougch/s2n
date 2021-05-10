@@ -27,8 +27,8 @@
 #include "tls/s2n_kem.h"
 #include "tls/s2n_cipher_suites.h"
 
-#include "tests/s2n_test.h"
-#include "tests/testlib/s2n_testlib.h"
+#include "s2n_test.h"
+#include "testlib/s2n_testlib.h"
 
 #include <openssl/pem.h>
 
