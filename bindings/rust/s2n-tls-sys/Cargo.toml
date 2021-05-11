@@ -23,5 +23,5 @@ cc = { version = "1.0", features = ["parallel"] }
 
 # https://www.jibbow.com/posts/criterion-flamegraphs/
 [[bench]]
-name = "flamegraph"
+name = "drbg"
 harness = false
