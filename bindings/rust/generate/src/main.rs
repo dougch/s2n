@@ -18,15 +18,18 @@ fn main() {
         .unwrap();
     }
 
+    // api.rs
     gen_bindings("#include <s2n.h>", &out_dir.join("lib"))
         .allowlist_type("s2n_.*")
         .allowlist_function("s2n_.*")
         .allowlist_var("s2n_.*")
+        .with_codegen_config(CodegenConfig::VARS)
         .generate()
         .unwrap()
         .write_to_file(out_dir.join("src/api.rs"))
         .unwrap();
 
+    // quic.rs
     gen_bindings("#include \"tls/s2n_quic_support.h\"", &out_dir.join("lib"))
         .allowlist_function("s2n_.*quic.*")
         .allowlist_function("s2n_.*secret_callback.*")
@@ -129,6 +132,8 @@ fn gen_internal(input: &Path, out: &Path) -> io::Result<()> {
         .allowlist_type("s2n_.*")
         .allowlist_function("s2n_.*")
         .allowlist_var("s2n_.*")
+        .with_codegen_config(CodegenConfig::VARS)
+        .with_codegen_config(CodegenConfig::TYPES)
         .generate()
         .unwrap()
         .write_to_file(out)?;
@@ -190,10 +195,11 @@ impl FunctionCallbacks {
         let mut o = io::BufWriter::new(&mut tests);
 
         writeln!(o, "{}", COPYRIGHT)?;
+        writeln!(o, "{}", PRELUDE)?;
         for function in functions.difference(&types) {
             writeln!(o, "#[test]")?;
             writeln!(o, "fn {} () {{", function)?;
-            writeln!(o, "    let ptr = crate::{} as *const ();", function)?;
+            writeln!(o, "    let ptr = crate::tests::{} as *const ();", function)?;
             writeln!(o, "    assert!(!ptr.is_null());")?;
             writeln!(o, "}}")?;
             writeln!(o)?;
