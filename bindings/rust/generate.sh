@@ -30,11 +30,10 @@ cp ../../tests/testlib/s2n_stuffer_hex.c s2n-tls-sys/lib/testlib
 cp ../../tests/s2n_test.h s2n-tls-sys/lib/tests
 cp ../../tests/unit/s2n_drbg_test.* s2n-tls-sys/lib/tests
 
-
-
 # generate the bindings modules from the copied sources
 cd generate && cargo run -- ../s2n-tls-sys $ARGS && cd ..
 
+exit 0
 # make sure everything builds and passes sanity checks
 cd s2n-tls-sys \
   && cargo test \

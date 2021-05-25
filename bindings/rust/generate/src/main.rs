@@ -1,7 +1,6 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-use bindgen::CodegenConfig;
 use std::collections::BTreeSet;
 use std::sync::{Arc, Mutex};
 use std::{io, path::Path};
@@ -23,7 +22,6 @@ fn main() {
         .allowlist_type("s2n_.*")
         .allowlist_function("s2n_.*")
         .allowlist_var("s2n_.*")
-        .with_codegen_config(CodegenConfig::VARS)
         .generate()
         .unwrap()
         .write_to_file(out_dir.join("src/api.rs"))
@@ -45,7 +43,6 @@ fn main() {
 
     gen_bindings("#include <s2n.h>", &out_dir.join("lib"))
         .allowlist_function("s2n_.*")
-        .with_codegen_config(CodegenConfig::FUNCTIONS)
         .parse_callbacks(Box::new(functions.clone()))
         .generate()
         .unwrap();
@@ -116,7 +113,7 @@ fn gen_internal(input: &Path, out: &Path) -> io::Result<()> {
     use std::fmt::Write;
 
     let pattern = format!("{}/**/*.h", input.display());
-
+    println!("Including pattern: {:?}", pattern);
     let mut headers = String::new();
     for header in glob::glob(&pattern).unwrap() {
         let header = header.unwrap();
@@ -131,9 +128,8 @@ fn gen_internal(input: &Path, out: &Path) -> io::Result<()> {
         .raw_line("use libc::{pid_t as __pid_t, c_int as __sig_atomic_t};")
         .allowlist_type("s2n_.*")
         .allowlist_function("s2n_.*")
+        .allowlist_function("s2n_drbg_test")
         .allowlist_var("s2n_.*")
-        .with_codegen_config(CodegenConfig::VARS)
-        .with_codegen_config(CodegenConfig::TYPES)
         .generate()
         .unwrap()
         .write_to_file(out)?;
