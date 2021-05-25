@@ -45,6 +45,5 @@ fn main() {
         println!("s2n_drbg_test: {:?}", result);
     }
 
-
     println!("Done.");
 }

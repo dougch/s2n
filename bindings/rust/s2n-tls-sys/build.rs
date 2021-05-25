@@ -3,7 +3,6 @@
 
 fn main() {
     let mut build = cc::Build::new();
-
     let pq = option_env("CARGO_FEATURE_PQ").is_some();
 
     // TODO each pq section needs to be built separately since it
