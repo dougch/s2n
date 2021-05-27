@@ -42,7 +42,6 @@ phases:
         if [ -d "third-party-src" ]; then
           cd third-party-src;
         fi
-      - GCC_VERSION=6 $CB_BIN_DIR/install_default_dependencies.sh
   build:
     commands:
       - printenv

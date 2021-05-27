@@ -29,7 +29,7 @@ source codebuild/bin/s2n_setup_env.sh
 
 # Set the version of GCC as Default if it's required
 if [[ -n "$GCC_VERSION" ]] && [[ "$GCC_VERSION" != "NONE" ]]; then
-    alias gcc=$(which gcc-$GCC_VERSION);
+    export CC=$(which gcc-$GCC_VERSION);
 fi
 
 BUILD_DIR=$1
