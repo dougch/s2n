@@ -29,7 +29,7 @@ batch:
         privileged-mode: true
         compute-type: BUILD_GENERAL1_LARGE
 
-    - identifier: s2nInSourceBuildAwsLc
+    - identifier: s2nUnitAwsLcInSourceBuild
       buildspec: codebuild/spec/buildspec_ubuntu_insourcebuild_awslc.yml
       env:
         privileged-mode: true
