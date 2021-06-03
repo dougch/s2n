@@ -336,7 +336,7 @@ int check_drgb_version(s2n_drbg_mode mode, int (*generator)(void *, uint32_t), i
     return 0;
 }
 
-int main(int argc, char **argv)
+int s2n_drbg_test(int argc, char **argv)
 {
     BEGIN_TEST();
     EXPECT_SUCCESS(s2n_disable_tls13());

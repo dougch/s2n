@@ -728,9 +728,7 @@ int s2n_security_policies_init()
             }
         }
 
-	printf("***Validating kem prefs for security policy #%d %s\n",i,security_policy_selection[i].version);
         POSIX_GUARD(s2n_validate_kem_preferences(kem_preference, security_policy_selection[i].pq_kem_extension_required));
-	printf("***Next up: kem prefs for security policy #%d %s\n",i+1,security_policy_selection[i+1].version);
     }
     return 0;
 }

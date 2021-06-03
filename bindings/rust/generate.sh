@@ -43,7 +43,6 @@ cd s2n-tls-sys
 cargo build
 ./target/debug/s2n-tls-sys
 
-exit 0
 # make sure everything builds and passes sanity checks
 cd s2n-tls-sys \
   && cargo test \
