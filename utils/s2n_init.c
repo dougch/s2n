@@ -42,9 +42,13 @@ int s2n_init(void)
     POSIX_GUARD(s2n_mem_init());
     POSIX_GUARD_RESULT(s2n_rand_init());
     POSIX_GUARD(s2n_cipher_suites_init());
+    printf("***DEBUG running s2n_security_policies_init\n");
     POSIX_GUARD(s2n_security_policies_init());
+    printf("***DEBUG running s2n_config_default_init\n");
     POSIX_GUARD(s2n_config_defaults_init());
+    printf("***DEBUG running s2n_extention_type_init\n");
     POSIX_GUARD(s2n_extension_type_init());
+    printf("***DEBUG running s2n_pq_init\n");
     POSIX_GUARD_RESULT(s2n_pq_init());
 
     POSIX_ENSURE_OK(atexit(s2n_cleanup_atexit), S2N_ERR_ATEXIT);
@@ -52,7 +56,7 @@ int s2n_init(void)
     if (getenv("S2N_PRINT_STACKTRACE")) {
         s2n_stack_traces_enabled_set(true);
     }
-
+    printf("Done with s2n_init()\n");
     return 0;
 }
 
