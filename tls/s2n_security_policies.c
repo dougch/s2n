@@ -299,8 +299,8 @@ const struct s2n_security_policy security_policy_kms_tls_1_0_2018_10 = {
 
 const struct s2n_security_policy security_policy_kms_pq_tls_1_0_2019_06 = {
     .minimum_protocol_version = S2N_TLS10,
-    .cipher_preferences = &cipher_preferences_kms_pq_tls_1_0_2019_06,
-    .kem_preferences = &kem_preferences_kms_pq_tls_1_0_2019_06,
+    .cipher_preferences = &cipher_preferences_null,
+    .kem_preferences =  &kem_preferences_null,
     .signature_preferences = &s2n_signature_preferences_20140601,
     .ecc_preferences = &s2n_ecc_preferences_20140601,
 };
@@ -308,7 +308,7 @@ const struct s2n_security_policy security_policy_kms_pq_tls_1_0_2019_06 = {
 const struct s2n_security_policy security_policy_kms_pq_tls_1_0_2020_02 = {
     .minimum_protocol_version = S2N_TLS10,
     .cipher_preferences = &cipher_preferences_kms_pq_tls_1_0_2020_02,
-    .kem_preferences = &kem_preferences_kms_pq_tls_1_0_2020_02,
+    .kem_preferences =  &kem_preferences_null,
     .signature_preferences = &s2n_signature_preferences_20140601,
     .ecc_preferences = &s2n_ecc_preferences_20140601,
 };
@@ -500,7 +500,7 @@ const struct s2n_security_policy security_policy_20201021 = {
 const struct s2n_security_policy security_policy_test_all = {
     .minimum_protocol_version = S2N_SSLv3,
     .cipher_preferences = &cipher_preferences_test_all,
-    .kem_preferences = &kem_preferences_kms_pq_tls_1_0_2020_07,
+    .kem_preferences =  &kem_preferences_null,
     .signature_preferences = &s2n_signature_preferences_20201021,
     .ecc_preferences = &s2n_ecc_preferences_test_all,
 };
@@ -508,7 +508,7 @@ const struct s2n_security_policy security_policy_test_all = {
 const struct s2n_security_policy security_policy_test_all_tls12 = {
     .minimum_protocol_version = S2N_SSLv3,
     .cipher_preferences = &cipher_preferences_test_all_tls12,
-    .kem_preferences = &kem_preferences_kms_pq_tls_1_0_2020_07,
+    .kem_preferences =  &kem_preferences_null,
     .signature_preferences = &s2n_signature_preferences_20201021,
     .ecc_preferences = &s2n_ecc_preferences_20201021,
 };
@@ -516,7 +516,7 @@ const struct s2n_security_policy security_policy_test_all_tls12 = {
 const struct s2n_security_policy security_policy_test_all_fips = {
     .minimum_protocol_version = S2N_TLS10,
     .cipher_preferences = &cipher_preferences_test_all_fips,
-    .kem_preferences = &kem_preferences_null,
+    .kem_preferences =  &kem_preferences_null,
     .signature_preferences = &s2n_signature_preferences_20201021,
     .ecc_preferences = &s2n_ecc_preferences_20201021,
 };
@@ -596,12 +596,12 @@ struct s2n_security_policy_selection security_policy_selection[] = {
     { .version="CloudFront-TLS-1-2-2018-Legacy", .security_policy=&security_policy_cloudfront_tls_1_2_2018_legacy, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="CloudFront-TLS-1-2-2019-Legacy", .security_policy=&security_policy_cloudfront_tls_1_2_2019_legacy, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="KMS-TLS-1-0-2018-10", .security_policy=&security_policy_kms_tls_1_0_2018_10, .ecc_extension_required=0, .pq_kem_extension_required=0 },
-    { .version="KMS-PQ-TLS-1-0-2019-06", .security_policy=&security_policy_kms_pq_tls_1_0_2019_06, .ecc_extension_required=0, .pq_kem_extension_required=0 },
+    /*{ .version="KMS-PQ-TLS-1-0-2019-06", .security_policy=&security_policy_kms_pq_tls_1_0_2019_06, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="KMS-PQ-TLS-1-0-2020-02", .security_policy=&security_policy_kms_pq_tls_1_0_2020_02, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="KMS-PQ-TLS-1-0-2020-07", .security_policy=&security_policy_kms_pq_tls_1_0_2020_07, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="PQ-SIKE-TEST-TLS-1-0-2019-11", .security_policy=&security_policy_pq_sike_test_tls_1_0_2019_11, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="PQ-SIKE-TEST-TLS-1-0-2020-02", .security_policy=&security_policy_pq_sike_test_tls_1_0_2020_02, .ecc_extension_required=0, .pq_kem_extension_required=0 },
-    { .version="PQ-TLS-1-0-2020-12", .security_policy=&security_policy_pq_tls_1_0_2020_12, .ecc_extension_required=0, .pq_kem_extension_required=0 },
+    { .version="PQ-TLS-1-0-2020-12", .security_policy=&security_policy_pq_tls_1_0_2020_12, .ecc_extension_required=0, .pq_kem_extension_required=0 }, */
     { .version="KMS-FIPS-TLS-1-2-2018-10", .security_policy=&security_policy_kms_fips_tls_1_2_2018_10, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="20140601", .security_policy=&security_policy_20140601, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="20141001", .security_policy=&security_policy_20141001, .ecc_extension_required=0, .pq_kem_extension_required=0 },
@@ -627,12 +627,12 @@ struct s2n_security_policy_selection security_policy_selection[] = {
     { .version="20190802", .security_policy=&security_policy_20190802, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="20200207", .security_policy=&security_policy_test_all_tls13, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="20201021", .security_policy=&security_policy_20201021, .ecc_extension_required=0, .pq_kem_extension_required=0 },
-    { .version="test_all", .security_policy=&security_policy_test_all, .ecc_extension_required=0, .pq_kem_extension_required=0 },
+    /*{ .version="test_all", .security_policy=&security_policy_test_all, .ecc_extension_required=0, .pq_kem_extension_required=0 },*/
     { .version="test_all_fips", .security_policy=&security_policy_test_all_fips, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="test_all_ecdsa", .security_policy=&security_policy_test_all_ecdsa, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="test_all_rsa_kex", .security_policy=&security_policy_test_all_rsa_kex, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="test_ecdsa_priority", .security_policy=&security_policy_test_ecdsa_priority, .ecc_extension_required=0, .pq_kem_extension_required=0 },
-    { .version="test_all_tls12", .security_policy=&security_policy_test_all_tls12, .ecc_extension_required=0, .pq_kem_extension_required=0 },
+    /*{ .version="test_all_tls12", .security_policy=&security_policy_test_all_tls12, .ecc_extension_required=0, .pq_kem_extension_required=0 },*/
     { .version="test_all_tls13", .security_policy=&security_policy_test_all_tls13, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version="null", .security_policy=&security_policy_null, .ecc_extension_required=0, .pq_kem_extension_required=0 },
     { .version=NULL, .security_policy=NULL, .ecc_extension_required=0, .pq_kem_extension_required=0 }
@@ -728,7 +728,9 @@ int s2n_security_policies_init()
             }
         }
 
+	printf("***Validating kem prefs for security policy #%d %s\n",i,security_policy_selection[i].version);
         POSIX_GUARD(s2n_validate_kem_preferences(kem_preference, security_policy_selection[i].pq_kem_extension_required));
+	printf("***Next up: kem prefs for security policy #%d %s\n",i+1,security_policy_selection[i+1].version);
     }
     return 0;
 }

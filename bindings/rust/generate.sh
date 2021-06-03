@@ -39,6 +39,10 @@ cp ../../tests/unit/s2n_drbg_test.* s2n-tls-sys/lib/tests
 # generate the bindings modules from the copied sources
 cd generate && cargo run -- ../s2n-tls-sys $ARGS && cd ..
 
+cd s2n-tls-sys
+cargo build
+./target/debug/s2n-tls-sys
+
 exit 0
 # make sure everything builds and passes sanity checks
 cd s2n-tls-sys \
