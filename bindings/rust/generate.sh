@@ -41,6 +41,7 @@ cd generate && cargo run -- ../s2n-tls-sys $ARGS && cd ..
 
 cd s2n-tls-sys
 cargo build
+exit
 
 # make sure everything builds and passes sanity checks
 cd s2n-tls-sys \
