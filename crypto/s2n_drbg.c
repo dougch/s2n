@@ -150,6 +150,7 @@ static int s2n_drbg_mix(struct s2n_drbg *drbg, struct s2n_blob *ps)
 
 int s2n_drbg_instantiate(struct s2n_drbg *drbg, struct s2n_blob *personalization_string, const s2n_drbg_mode mode)
 {
+    printf("***DEBUG starting s2n_drbg_instantiate\n");
     POSIX_ENSURE_REF(drbg);
 
     drbg->ctx = EVP_CIPHER_CTX_new();
@@ -173,16 +174,20 @@ int s2n_drbg_instantiate(struct s2n_drbg *drbg, struct s2n_blob *personalization
 
     static const uint8_t zero_key[S2N_DRBG_MAX_KEY_SIZE] = {0};
 
+    printf("***DEBUG memset\n");
     /* Start off with zeroed data, per 10.2.1.3.1 item 4 and 5 */
     memset(drbg->v, 0, sizeof(drbg->v));
     POSIX_GUARD_OSSL(EVP_EncryptInit_ex(drbg->ctx, NULL, NULL, zero_key, NULL), S2N_ERR_DRBG);
 
+    printf("***DEBUG personalization string\n");
     /* Copy the personalization string */
     s2n_stack_blob(ps, s2n_drbg_seed_size(drbg), S2N_DRBG_MAX_SEED_SIZE);
     POSIX_GUARD(s2n_blob_zero(&ps));
 
+    printf("***DEBUG check memcpy\n");
     POSIX_CHECKED_MEMCPY(ps.data, personalization_string->data, MIN(ps.size, personalization_string->size));
 
+    printf("***DEBUG seed the drbg\n");
     /* Seed the DRBG */
     POSIX_GUARD(s2n_drbg_seed(drbg, &ps));
 
