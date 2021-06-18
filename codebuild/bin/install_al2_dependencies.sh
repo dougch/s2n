@@ -28,10 +28,11 @@ base_packages() {
     yum install amazon-linux-extras
 
     # Who owns this package? It needs updating to not install modules under python2.7
-    PYTHON=$(which python2) amazon-linux-extras install -y ruby2.6 rust1 python3.8
-    PYTHON=$(which python2) amazon-linux-extras enable epel
-    PYTHON=$(which python2) amazon-linux-extras enable corretto8
-    yum install -y openssh-clients
+    # These don't exist inside the gated garden, ignore errors
+    PYTHON=$(which python2) amazon-linux-extras install -y ruby2.6 rust1 python3.8 || true
+    PYTHON=$(which python2) amazon-linux-extras enable epel || true
+    PYTHON=$(which python2) amazon-linux-extras enable corretto8 || true
+    yum install -y openssh-clients || true
 }
 
 mono() {
