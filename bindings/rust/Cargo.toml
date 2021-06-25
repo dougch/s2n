@@ -2,6 +2,7 @@
 members = [
     "generate",
     "integration",
+    "performance",
     "s2n-tls",
     "s2n-tls-sys",
 ]
@@ -15,3 +16,8 @@ incremental = false
 lto = true
 codegen-units = 1
 incremental = false
+debug = true
+debug-assertions = true
+overflow-checks = true
+panic = 'unwind'
+
